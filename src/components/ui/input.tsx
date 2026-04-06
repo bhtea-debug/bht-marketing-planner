@@ -22,14 +22,14 @@ interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
 }
 
 const baseInputClasses =
-  'w-full px-4 py-2 border border-gray-300 rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed';
+  'w-full px-4 py-2 border border-slate-300 rounded-lg font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed';
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, helperText, className = '', ...rest }, ref) => {
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-slate-700 mb-2">
             {label}
           </label>
         )}
@@ -44,7 +44,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         />
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         {helperText && !error && (
-          <p className="mt-2 text-sm text-gray-500">{helperText}</p>
+          <p className="mt-2 text-sm text-slate-500">{helperText}</p>
         )}
       </div>
     );
@@ -58,7 +58,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-slate-700 mb-2">
             {label}
           </label>
         )}
@@ -87,7 +87,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
         </select>
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         {helperText && !error && (
-          <p className="mt-2 text-sm text-gray-500">{helperText}</p>
+          <p className="mt-2 text-sm text-slate-500">{helperText}</p>
         )}
       </div>
     );
@@ -101,7 +101,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-slate-700 mb-2">
             {label}
           </label>
         )}
@@ -117,7 +117,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         />
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         {helperText && !error && (
-          <p className="mt-2 text-sm text-gray-500">{helperText}</p>
+          <p className="mt-2 text-sm text-slate-500">{helperText}</p>
         )}
       </div>
     );

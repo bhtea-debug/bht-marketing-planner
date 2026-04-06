@@ -8,136 +8,91 @@ type CampaignStatus = 'Szkic' | 'Aktywne' | 'Zakończone' | 'Wstrzymane';
 
 interface CampaignCardProps {
   campaign: {
-    id: string;
-    name: string;
-    description: string;
-    channelName: string;
-    channelColor: string;
-    status: CampaignStatus;
-    startDate: string;
-    endDate: string;
-    budgetPlanned: number;
-    budgetSpent: number;
-    tasksDone: number;
-    tasksTotal: number;
+    id: string; name: string; description: string; channelName: string;
+    channelColor: string; status: CampaignStatus; startDate: string;
+    endDate: string; budgetPlanned: number; budgetSpent: number;
+    tasksDone: number; tasksTotal: number;
   };
 }
 
 const getStatusColor = (status: CampaignStatus): string => {
-  switch (status) {
-    case 'Szkic':
-      return '#6B7280'; // gray
-    case 'Aktywne':
-      return '#10B981'; // green
-    case 'Zakończone':
-      return '#3B82F6'; // blue
-    case 'Wstrzymane':
-      return '#FBBF24'; // yellow
-    default:
-      return '#6B7280';
-  }
+  const colors: Record<CampaignStatus, string> = {
+    'Szkic': '#94a3b8', 'Aktywne': '#059669', 'Zakończone': '#2563eb', 'Wstrzymane': '#d97706',
+  };
+  return colors[status] || '#94a3b8';
 };
 
-const getStatusText = (status: CampaignStatus): string => {
-  switch (status) {
-    case 'Szkic':
-      return 'Szkic';
-    case 'Aktywne':
-      return 'Aktywne';
-    case 'Zakończone':
-      return 'Zakończone';
-    case 'Wstrzymane':
-      return 'Wstrzymane';
-    default:
-      return status;
-  }
-};
-
-const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('pl-PL', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
+const formatDate = (dateString: string): string =>
+  new Date(dateString).toLocaleDateString('pl-PL', { month: 'short', day: 'numeric', year: 'numeric' });
 
 export default function CampaignCard({ campaign }: CampaignCardProps) {
   const budgetPercentage = (campaign.budgetSpent / campaign.budgetPlanned) * 100;
   const taskPercentage = (campaign.tasksDone / campaign.tasksTotal) * 100;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-200 overflow-hidden">
-      {/* Card Header with Status */}
-      <div className="p-6 border-b border-gray-100 flex items-start justify-between">
-        <div className="flex-1">
-          <h3 className="text-lg font-semibold text-gray-900">{campaign.name}</h3>
-          <p className="text-sm text-gray-600 mt-1">{campaign.description}</p>
-        </div>
-        <Badge color={getStatusColor(campaign.status)} size="sm">
-          {getStatusText(campaign.status)}
-        </Badge>
-      </div>
-
-      {/* Card Body */}
-      <div className="p-6 space-y-5">
-        {/* Channel Badge */}
-        <div className="flex items-center gap-2">
-          <Badge color={campaign.channelColor} size="sm">
-            {campaign.channelName}
+    <div className="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-md hover:border-slate-300/80 transition-all duration-200 overflow-hidden group">
+      {/* Header */}
+      <div className="p-5 pb-4">
+        <div className="flex items-start justify-between mb-1">
+          <h3 className="text-[15px] font-semibold text-slate-900 group-hover:text-amber-800 transition-colors">{campaign.name}</h3>
+          <Badge color={getStatusColor(campaign.status)} size="sm" variant="outline">
+            {campaign.status}
           </Badge>
         </div>
+        <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-1">{campaign.description}</p>
+      </div>
 
-        {/* Date Range */}
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <Calendar size={16} className="text-amber-700" />
-          <span>
-            {formatDate(campaign.startDate)} - {formatDate(campaign.endDate)}
-          </span>
+      {/* Body */}
+      <div className="px-5 pb-5 space-y-4">
+        {/* Channel + Date */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <Badge color={campaign.channelColor} size="sm">{campaign.channelName}</Badge>
+          <div className="flex items-center gap-1.5 text-[12px] text-slate-400">
+            <Calendar size={13} />
+            <span>{formatDate(campaign.startDate)} - {formatDate(campaign.endDate)}</span>
+          </div>
         </div>
 
-        {/* Budget Progress */}
+        {/* Budget */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Budżet</span>
-            <span className="text-sm text-gray-600">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-medium text-slate-500">Budżet</span>
+            <span className="text-[12px] font-semibold text-slate-700">
               ${campaign.budgetSpent.toLocaleString()} / ${campaign.budgetPlanned.toLocaleString()}
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-amber-600 to-amber-700 h-full transition-all duration-300"
+              className="bg-gradient-to-r from-amber-500 to-amber-600 h-full rounded-full transition-all duration-500"
               style={{ width: `${Math.min(budgetPercentage, 100)}%` }}
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">{budgetPercentage.toFixed(0)}% wydanego</p>
+          <p className="text-[11px] text-slate-400 mt-1">{budgetPercentage.toFixed(0)}% wydanego</p>
         </div>
 
-        {/* Tasks Progress */}
+        {/* Tasks */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">Zadania</span>
-            <span className="text-sm text-gray-600">
-              {campaign.tasksDone} / {campaign.tasksTotal}
-            </span>
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-medium text-slate-500">Zadania</span>
+            <span className="text-[12px] font-semibold text-slate-700">{campaign.tasksDone} / {campaign.tasksTotal}</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-green-500 to-green-600 h-full transition-all duration-300"
+              className="bg-gradient-to-r from-emerald-400 to-emerald-500 h-full rounded-full transition-all duration-500"
               style={{ width: `${taskPercentage}%` }}
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1">{taskPercentage.toFixed(0)}% wykonanych</p>
+          <p className="text-[11px] text-slate-400 mt-1">{taskPercentage.toFixed(0)}% wykonanych</p>
         </div>
       </div>
 
-      {/* Card Footer */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <CheckCircle2 size={16} className="text-green-600" />
-          <span>{campaign.tasksDone} zadań wykonanych</span>
+      {/* Footer */}
+      <div className="px-5 py-3 bg-slate-50/80 border-t border-slate-100 flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-[12px] text-slate-500">
+          <CheckCircle2 size={14} className="text-emerald-500" />
+          <span>{campaign.tasksDone} wykonanych</span>
         </div>
-        <button className="text-amber-700 hover:text-amber-800 text-sm font-medium transition-colors">
+        <button className="text-[13px] font-medium text-amber-700 hover:text-amber-800 transition-colors">
           Szczegóły →
         </button>
       </div>

@@ -44,8 +44,8 @@ export default function ReportsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-stone-900">Raporty</h1>
-        <p className="text-stone-600 mt-2">
+        <h1 className="text-3xl font-bold text-slate-900">Raporty</h1>
+        <p className="text-slate-600 mt-2">
           Analiza wydajności kampanii i kanałów marketingowych
         </p>
       </div>
@@ -87,19 +87,19 @@ export default function ReportsPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-stone-200">
-                <th className="text-left py-3 px-4 font-semibold text-stone-900">Kanał</th>
-                <th className="text-right py-3 px-4 font-semibold text-stone-900">Reach</th>
-                <th className="text-right py-3 px-4 font-semibold text-stone-900">Konwersje</th>
-                <th className="text-right py-3 px-4 font-semibold text-stone-900">ROI</th>
+              <tr className="border-b border-slate-200">
+                <th className="text-left py-3 px-4 font-semibold text-slate-900">Kanał</th>
+                <th className="text-right py-3 px-4 font-semibold text-slate-900">Reach</th>
+                <th className="text-right py-3 px-4 font-semibold text-slate-900">Konwersje</th>
+                <th className="text-right py-3 px-4 font-semibold text-slate-900">ROI</th>
               </tr>
             </thead>
             <tbody>
               {channelPerformanceData.map((data, idx) => (
-                <tr key={idx} className="border-b border-stone-100 hover:bg-stone-50">
-                  <td className="py-3 px-4 text-stone-900">{data.channel}</td>
-                  <td className="text-right py-3 px-4 text-stone-900">{(data.reach / 1000).toFixed(1)}K</td>
-                  <td className="text-right py-3 px-4 text-stone-900">{data.conversions}</td>
+                <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50">
+                  <td className="py-3 px-4 text-slate-900">{data.channel}</td>
+                  <td className="text-right py-3 px-4 text-slate-900">{(data.reach / 1000).toFixed(1)}K</td>
+                  <td className="text-right py-3 px-4 text-slate-900">{data.conversions}</td>
                   <td className="text-right py-3 px-4 text-green-600 font-medium">{data.roi}x</td>
                 </tr>
               ))}
@@ -112,16 +112,16 @@ export default function ReportsPage() {
       <Card title="Ostatnie aktywności" subtitle="Historia zmian w kampaniach">
         <div className="space-y-4">
           {recentActivities.map((activity) => (
-            <div key={activity.id} className="border-b border-stone-100 pb-4 last:border-b-0">
+            <div key={activity.id} className="border-b border-slate-100 pb-4 last:border-b-0">
               <div className="flex items-start gap-4">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-stone-900">{activity.title}</h3>
-                  <p className="text-sm text-stone-600">{activity.description}</p>
+                  <h3 className="font-semibold text-slate-900">{activity.title}</h3>
+                  <p className="text-sm text-slate-600">{activity.description}</p>
                   <div className="flex gap-2 mt-2">
-                    <span className="inline-block px-2 py-1 bg-stone-100 rounded text-xs text-stone-600">
+                    <span className="inline-block px-2 py-1 bg-slate-100 rounded text-xs text-slate-600">
                       {activity.channel}
                     </span>
-                    <span className="inline-block px-2 py-1 bg-stone-100 rounded text-xs text-stone-600">
+                    <span className="inline-block px-2 py-1 bg-slate-100 rounded text-xs text-slate-600">
                       {new Date(activity.timestamp).toLocaleDateString('pl-PL')}
                     </span>
                   </div>
@@ -134,7 +134,7 @@ export default function ReportsPage() {
 
       {/* Export Button */}
       <div className="flex justify-end">
-        <button className="flex items-center gap-2 px-4 py-2 bg-stone-900 text-white rounded-lg hover:bg-stone-800 transition-colors">
+        <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors">
           <Download size={18} />
           Pobierz raport
         </button>

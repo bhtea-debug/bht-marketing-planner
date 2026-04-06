@@ -67,11 +67,11 @@ const Modal: React.FC<ModalProps> = ({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+          <div className="flex items-center justify-between p-6 border-b border-slate-200">
+            <h2 className="text-xl font-semibold text-slate-900">{title}</h2>
             <button
               onClick={onClose}
-              className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200"
+              className="p-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors duration-200"
               aria-label="Close modal"
             >
               <X size={20} />

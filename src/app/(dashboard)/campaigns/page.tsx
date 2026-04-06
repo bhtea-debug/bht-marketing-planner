@@ -134,33 +134,33 @@ export default function CampaignsPage() {
   }, [searchTerm, statusFilter, channelFilter]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-stone-900">Kampanie marketingowe</h1>
-          <p className="text-stone-600 mt-2">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Kampanie marketingowe</h1>
+          <p className="text-[13px] text-slate-500 mt-1">
             Zarządzaj kampaniami marketingowymi Brown House & Tea
           </p>
         </div>
-        <Button variant="primary" size="lg" className="flex items-center gap-2">
-          <Plus size={20} />
+        <Button variant="primary" size="md" className="flex items-center gap-2">
+          <Plus size={16} />
           Nowa kampania
         </Button>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+      <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search Input */}
           <div className="relative">
-            <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+            <Search className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
             <input
               type="text"
               placeholder="Szukaj kampanii..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
 
@@ -168,7 +168,7 @@ export default function CampaignsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as 'Wszystkie' | CampaignStatus)}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+            className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
           >
             <option value="Wszystkie">Wszystkie statusy</option>
             <option value="Szkic">Szkic</option>
@@ -181,7 +181,7 @@ export default function CampaignsPage() {
           <select
             value={channelFilter}
             onChange={(e) => setChannelFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
+            className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
           >
             <option value="">Wszystkie kanały</option>
             {channels.map((channel) => (
@@ -192,7 +192,7 @@ export default function CampaignsPage() {
           </select>
 
           {/* Results count */}
-          <div className="flex items-center justify-end text-sm text-gray-600">
+          <div className="flex items-center justify-end text-sm text-slate-600">
             <span className="font-medium">{filteredCampaigns.length}</span>
             <span className="ml-1">kampanii</span>
           </div>
@@ -207,8 +207,8 @@ export default function CampaignsPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <p className="text-gray-500 text-lg">Brak kampanii spełniających kryteria wyszukiwania</p>
+        <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
+          <p className="text-slate-500 text-lg">Brak kampanii spełniających kryteria wyszukiwania</p>
         </div>
       )}
     </div>

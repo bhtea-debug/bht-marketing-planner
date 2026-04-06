@@ -112,9 +112,9 @@ const MOCK_CHANNELS: ChannelStats[] = [
 
 function ChannelCard({ channel }: { channel: ChannelStats }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow duration-200 overflow-hidden">
+    <div className="bg-white rounded-lg border border-slate-200 transition-shadow duration-200 overflow-hidden hover:shadow-md">
       {/* Header */}
-      <div className="p-6 border-b border-gray-100">
+      <div className="p-6 border-b border-slate-200">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div
@@ -125,7 +125,7 @@ function ChannelCard({ channel }: { channel: ChannelStats }) {
             >
               <div style={{ color: channel.color }}>{channel.icon}</div>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">{channel.name}</h3>
+            <h3 className="text-lg font-semibold text-slate-900">{channel.name}</h3>
           </div>
           <div
             className="w-4 h-4 rounded-full"
@@ -135,32 +135,32 @@ function ChannelCard({ channel }: { channel: ChannelStats }) {
       </div>
 
       {/* Stats */}
-      <div className="px-6 py-5 space-y-5 bg-gray-50">
+      <div className="px-6 py-5 space-y-5 bg-slate-50">
         {/* Active Campaigns */}
         <div>
-          <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+          <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">
             Aktywne kampanie
           </p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{channel.activeCampaigns}</p>
+          <p className="text-2xl font-bold text-slate-900 mt-1">{channel.activeCampaigns}</p>
         </div>
 
         {/* Total Budget */}
         <div>
-          <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+          <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">
             Całkowity budżet
           </p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">
+          <p className="text-2xl font-bold text-slate-900 mt-1">
             ${channel.totalBudget.toLocaleString()}
           </p>
         </div>
 
         {/* Key Metric */}
         <div>
-          <p className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+          <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">
             {channel.keyMetricLabel}
           </p>
           <div className="flex items-end justify-between mt-1">
-            <p className="text-2xl font-bold text-gray-900">{channel.keyMetricValue}</p>
+            <p className="text-2xl font-bold text-slate-900">{channel.keyMetricValue}</p>
             {channel.performanceChange !== 0 && (
               <div
                 className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
@@ -179,7 +179,7 @@ function ChannelCard({ channel }: { channel: ChannelStats }) {
       </div>
 
       {/* Footer */}
-      <div className="px-6 py-4 bg-white border-t border-gray-100">
+      <div className="px-6 py-4 bg-white border-t border-slate-200">
         <button className="w-full text-center text-amber-700 hover:text-amber-800 text-sm font-medium transition-colors py-2">
           Przejdź do szczegółów →
         </button>
@@ -196,8 +196,8 @@ export default function ChannelsPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-stone-900">Kanały marketingowe</h1>
-        <p className="text-stone-600 mt-2">
+        <h1 className="text-3xl font-bold text-slate-900">Kanały marketingowe</h1>
+        <p className="text-slate-600 mt-2">
           Zarządzaj kanałami marketingowymi i monitoruj wydajność Brown House & Tea
         </p>
       </div>
@@ -205,7 +205,7 @@ export default function ChannelsPage() {
       {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Total Budget */}
-        <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg border border-amber-200 p-6">
+        <div className="bg-white rounded-lg border border-amber-200 p-6">
           <p className="text-sm font-medium text-amber-900 uppercase tracking-wide">
             Całkowity budżet kanałów
           </p>
@@ -216,7 +216,7 @@ export default function ChannelsPage() {
         </div>
 
         {/* Active Campaigns */}
-        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200 p-6">
+        <div className="bg-white rounded-lg border border-green-200 p-6">
           <p className="text-sm font-medium text-green-900 uppercase tracking-wide">
             Aktywne kampanie
           </p>

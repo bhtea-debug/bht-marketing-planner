@@ -232,8 +232,8 @@ export default function CalendarPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-stone-900">Kalendarz marketingowy</h1>
-        <p className="text-stone-600 mt-2">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Kalendarz marketingowy</h1>
+        <p className="text-slate-600 mt-2">
           Zaplanuj i zarządzaj harmonogramem kampanii marketingowych Brown House & Tea
         </p>
       </div>

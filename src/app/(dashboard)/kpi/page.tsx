@@ -29,8 +29,8 @@ export default function KPIPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-stone-900">Wskaźniki KPI</h1>
-        <p className="text-stone-600 mt-2">
+        <h1 className="text-3xl font-bold text-slate-900">Wskaźniki KPI</h1>
+        <p className="text-slate-600 mt-2">
           Śledzenie wydajności kampanii marketingowych
         </p>
       </div>
@@ -58,8 +58,8 @@ export default function KPIPage() {
               onClick={() => setSelectedChannel(channel.id)}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 selectedChannel === channel.id
-                  ? 'bg-stone-900 text-white'
-                  : 'bg-stone-100 text-stone-900 hover:bg-stone-200'
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
               }`}
             >
               {channel.label}
@@ -70,7 +70,7 @@ export default function KPIPage() {
 
       {/* Summary */}
       <Card title="Podsumowanie" subtitle="Ogólne statystyki">
-        <div className="text-center text-stone-600">
+        <div className="text-center text-slate-600">
           <p>Wybrano kanał: <strong>{selectedChannel}</strong></p>
         </div>
       </Card>

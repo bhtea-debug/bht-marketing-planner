@@ -19,20 +19,16 @@ const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <div
-      className={`
-        bg-white rounded-lg shadow-sm border border-gray-100
-        hover:shadow-md transition-shadow duration-200
-        ${className}
-      `}
+      className={`bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] ${className}`}
     >
       {(title || action) && (
-        <div className="flex items-start justify-between p-6 border-b border-gray-100">
+        <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100">
           <div className="flex-1">
             {title && (
-              <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+              <h3 className="text-[15px] font-semibold text-slate-900">{title}</h3>
             )}
             {subtitle && (
-              <p className="mt-1 text-sm text-gray-600">{subtitle}</p>
+              <p className="mt-0.5 text-[13px] text-slate-500">{subtitle}</p>
             )}
           </div>
           {action && <div className="ml-4">{action}</div>}

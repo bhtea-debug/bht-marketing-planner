@@ -2,17 +2,9 @@
 
 import React, { useState } from 'react';
 import {
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  format,
-  addMonths,
-  subMonths,
-  isSameDay,
-  isSameMonth,
-  isToday,
-  startOfWeek,
-  endOfWeek,
+  startOfMonth, endOfMonth, eachDayOfInterval, format,
+  addMonths, subMonths, isSameDay, isSameMonth, isToday,
+  startOfWeek, endOfWeek,
 } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -24,10 +16,7 @@ interface Task {
   scheduled_date: Date | string;
   status: 'todo' | 'in_progress' | 'done';
   priority: 'low' | 'medium' | 'high';
-  channel: {
-    name: string;
-    color: string;
-  };
+  channel: { name: string; color: string; };
 }
 
 interface CalendarViewProps {
@@ -39,83 +28,66 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onDayClick }) => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  const handlePrevMonth = () => {
-    setCurrentMonth(subMonths(currentMonth, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentMonth(addMonths(currentMonth, 1));
-  };
-
-  const handleDayClick = (date: Date) => {
-    setSelectedDate(date);
-    onDayClick(date);
-  };
+  const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+  const handleDayClick = (date: Date) => { setSelectedDate(date); onDayClick(date); };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-
   const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
-  const weeks = Array.from({ length: Math.ceil(days.length / 7) }, (_, i) =>
-    days.slice(i * 7, (i + 1) * 7)
-  );
-
+  const weeks = Array.from({ length: Math.ceil(days.length / 7) }, (_, i) => days.slice(i * 7, (i + 1) * 7));
   const dayLabels = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'];
 
-  const getTasksForDay = (date: Date) => {
-    return tasks.filter((task) => {
-      const taskDate = task.scheduled_date instanceof Date
-        ? task.scheduled_date
-        : new Date(task.scheduled_date);
+  const getTasksForDay = (date: Date) =>
+    tasks.filter((task) => {
+      const taskDate = task.scheduled_date instanceof Date ? task.scheduled_date : new Date(task.scheduled_date);
       return isSameDay(taskDate, date);
     });
-  };
 
   return (
-    <div className="bg-white rounded-lg border border-stone-200 p-6">
-      {/* Header with Navigation */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-stone-900">
+    <div className="bg-white rounded-xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+        <h2 className="text-lg font-semibold text-slate-900 tracking-tight capitalize">
           {format(currentMonth, 'LLLL yyyy', { locale: pl })}
         </h2>
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
+        <div className="flex items-center gap-1">
+          <button
             onClick={handlePrevMonth}
-            className="p-2"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all duration-150"
           >
-            <ChevronLeft size={20} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
+            <ChevronLeft size={18} />
+          </button>
+          <button
+            onClick={() => { setCurrentMonth(new Date()); }}
+            className="px-2.5 py-1 rounded-lg text-[12px] font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-150"
+          >
+            Dziś
+          </button>
+          <button
             onClick={handleNextMonth}
-            className="p-2"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all duration-150"
           >
-            <ChevronRight size={20} />
-          </Button>
+            <ChevronRight size={18} />
+          </button>
         </div>
       </div>
 
       {/* Day Labels */}
-      <div className="grid grid-cols-7 gap-px mb-1">
+      <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
         {dayLabels.map((label) => (
-          <div
-            key={label}
-            className="text-center text-xs font-semibold text-stone-600 py-2"
-          >
+          <div key={label} className="text-center text-[11px] font-semibold text-slate-400 uppercase tracking-wider py-2.5">
             {label}
           </div>
         ))}
       </div>
 
       {/* Calendar Grid */}
-      <div className="space-y-px border border-stone-200 rounded-lg overflow-hidden bg-stone-50">
+      <div className="bg-white">
         {weeks.map((week, weekIndex) => (
-          <div key={weekIndex} className="grid grid-cols-7">
+          <div key={weekIndex} className="grid grid-cols-7 border-b border-slate-100/80 last:border-b-0">
             {week.map((day, dayIndex) => {
               const dayTasks = getTasksForDay(day);
               const isCurrentMonth = isSameMonth(day, currentMonth);
@@ -127,36 +99,38 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onDayClick }) => {
                   key={day.toString()}
                   onClick={() => handleDayClick(day)}
                   className={`
-                    min-h-24 p-2 border-r border-b border-stone-200 cursor-pointer
-                    transition-colors duration-150
-                    ${!isCurrentMonth ? 'bg-stone-100' : 'bg-white hover:bg-amber-50'}
-                    ${isTodayDate ? 'ring-2 ring-inset ring-amber-700 bg-amber-50' : ''}
-                    ${isSelected ? 'bg-amber-100 ring-2 ring-inset ring-amber-700' : ''}
-                    ${dayIndex === 6 ? 'border-r-0' : ''}
-                    ${weekIndex === weeks.length - 1 ? 'border-b-0' : ''}
+                    min-h-[100px] p-1.5 border-r border-slate-100/80 last:border-r-0 cursor-pointer
+                    transition-all duration-100 relative
+                    ${!isCurrentMonth ? 'bg-slate-50/60' : 'bg-white hover:bg-blue-50/30'}
+                    ${isSelected ? 'bg-amber-50/50 ring-1 ring-inset ring-amber-300/60' : ''}
                   `}
                 >
-                  <div
-                    className={`
-                      text-sm font-semibold mb-1
-                      ${!isCurrentMonth ? 'text-stone-400' : 'text-stone-900'}
-                    `}
-                  >
-                    {format(day, 'd')}
+                  {/* Day number */}
+                  <div className="flex items-center justify-center mb-1">
+                    <span className={`
+                      w-7 h-7 flex items-center justify-center rounded-full text-[13px] font-medium
+                      ${isTodayDate ? 'bg-amber-700 text-white font-semibold' : ''}
+                      ${!isCurrentMonth ? 'text-slate-300' : 'text-slate-700'}
+                      ${isSelected && !isTodayDate ? 'bg-amber-100 text-amber-800' : ''}
+                    `}>
+                      {format(day, 'd')}
+                    </span>
                   </div>
-                  <div className="space-y-1">
+                  
+                  {/* Tasks */}
+                  <div className="space-y-0.5 px-0.5">
                     {dayTasks.slice(0, 3).map((task) => (
                       <div
                         key={task.id}
-                        className="text-xs font-medium px-2 py-1 rounded text-white truncate"
-                        style={{ backgroundColor: task.channel.color }}
+                        className="flex items-center gap-1 text-[10px] leading-tight font-medium px-1.5 py-[3px] rounded-md text-white truncate"
+                        style={{ backgroundColor: task.channel.color + 'dd' }}
                         title={task.title}
                       >
-                        {task.title}
+                        <span className="truncate">{task.title}</span>
                       </div>
                     ))}
                     {dayTasks.length > 3 && (
-                      <div className="text-xs text-stone-600 px-2">
+                      <div className="text-[10px] text-slate-400 font-medium px-1.5">
                         +{dayTasks.length - 3} więcej
                       </div>
                     )}

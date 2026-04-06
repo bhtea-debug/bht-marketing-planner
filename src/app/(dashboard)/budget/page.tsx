@@ -26,8 +26,8 @@ export default function BudgetPage() {
     <div className="space-y-6">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-stone-900">Budżet marketingowy</h1>
-        <p className="text-stone-600 mt-2">
+        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Budżet marketingowy</h1>
+        <p className="text-slate-600 mt-2">
           Śledzenie i zarządzanie budżetem kampanii marketingowych
         </p>
       </div>
@@ -67,20 +67,20 @@ export default function BudgetPage() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-stone-200">
-                <th className="text-left py-3 px-4 font-semibold text-stone-900">
+              <tr className="border-b border-slate-200">
+                <th className="text-left py-3 px-4 font-semibold text-slate-900">
                   Miesiąc
                 </th>
-                <th className="text-right py-3 px-4 font-semibold text-stone-900">
+                <th className="text-right py-3 px-4 font-semibold text-slate-900">
                   Planowany
                 </th>
-                <th className="text-right py-3 px-4 font-semibold text-stone-900">
+                <th className="text-right py-3 px-4 font-semibold text-slate-900">
                   Rzeczywisty
                 </th>
-                <th className="text-right py-3 px-4 font-semibold text-stone-900">
+                <th className="text-right py-3 px-4 font-semibold text-slate-900">
                   Różnica
                 </th>
-                <th className="text-right py-3 px-4 font-semibold text-stone-900">
+                <th className="text-right py-3 px-4 font-semibold text-slate-900">
                   %
                 </th>
               </tr>
@@ -89,13 +89,13 @@ export default function BudgetPage() {
               {monthlyBudgetData.map((row, idx) => (
                 <tr
                   key={idx}
-                  className="border-b border-stone-100 hover:bg-stone-50 transition-colors"
+                  className="border-b border-slate-100 hover:bg-slate-50 transition-colors"
                 >
-                  <td className="py-3 px-4 text-stone-900">{row.month}</td>
-                  <td className="text-right py-3 px-4 text-stone-900">
+                  <td className="py-3 px-4 text-slate-900">{row.month}</td>
+                  <td className="text-right py-3 px-4 text-slate-900">
                     {row.planned.toLocaleString()} PLN
                   </td>
-                  <td className="text-right py-3 px-4 text-stone-900">
+                  <td className="text-right py-3 px-4 text-slate-900">
                     {row.actual.toLocaleString()} PLN
                   </td>
                   <td
@@ -106,7 +106,7 @@ export default function BudgetPage() {
                     {row.difference >= 0 ? '+' : ''}
                     {row.difference.toLocaleString()} PLN
                   </td>
-                  <td className="text-right py-3 px-4 text-stone-900">
+                  <td className="text-right py-3 px-4 text-slate-900">
                     {Math.round((row.actual / row.planned) * 100)}%
                   </td>
                 </tr>

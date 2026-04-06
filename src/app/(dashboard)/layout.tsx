@@ -6,13 +6,10 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex">
-      {/* Sidebar - Fixed on desktop, collapsible on mobile */}
+    <div className="flex min-h-screen bg-[#f6f8fa]">
       <Sidebar />
-
-      {/* Main Content */}
-      <main className="flex-1 w-full lg:ml-64 bg-stone-50 min-h-screen">
-        <div className="p-4 lg:p-8">{children}</div>
+      <main className="flex-1 w-full lg:ml-[260px] min-h-screen">
+        <div className="p-5 lg:p-8 max-w-[1400px] mx-auto page-enter">{children}</div>
       </main>
     </div>
   );
