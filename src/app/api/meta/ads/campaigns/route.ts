@@ -80,8 +80,14 @@ export async function GET(req: NextRequest) {
     // Sort by spend desc
     enriched.sort((a: any, b: any) => b.spend - a.spend);
 
-    // Account-level totals
-    const totals = enriched.reduce(
+    // Hide inactive/old campaigns by default; allow ?includeInactive=true to show them
+    const includeInactive = req.nextUrl.searchParams.get('includeInactive') === 'true';
+    const visible = includeInactive
+      ? enriched
+      : enriched.filter((c: any) => c.status === 'ACTIVE' || c.effectiveStatus === 'ACTIVE');
+
+    // Account-level totals (computed across visible campaigns)
+    const totals = visible.reduce(
       (acc: any, c: any) => {
         acc.spend += c.spend;
         acc.impressions += c.impressions;
@@ -98,7 +104,13 @@ export async function GET(req: NextRequest) {
       : 0;
     totals.roas = totals.spend ? Math.round((totals.revenue / totals.spend) * 100) / 100 : 0;
 
-    return NextResponse.json({ data: { campaigns: enriched, totals } });
+    return NextResponse.json({
+      data: {
+        campaigns: visible,
+        totals,
+        hiddenCount: enriched.length - visible.length,
+      },
+    });
   } catch (e: any) {
     console.error(e);
     return NextResponse.json({ error: e.message }, { status: 500 });

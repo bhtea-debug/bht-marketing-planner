@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
 
     const datePreset = periodToDatePreset(period);
 
-    // Fetch all campaigns + insights
-    const [campaignsRes, insightsRes] = await Promise.all([
+    // Fetch current-period campaigns/insights AND lifetime ("learning") insights in parallel
+    const [campaignsRes, insightsRes, lifetimeRes, lifetimeCampaignsRes] = await Promise.all([
       metaGet(`${accountId}/campaigns`, auth.token, {
         fields: 'id,name,status,effective_status,objective,daily_budget,lifetime_budget',
         limit: 100,
@@ -42,6 +42,17 @@ export async function GET(req: NextRequest) {
         date_preset: datePreset,
         limit: 200,
       }),
+      metaGet(`${accountId}/insights`, auth.token, {
+        level: 'campaign',
+        fields:
+          'campaign_id,campaign_name,spend,impressions,clicks,ctr,cpc,actions,action_values',
+        date_preset: 'maximum',
+        limit: 500,
+      }).catch(() => ({ data: [] })),
+      metaGet(`${accountId}/campaigns`, auth.token, {
+        fields: 'id,name,status,effective_status,objective',
+        limit: 500,
+      }).catch(() => ({ data: [] })),
     ]);
 
     const campaigns = campaignsRes.data || [];
@@ -164,6 +175,98 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    // ----- Historical learning from ALL past campaigns ---------------------
+    const lifetime = lifetimeRes.data || [];
+    const lifetimeCampaigns = lifetimeCampaignsRes.data || [];
+    const ltCampMap: Record<string, any> = {};
+    for (const c of lifetimeCampaigns) ltCampMap[c.id] = c;
+
+    const ltEnriched = lifetime.map((i: any) => {
+      const c = ltCampMap[i.campaign_id] || {};
+      const sp = Number(i.spend || 0);
+      const conv = sumActions(i.actions, [
+        'purchase',
+        'omni_purchase',
+        'offsite_conversion.fb_pixel_purchase',
+        'lead',
+      ]);
+      const rev = purchaseValue(i.action_values);
+      return {
+        id: i.campaign_id,
+        name: i.campaign_name || c.name,
+        objective: c.objective,
+        spend: sp,
+        ctr: Number(i.ctr || 0),
+        cpc: Number(i.cpc || 0),
+        conv,
+        revenue: rev,
+        roas: sp > 0 ? rev / sp : 0,
+      };
+    });
+
+    // Best historical objective
+    const objStats: Record<string, { spend: number; rev: number; n: number }> = {};
+    for (const c of ltEnriched) {
+      const k = c.objective || 'UNKNOWN';
+      if (!objStats[k]) objStats[k] = { spend: 0, rev: 0, n: 0 };
+      objStats[k].spend += c.spend;
+      objStats[k].rev += c.revenue;
+      objStats[k].n += 1;
+    }
+    const bestObjEntry = Object.entries(objStats)
+      .filter(([, v]: any) => v.spend > 100)
+      .map(([k, v]: any) => ({ obj: k, roas: v.rev / v.spend, spend: v.spend, n: v.n }))
+      .sort((a, b) => b.roas - a.roas)[0];
+
+    if (bestObjEntry && bestObjEntry.roas > 1) {
+      recs.unshift({
+        severity: 'info',
+        title: `Wnioski z historii: cel ${bestObjEntry.obj} sprawdza się dla marki`,
+        description: `Historyczny ROAS dla celu ${bestObjEntry.obj} = ${bestObjEntry.roas.toFixed(
+          2
+        )}x na ${bestObjEntry.n} kampaniach (wydatek lifetime ${bestObjEntry.spend.toFixed(
+          0
+        )} zł). AI bierze to pod uwagę przy nowych rekomendacjach.`,
+        action: 'use_winning_objective',
+      });
+    }
+
+    // Best historical campaign — surface as a learnable example
+    const topLifetime = [...ltEnriched]
+      .filter((c) => c.spend >= 100)
+      .sort((a, b) => b.roas - a.roas)[0];
+    if (topLifetime && topLifetime.roas > 2) {
+      recs.unshift({
+        severity: 'success',
+        title: `Wzorzec z przeszłości: "${topLifetime.name}"`,
+        description: `Najlepsza historyczna kampania marki — ROAS ${topLifetime.roas.toFixed(
+          2
+        )}x przy wydatku ${topLifetime.spend.toFixed(
+          0
+        )} zł, CTR ${topLifetime.ctr.toFixed(
+          2
+        )}%. Powiel mechanikę (cel, kreację, audience) w nowych testach.`,
+      });
+    }
+
+    // Detect repeat losers from history (same name pattern losing again)
+    const ltLosers = ltEnriched
+      .filter((c) => c.spend > 200 && c.roas < 1)
+      .sort((a, b) => b.spend - a.spend)
+      .slice(0, 3);
+    if (ltLosers.length) {
+      recs.push({
+        severity: 'warning',
+        title: 'Nieudane historyczne wzorce — unikać powielania',
+        description:
+          'Te kampanie historycznie spaliły budżet bez zwrotu: ' +
+          ltLosers
+            .map((c) => `"${c.name}" (${c.spend.toFixed(0)} zł, ROAS ${c.roas.toFixed(2)})`)
+            .join(', ') +
+          '. Zanim postawisz nową kampanię o podobnej tematyce/celu — zmień podejście.',
+      });
+    }
+
     // Sort by severity
     const order = { critical: 0, warning: 1, info: 2, success: 3 };
     recs.sort((a, b) => order[a.severity] - order[b.severity]);
@@ -172,6 +275,13 @@ export async function GET(req: NextRequest) {
       data: {
         recommendations: recs,
         accountAverages: { cpc: avgCPC, ctr: avgCTR, totalSpend: totals.spend },
+        learningContext: {
+          lifetimeCampaignsAnalyzed: ltEnriched.length,
+          bestObjective: bestObjEntry?.obj || null,
+          bestObjectiveRoas: bestObjEntry?.roas || 0,
+          topLifetimeCampaign: topLifetime?.name || null,
+          topLifetimeRoas: topLifetime?.roas || 0,
+        },
       },
     });
   } catch (e: any) {

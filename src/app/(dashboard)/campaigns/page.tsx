@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Search, Plus, X, LayoutGrid, GanttChartSquare } from 'lucide-react';
 import Button from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,95 +37,23 @@ const CHANNEL_OPTIONS = [
   { name: 'Multi-kanał', color: '#7C3AED' },
 ];
 
-const INITIAL_CAMPAIGNS: Campaign[] = [
-  {
-    id: '1',
-    name: 'Wiosenna kolekcja 2026',
-    description: 'Kampania promocyjna nowej wiosennej kolekcji herbat Brown House & Tea',
-    channelName: 'Instagram',
-    channelColor: '#E1306C',
-    status: 'Aktywne',
-    startDate: '2026-04-01',
-    endDate: '2026-06-30',
-    budgetPlanned: 5000,
-    budgetSpent: 2300,
-    tasksDone: 12,
-    tasksTotal: 18,
-  },
-  {
-    id: '2',
-    name: 'Earl Great Launch',
-    description: 'Wielokanałowa kampania uruchomienia nowej linii Earl Grey',
-    channelName: 'Multi-kanał',
-    channelColor: '#7C3AED',
-    status: 'Aktywne',
-    startDate: '2026-04-01',
-    endDate: '2026-04-30',
-    budgetPlanned: 8500,
-    budgetSpent: 5200,
-    tasksDone: 20,
-    tasksTotal: 28,
-  },
-  {
-    id: '3',
-    name: 'Matcha Specjal',
-    description: 'Kampania promocyjna specjalnej edycji matchy japońskiej',
-    channelName: 'TikTok',
-    channelColor: '#000000',
-    status: 'Szkic',
-    startDate: '2026-05-01',
-    endDate: '2026-05-31',
-    budgetPlanned: 3500,
-    budgetSpent: 0,
-    tasksDone: 2,
-    tasksTotal: 15,
-  },
-  {
-    id: '4',
-    name: 'Newsletter miesieczny',
-    description: 'Regularne wysyłki newslettera do bazy subskrybentów',
-    channelName: 'Email',
-    channelColor: '#0EA5E9',
-    status: 'Aktywne',
-    startDate: '2026-01-01',
-    endDate: '2026-12-31',
-    budgetPlanned: 1500,
-    budgetSpent: 750,
-    tasksDone: 8,
-    tasksTotal: 12,
-  },
-  {
-    id: '5',
-    name: 'SEO - Blog herbatany',
-    description: 'Optymalizacja SEO i tworzenie treści edukacyjnych na blogu',
-    channelName: 'SEO',
-    channelColor: '#10B981',
-    status: 'Aktywne',
-    startDate: '2026-01-01',
-    endDate: '2026-12-31',
-    budgetPlanned: 4000,
-    budgetSpent: 1800,
-    tasksDone: 15,
-    tasksTotal: 24,
-  },
-  {
-    id: '6',
-    name: 'Google Ads - Wielkanoc',
-    description: 'Kampania Google Ads dla sprzedaży świątecznej zbitek herbaty',
-    channelName: 'Google Ads',
-    channelColor: '#4285F4',
-    status: 'Zakończone',
-    startDate: '2026-03-01',
-    endDate: '2026-04-15',
-    budgetPlanned: 6000,
-    budgetSpent: 5950,
-    tasksDone: 11,
-    tasksTotal: 11,
-  },
-];
+const STATUS_DB_TO_UI: Record<string, CampaignStatus> = {
+  draft: 'Szkic',
+  active: 'Aktywne',
+  completed: 'Zakończone',
+  paused: 'Wstrzymane',
+};
+const STATUS_UI_TO_DB: Record<CampaignStatus, string> = {
+  Szkic: 'draft',
+  Aktywne: 'active',
+  Zakończone: 'completed',
+  Wstrzymane: 'paused',
+};
 
 export default function CampaignsPage() {
-  const [campaigns, setCampaigns] = useState<Campaign[]>(INITIAL_CAMPAIGNS);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [channelMap, setChannelMap] = useState<Record<number, { name: string; color: string }>>({});
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'Wszystkie' | CampaignStatus>('Wszystkie');
   const [channelFilter, setChannelFilter] = useState('');
@@ -142,6 +70,54 @@ export default function CampaignsPage() {
   const [formBudget, setFormBudget] = useState('');
 
   const channels = Array.from(new Set(campaigns.map((c) => c.channelName))).sort();
+
+  // Load channels + campaigns from real DB
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [chRes, cRes] = await Promise.all([
+          fetch('/api/channels'),
+          fetch('/api/campaigns'),
+        ]);
+        const ch = chRes.ok ? await chRes.json() : [];
+        const cs = cRes.ok ? await cRes.json() : [];
+        if (cancelled) return;
+        const map: Record<number, { name: string; color: string }> = {};
+        for (const c of ch) {
+          const opt =
+            CHANNEL_OPTIONS.find((o) => o.name.toLowerCase() === (c.name || '').toLowerCase()) || {
+              color: '#94A3B8',
+            };
+          map[c.id] = { name: c.name, color: c.color || opt.color };
+        }
+        setChannelMap(map);
+        setCampaigns(
+          (cs || []).map((c: any) => ({
+            id: String(c.id),
+            name: c.name,
+            description: c.description || '',
+            channelName: map[c.channel_id]?.name || '—',
+            channelColor: map[c.channel_id]?.color || '#94A3B8',
+            status: STATUS_DB_TO_UI[c.status] || 'Szkic',
+            startDate: c.start_date || '',
+            endDate: c.end_date || '',
+            budgetPlanned: Number(c.budget_planned || 0),
+            budgetSpent: Number(c.budget_spent || 0),
+            tasksDone: 0,
+            tasksTotal: 0,
+          }))
+        );
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredCampaigns = useMemo(() => {
     return campaigns.filter((campaign) => {
@@ -173,29 +149,59 @@ export default function CampaignsPage() {
     setIsModalOpen(false);
   }, []);
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     if (!formName.trim() || !formStartDate || !formEndDate) return;
 
-    const channelObj = CHANNEL_OPTIONS.find(c => c.name === formChannel) || CHANNEL_OPTIONS[0];
-    const newCampaign: Campaign = {
-      id: `camp-${Date.now()}`,
-      name: formName.trim(),
-      description: formDesc.trim() || `Nowa kampania ${formChannel}`,
-      channelName: channelObj.name,
-      channelColor: channelObj.color,
-      status: formStatus,
-      startDate: formStartDate,
-      endDate: formEndDate,
-      budgetPlanned: parseInt(formBudget) || 0,
-      budgetSpent: 0,
-      tasksDone: 0,
-      tasksTotal: 0,
-    };
+    const channelObj =
+      CHANNEL_OPTIONS.find((c) => c.name === formChannel) || CHANNEL_OPTIONS[0];
+    const channelEntry = Object.entries(channelMap).find(
+      ([, v]) => v.name.toLowerCase() === formChannel.toLowerCase()
+    );
+    const channelId = channelEntry ? Number(channelEntry[0]) : null;
+    if (!channelId) {
+      alert(`Brak kanału "${formChannel}" w bazie. Dodaj go najpierw w sekcji Kanały.`);
+      return;
+    }
 
-    setCampaigns(prev => [newCampaign, ...prev]);
-    setIsModalOpen(false);
-    resetForm();
-  }, [formName, formDesc, formChannel, formStatus, formStartDate, formEndDate, formBudget, resetForm]);
+    try {
+      const res = await fetch('/api/campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formName.trim(),
+          description: formDesc.trim() || null,
+          channel_id: channelId,
+          status: STATUS_UI_TO_DB[formStatus],
+          start_date: formStartDate,
+          end_date: formEndDate,
+          budget_planned: parseInt(formBudget) || 0,
+          budget_spent: 0,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const created = await res.json();
+      const newCampaign: Campaign = {
+        id: String(created.id),
+        name: created.name,
+        description: created.description || '',
+        channelName: channelObj.name,
+        channelColor: channelObj.color,
+        status: STATUS_DB_TO_UI[created.status] || formStatus,
+        startDate: created.start_date || formStartDate,
+        endDate: created.end_date || formEndDate,
+        budgetPlanned: Number(created.budget_planned || 0),
+        budgetSpent: 0,
+        tasksDone: 0,
+        tasksTotal: 0,
+      };
+      setCampaigns((prev) => [newCampaign, ...prev]);
+      setIsModalOpen(false);
+      resetForm();
+    } catch (e: any) {
+      console.error(e);
+      alert('Nie udało się utworzyć kampanii: ' + (e?.message || 'błąd'));
+    }
+  }, [formName, formDesc, formChannel, formStatus, formStartDate, formEndDate, formBudget, resetForm, channelMap]);
 
   const inputClass = "w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-500 bg-white placeholder:text-slate-400 transition-all";
   const labelClass = "block text-[13px] font-medium text-slate-700 mb-1.5";
