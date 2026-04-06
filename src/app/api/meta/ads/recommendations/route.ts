@@ -7,6 +7,7 @@ import {
   totalConversions,
   purchaseValue,
 } from '@/lib/meta-api';
+import { buildWooSalesContext } from '@/lib/woo-api';
 
 type Rec = {
   severity: 'critical' | 'warning' | 'info' | 'success';
@@ -236,6 +237,74 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.spend - a.spend)
       .slice(0, 3);
 
+    // ----- WooCommerce sales context (silent, real-time) -------------------
+    // Pulls sales velocity, top movers and stock signals so the planner can
+    // recommend WHICH products to push, scale, or pause campaigns for.
+    // Fails soft — if Woo isn't configured, we just skip these recs.
+    const woo = await buildWooSalesContext(30).catch(() => null);
+
+    if (woo && woo.configured) {
+      // Cross-reference: top selling products that don't appear in any active
+      // campaign name → suggest a new campaign for them.
+      const activeNames = (campaigns || [])
+        .filter((c: any) => c.effective_status === 'ACTIVE')
+        .map((c: any) => (c.name || '').toLowerCase());
+      const tokenize = (s: string) =>
+        s.toLowerCase().split(/[^a-ząćęłńóśźż0-9]+/i).filter((w) => w.length > 3);
+
+      const unpromoted = (woo.topProducts || []).filter((p: any) => {
+        const tokens = tokenize(p.name);
+        return !activeNames.some((n: string) => tokens.some((t) => n.includes(t)));
+      });
+
+      if (unpromoted.length) {
+        const top = unpromoted[0];
+        recs.unshift({
+          severity: 'info',
+          title: `Bestseller bez aktywnej kampanii: ${top.name}`,
+          description: `Sprzedał ${top.quantity} szt. (${top.revenue.toFixed(0)} zł) w ostatnich 30 dniach, ale nie ma dedykowanej kampanii. Postaw test sprzedażowy z tym SKU.`,
+          action: 'create_campaign_for_product',
+        });
+      }
+
+      // Stock-out risk on top movers — pause to avoid wasted spend
+      const topMoverIds = new Set(woo.topProducts.map((p: any) => p.id));
+      const lowStockTopMovers = woo.lowStock.filter((p: any) => topMoverIds.has(p.id));
+      if (lowStockTopMovers.length) {
+        recs.unshift({
+          severity: 'critical',
+          title: 'Niski stan magazynowy na bestsellerach',
+          description:
+            'Te produkty mocno się sprzedają, ale stan magazynowy jest krytyczny — zatrzymaj kampanie albo wstrzymaj wydatek, żeby nie spalić budżetu na out-of-stock: ' +
+            lowStockTopMovers.map((p: any) => `${p.name} (${p.stock} szt.)`).join(', '),
+          action: 'pause_low_stock',
+        });
+      }
+
+      // Slow movers in stock → reduce budget / kill underperformers
+      if (woo.slowProducts.length >= 5) {
+        recs.push({
+          severity: 'info',
+          title: 'Produkty z wysokim stockiem i niską sprzedażą',
+          description: `${woo.slowProducts.length} produktów w katalogu ma stock > 0 i mniej niż 5 sprzedaży lifetime. Rozważ kampanię stockową lub promocję, żeby uwolnić kapitał.`,
+          action: 'consider_clearance_campaign',
+        });
+      }
+
+      // Real AOV from Woo vs assumed AOV → calibrate
+      const wooAov = woo.averageOrderValue;
+      if (wooAov > 0 && Math.abs(wooAov - 120) / 120 > 0.3) {
+        recs.push({
+          severity: 'info',
+          title: 'AOV z Woo różni się od konfiguracji raportów',
+          description: `Realny AOV ostatnich 30 dni to ${wooAov.toFixed(
+            0
+          )} zł, a raporty Meta liczą po 120 zł. Zaktualizuj META_AVG_ORDER_VALUE w Vercel, żeby ROAS odzwierciedlał rzeczywistość.`,
+          action: 'update_aov_env',
+        });
+      }
+    }
+
     // Sort by severity
     const order = { critical: 0, warning: 1, info: 2, success: 3 };
     recs.sort((a, b) => order[a.severity] - order[b.severity]);
@@ -256,6 +325,16 @@ export async function GET(req: NextRequest) {
             spend: c.spend,
             roas: c.roas,
           })),
+          woo: woo && woo.configured
+            ? {
+                windowDays: woo.windowDays,
+                orderCount: woo.orderCount,
+                revenue: woo.revenue,
+                aov: woo.averageOrderValue,
+                topProducts: woo.topProducts.slice(0, 5),
+                lowStock: woo.lowStock.slice(0, 5),
+              }
+            : null,
         },
       },
     });
