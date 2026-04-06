@@ -13,7 +13,15 @@ export async function GET() {
       limit: 50,
     });
 
-    return NextResponse.json({ data: data.data || [] });
+    // Filter: keep only "Brown House & Tea" PLN account
+    const all = data.data || [];
+    const filtered = all.filter((a: any) => {
+      const name = (a.name || '').toLowerCase();
+      const isBHT = name.includes('brown house') && name.includes('tea');
+      const isPLN = (a.currency || '').toUpperCase() === 'PLN';
+      return isBHT && isPLN;
+    });
+    return NextResponse.json({ data: filtered.length ? filtered : all.filter((a: any) => (a.currency || '').toUpperCase() === 'PLN') });
   } catch (e: any) {
     console.error(e);
     return NextResponse.json({ error: e.message }, { status: 500 });
