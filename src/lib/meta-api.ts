@@ -93,6 +93,26 @@ function pickFirst(actions: any[] | undefined, types: string[]): number {
   return 0;
 }
 
+// Same as pickFirst but treats the raw value as MONEY: if Meta returns the
+// value as an integer string without a decimal separator (e.g. "150000"
+// instead of "1500.00"), it's in minor units (grosze) and must be divided
+// by 100. Detected heuristically by checking the raw string for '.' or ','.
+function pickMoneyFirst(actions: any[] | undefined, types: string[]): number {
+  if (!actions) return 0;
+  for (const t of types) {
+    const hit = actions.find((a) => a.action_type === t);
+    if (hit) {
+      const raw = String(hit.value ?? '');
+      const num = Number(raw);
+      if (num > 0) {
+        const hasDecimal = raw.includes('.') || raw.includes(',');
+        return hasDecimal ? num : num / 100;
+      }
+    }
+  }
+  return 0;
+}
+
 // Number of purchases — picks the most reliable single source (omni_purchase
 // is Meta's deduplicated total across pixel + app + offline). Avoids
 // double-counting that happens when summing multiple purchase action types.
@@ -104,9 +124,10 @@ export function purchaseCount(actions: any[] | undefined): number {
   ]);
 }
 
-// Revenue from purchases — same de-duplication logic against action_values.
+// Revenue from purchases — same de-duplication logic against action_values,
+// with cents-vs-major-units detection so ROAS isn't 100x off.
 export function purchaseValue(actionValues: any[] | undefined): number {
-  return pickFirst(actionValues, [
+  return pickMoneyFirst(actionValues, [
     'omni_purchase',
     'purchase',
     'offsite_conversion.fb_pixel_purchase',
