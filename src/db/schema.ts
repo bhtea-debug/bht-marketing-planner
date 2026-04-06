@@ -111,6 +111,25 @@ export const kpi_entries = sqliteTable('kpi_entries', {
   created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+// Integrations table - stores OAuth tokens for connected platforms
+export const integrations = sqliteTable('integrations', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  platform: text('platform', {
+    enum: ['meta', 'google', 'mailchimp', 'tiktok'],
+  }).notNull(),
+  access_token: text('access_token').notNull(),
+  refresh_token: text('refresh_token'),
+  token_expires_at: text('token_expires_at'),
+  platform_user_id: text('platform_user_id'),
+  platform_user_name: text('platform_user_name'),
+  platform_data: text('platform_data'), // JSON: ad account IDs, page IDs, etc.
+  status: text('status', {
+    enum: ['active', 'expired', 'revoked'],
+  }).notNull().default('active'),
+  connected_at: text('connected_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  updated_at: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 // Type exports for TypeScript
 export type Channel = typeof channels.$inferSelect;
 export type NewChannel = typeof channels.$inferInsert;
@@ -126,3 +145,6 @@ export type NewBudgetEntry = typeof budget_entries.$inferInsert;
 
 export type KpiEntry = typeof kpi_entries.$inferSelect;
 export type NewKpiEntry = typeof kpi_entries.$inferInsert;
+
+export type Integration = typeof integrations.$inferSelect;
+export type NewIntegration = typeof integrations.$inferInsert;

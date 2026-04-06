@@ -10,6 +10,8 @@ import {
   Wallet,
   BarChart3,
   FileText,
+  TrendingUp,
+  Plug,
   Menu,
   X,
   ChevronRight,
@@ -18,10 +20,12 @@ import {
 const navItems = [
   { label: "Kalendarz", href: "/calendar", icon: Calendar },
   { label: "Kampanie", href: "/campaigns", icon: Megaphone },
+  { label: "Analityka", href: "/analytics", icon: TrendingUp },
   { label: "Kanały", href: "/channels", icon: Share2 },
   { label: "Budżet", href: "/budget", icon: Wallet },
   { label: "KPI", href: "/kpi", icon: BarChart3 },
   { label: "Raporty", href: "/reports", icon: FileText },
+  { label: "Integracje", href: "/integrations", icon: Plug },
 ];
 
 export function Sidebar() {
