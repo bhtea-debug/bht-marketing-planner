@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Plus } from 'lucide-react';
 import Button from '@/components/ui/button';
-import { Input, Select } from '@/components/ui/input';
+import { Input } from '@/components/ui/input';
 import CampaignCard from '@/components/campaigns/campaign-card';
 
 type CampaignStatus = 'Szkic' | 'Aktywne' | 'Zakończone' | 'Wstrzymane';

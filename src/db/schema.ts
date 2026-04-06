@@ -4,7 +4,6 @@ import {
   text,
   integer,
   real,
-  primaryKey,
 } from 'drizzle-orm/sqlite-core';
 
 // Channels table - represents marketing channels

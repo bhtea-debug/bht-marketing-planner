@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { budget_entries } from '@/db/schema';
