@@ -175,27 +175,45 @@ export async function GET(req: NextRequest) {
     const ltCampMap: Record<string, any> = {};
     for (const c of lifetimeCampaigns) ltCampMap[c.id] = c;
 
-    const ltEnriched = lifetime.map((i: any) => {
-      const c = ltCampMap[i.campaign_id] || {};
-      const sp = Number(i.spend || 0);
-      const conv = totalConversions(i.actions);
-      const rev = purchaseValue(i.action_values, conv);
-      return {
-        id: i.campaign_id,
-        name: i.campaign_name || c.name,
-        objective: c.objective,
-        spend: sp,
-        ctr: Number(i.ctr || 0),
-        cpc: Number(i.cpc || 0),
-        conv,
-        revenue: rev,
-        roas: sp > 0 ? rev / sp : 0,
-      };
-    });
+    // Only conversion-focused objectives have meaningful ROAS.
+    // Awareness/traffic/engagement campaigns don't track purchases by design,
+    // so excluding them prevents nonsense "ROAS 0.00" labelling.
+    const CONVERSION_OBJECTIVES = new Set([
+      'OUTCOME_SALES',
+      'OUTCOME_LEADS',
+      'CONVERSIONS',
+      'PRODUCT_CATALOG_SALES',
+      'LEAD_GENERATION',
+      'APP_INSTALLS',
+    ]);
 
-    // Best historical objective
+    const ltEnriched = lifetime
+      .map((i: any) => {
+        const c = ltCampMap[i.campaign_id] || {};
+        const sp = Number(i.spend || 0);
+        const conv = totalConversions(i.actions);
+        const rev = purchaseValue(i.action_values, conv);
+        return {
+          id: i.campaign_id,
+          name: i.campaign_name || c.name,
+          objective: c.objective,
+          spend: sp,
+          ctr: Number(i.ctr || 0),
+          cpc: Number(i.cpc || 0),
+          conv,
+          revenue: rev,
+          roas: sp > 0 ? rev / sp : 0,
+          isConversion: CONVERSION_OBJECTIVES.has(c.objective || ''),
+        };
+      });
+
+    // Subset used for any ROAS-based reasoning (winners, losers, best objective)
+    const ltConversion = ltEnriched.filter((c: any) => c.isConversion);
+
+    // Best historical objective — computed silently for learningContext only
+    // (NOT pushed into visible recommendations to avoid constant noise).
     const objStats: Record<string, { spend: number; rev: number; n: number }> = {};
-    for (const c of ltEnriched) {
+    for (const c of ltConversion) {
       const k = c.objective || 'UNKNOWN';
       if (!objStats[k]) objStats[k] = { spend: 0, rev: 0, n: 0 };
       objStats[k].spend += c.spend;
@@ -207,54 +225,16 @@ export async function GET(req: NextRequest) {
       .map(([k, v]: any) => ({ obj: k, roas: v.rev / v.spend, spend: v.spend, n: v.n }))
       .sort((a, b) => b.roas - a.roas)[0];
 
-    if (bestObjEntry && bestObjEntry.roas > 1) {
-      recs.unshift({
-        severity: 'info',
-        title: `Wnioski z historii: cel ${bestObjEntry.obj} sprawdza się dla marki`,
-        description: `Historyczny ROAS dla celu ${bestObjEntry.obj} = ${bestObjEntry.roas.toFixed(
-          2
-        )}x na ${bestObjEntry.n} kampaniach (wydatek lifetime ${bestObjEntry.spend.toFixed(
-          0
-        )} zł). AI bierze to pod uwagę przy nowych rekomendacjach.`,
-        action: 'use_winning_objective',
-      });
-    }
-
-    // Best historical campaign — surface as a learnable example
-    const topLifetime = [...ltEnriched]
+    // Best historical campaign — silent (used as context for new-campaign AI)
+    const topLifetime = [...ltConversion]
       .filter((c) => c.spend >= 100)
       .sort((a, b) => b.roas - a.roas)[0];
-    if (topLifetime && topLifetime.roas > 2) {
-      recs.unshift({
-        severity: 'success',
-        title: `Wzorzec z przeszłości: "${topLifetime.name}"`,
-        description: `Najlepsza historyczna kampania marki — ROAS ${topLifetime.roas.toFixed(
-          2
-        )}x przy wydatku ${topLifetime.spend.toFixed(
-          0
-        )} zł, CTR ${topLifetime.ctr.toFixed(
-          2
-        )}%. Powiel mechanikę (cel, kreację, audience) w nowych testach.`,
-      });
-    }
 
-    // Detect repeat losers from history (same name pattern losing again)
-    const ltLosers = ltEnriched
+    // Historical losers — silent
+    const ltLosers = ltConversion
       .filter((c) => c.spend > 200 && c.roas < 1)
       .sort((a, b) => b.spend - a.spend)
       .slice(0, 3);
-    if (ltLosers.length) {
-      recs.push({
-        severity: 'warning',
-        title: 'Nieudane historyczne wzorce — unikać powielania',
-        description:
-          'Te kampanie historycznie spaliły budżet bez zwrotu: ' +
-          ltLosers
-            .map((c) => `"${c.name}" (${c.spend.toFixed(0)} zł, ROAS ${c.roas.toFixed(2)})`)
-            .join(', ') +
-          '. Zanim postawisz nową kampanię o podobnej tematyce/celu — zmień podejście.',
-      });
-    }
 
     // Sort by severity
     const order = { critical: 0, warning: 1, info: 2, success: 3 };
@@ -266,10 +246,16 @@ export async function GET(req: NextRequest) {
         accountAverages: { cpc: avgCPC, ctr: avgCTR, totalSpend: totals.spend },
         learningContext: {
           lifetimeCampaignsAnalyzed: ltEnriched.length,
+          conversionCampaignsAnalyzed: ltConversion.length,
           bestObjective: bestObjEntry?.obj || null,
           bestObjectiveRoas: bestObjEntry?.roas || 0,
           topLifetimeCampaign: topLifetime?.name || null,
           topLifetimeRoas: topLifetime?.roas || 0,
+          historicalLosers: ltLosers.map((c: any) => ({
+            name: c.name,
+            spend: c.spend,
+            roas: c.roas,
+          })),
         },
       },
     });

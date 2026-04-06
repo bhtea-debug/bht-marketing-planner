@@ -73,6 +73,17 @@ export async function GET(req: NextRequest) {
       regions = regRes.data || [];
     } catch {}
 
+    // Only conversion-focused objectives have meaningful ROAS — used for
+    // winner/loser detection. Awareness/traffic don't track purchases.
+    const CONVERSION_OBJECTIVES = new Set([
+      'OUTCOME_SALES',
+      'OUTCOME_LEADS',
+      'CONVERSIONS',
+      'PRODUCT_CATALOG_SALES',
+      'LEAD_GENERATION',
+      'APP_INSTALLS',
+    ]);
+
     // ----- Aggregate per-campaign metrics ------------------------------------
     const enriched = campaigns.map((c: any) => {
       const i = insightMap[c.id] || {};
@@ -93,6 +104,7 @@ export async function GET(req: NextRequest) {
         conversions: conv,
         revenue,
         roas: spend > 0 ? revenue / spend : 0,
+        isConversion: CONVERSION_OBJECTIVES.has(c.objective || ''),
       };
     });
 
@@ -102,8 +114,9 @@ export async function GET(req: NextRequest) {
     const totalImpr = enriched.reduce((s: number, c: any) => s + c.impressions, 0);
     const totalClicks = enriched.reduce((s: number, c: any) => s + c.clicks, 0);
 
-    // Top winners and losers (by ROAS, requiring meaningful spend)
-    const meaningful = enriched.filter((c: any) => c.spend >= 50);
+    // Top winners and losers (by ROAS, requiring meaningful spend) — restricted
+    // to conversion-objective campaigns where ROAS is actually meaningful.
+    const meaningful = enriched.filter((c: any) => c.spend >= 50 && c.isConversion);
     const topWinners = [...meaningful].sort((a, b) => b.roas - a.roas).slice(0, 5);
     const topLosers = [...meaningful]
       .filter((c: any) => c.conversions === 0 || c.roas < 1)
