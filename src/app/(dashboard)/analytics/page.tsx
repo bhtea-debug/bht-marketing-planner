@@ -5,99 +5,14 @@ import React, { useState, useEffect } from 'react';
 import Button from '@/components/ui/button';
 import { TrendingUp, TrendingDown, Share2, Users, BarChart3, Zap, Mail, Facebook, Instagram, AlertCircle } from 'lucide-react';
 
-// Demo data for when API returns empty
-const DEMO_DATA = {
+// No fake/demo data — when API returns nothing, show zeros instead.
+const EMPTY_DATA = {
   meta: {
-    facebook: {
-      pageLikes: 15420,
-      pageLikesChange: 2.3,
-      postReach: 48500,
-      postReachChange: 5.1,
-      engagement: 2847,
-      engagementChange: 3.2,
-      impressions: 124500,
-      impressionsChange: 1.8,
-    },
-    instagram: {
-      followers: 12890,
-      followersChange: 4.2,
-      reach: 45230,
-      reachChange: 6.5,
-      profileVisits: 3420,
-      profileVisitsChange: 8.3,
-      impressions: 98760,
-      impressionsChange: 2.1,
-      topPosts: [
-        { title: 'Spring Collection Launch', engagement: 2340, engagementRate: 18.2 },
-        { title: 'Behind the Scenes', engagement: 1890, engagementRate: 14.7 },
-        { title: 'Customer Testimonials', engagement: 1560, engagementRate: 12.1 },
-        { title: 'Product Photography', engagement: 1340, engagementRate: 10.4 },
-        { title: 'Weekly Tips', engagement: 890, engagementRate: 6.9 },
-      ],
-    },
-    ads: {
-      spend: 2847.50,
-      spendChange: 5.2,
-      cpc: 0.85,
-      cpcChange: -2.1,
-      ctr: 3.42,
-      ctrChange: 1.5,
-      conversions: 342,
-      conversionsChange: 12.3,
-      roas: 4.2,
-      roasChange: 8.7,
-      budgetUsed: 2847.50,
-      budgetLimit: 5000,
-    },
+    facebook: { pageLikes: 0, pageLikesChange: 0, postReach: 0, postReachChange: 0, engagement: 0, engagementChange: 0, impressions: 0, impressionsChange: 0 },
+    instagram: { followers: 0, followersChange: 0, reach: 0, reachChange: 0, profileVisits: 0, profileVisitsChange: 0, impressions: 0, impressionsChange: 0, topPosts: [] },
+    ads: { spend: 0, spendChange: 0, cpc: 0, cpcChange: 0, ctr: 0, ctrChange: 0, conversions: 0, conversionsChange: 0, roas: 0, roasChange: 0, budgetUsed: 0, budgetLimit: 0 },
   },
-  getresponse: {
-    totalSubscribers: 2547,
-    totalLists: 3,
-    averageOpenRate: 35.2,
-    averageClickRate: 4.2,
-    lastCampaigns: [
-      {
-        name: 'Wiosenna Kolekcja Herbat - 20% rabatu',
-        sendDate: '2026-04-01',
-        openRate: 38.5,
-        clickRate: 5.2,
-        status: 'sent',
-        recipients: 2401,
-      },
-      {
-        name: 'Newsletter Tygodniowy - Kwiecień',
-        sendDate: '2026-03-28',
-        openRate: 34.2,
-        clickRate: 3.8,
-        status: 'sent',
-        recipients: 2389,
-      },
-      {
-        name: 'Nowe Mieszanki Ziołowe w Ofercie',
-        sendDate: '2026-03-21',
-        openRate: 36.1,
-        clickRate: 4.6,
-        status: 'sent',
-        recipients: 2350,
-      },
-      {
-        name: 'Wielkanocna Oferta Specjalna',
-        sendDate: '2026-03-14',
-        openRate: 32.8,
-        clickRate: 3.5,
-        status: 'sent',
-        recipients: 2320,
-      },
-      {
-        name: 'Wiosenny Poradnik Wellness + Przepis',
-        sendDate: '2026-03-07',
-        openRate: 35.9,
-        clickRate: 4.1,
-        status: 'sent',
-        recipients: 2301,
-      },
-    ],
-  },
+  getresponse: { totalSubscribers: 0, totalLists: 0, averageOpenRate: 0, averageClickRate: 0, lastCampaigns: [] },
 };
 
 interface AnalyticsData {
@@ -226,12 +141,12 @@ export default function AnalyticsPage() {
             const metaRes = await fetch(`/api/integrations/meta/insights?period=${period}`);
             if (metaRes.ok) {
               const metaData = await metaRes.json();
-              newData.meta = metaData.data || DEMO_DATA.meta;
+              newData.meta = metaData.data || EMPTY_DATA.meta;
             } else {
-              newData.meta = DEMO_DATA.meta;
+              newData.meta = EMPTY_DATA.meta;
             }
           } catch (err) {
-            newData.meta = DEMO_DATA.meta;
+            newData.meta = EMPTY_DATA.meta;
             setErrors((prev) => ({ ...prev, meta: 'Failed to fetch Meta data' }));
           }
         }
@@ -242,12 +157,12 @@ export default function AnalyticsPage() {
             const getresponseRes = await fetch(`/api/integrations/getresponse/stats`);
             if (getresponseRes.ok) {
               const getresponseData = await getresponseRes.json();
-              newData.getresponse = getresponseData.data || DEMO_DATA.getresponse;
+              newData.getresponse = getresponseData.data || EMPTY_DATA.getresponse;
             } else {
-              newData.getresponse = DEMO_DATA.getresponse;
+              newData.getresponse = EMPTY_DATA.getresponse;
             }
           } catch (err) {
-            newData.getresponse = DEMO_DATA.getresponse;
+            newData.getresponse = EMPTY_DATA.getresponse;
             setErrors((prev) => ({ ...prev, getresponse: 'Failed to fetch GetResponse data' }));
           }
         }

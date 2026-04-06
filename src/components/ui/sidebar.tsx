@@ -12,6 +12,7 @@ import {
   FileText,
   TrendingUp,
   Plug,
+  Sparkles,
   Menu,
   X,
   ChevronRight,
@@ -20,6 +21,7 @@ import {
 const navItems = [
   { label: "Kalendarz", href: "/calendar", icon: Calendar },
   { label: "Kampanie", href: "/campaigns", icon: Megaphone },
+  { label: "Reklamy (Ads)", href: "/ads", icon: Sparkles },
   { label: "Analityka", href: "/analytics", icon: TrendingUp },
   { label: "Kanały", href: "/channels", icon: Share2 },
   { label: "Budżet", href: "/budget", icon: Wallet },
