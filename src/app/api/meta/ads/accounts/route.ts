@@ -13,15 +13,14 @@ export async function GET() {
       limit: 50,
     });
 
-    // Filter: keep only "Brown House & Tea" PLN account
+    // Filter: keep only the "Brown House & Tea (PLN)" account (exclude WooCommerce + other accounts)
     const all = data.data || [];
     const filtered = all.filter((a: any) => {
-      const name = (a.name || '').toLowerCase();
-      const isBHT = name.includes('brown house') && name.includes('tea');
+      const name = (a.name || '').trim().toLowerCase();
       const isPLN = (a.currency || '').toUpperCase() === 'PLN';
-      return isBHT && isPLN;
+      return isPLN && name === 'brown house & tea';
     });
-    return NextResponse.json({ data: filtered.length ? filtered : all.filter((a: any) => (a.currency || '').toUpperCase() === 'PLN') });
+    return NextResponse.json({ data: filtered });
   } catch (e: any) {
     console.error(e);
     return NextResponse.json({ error: e.message }, { status: 500 });
