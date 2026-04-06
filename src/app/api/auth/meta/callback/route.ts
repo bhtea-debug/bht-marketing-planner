@@ -136,8 +136,10 @@ export async function GET(request: NextRequest) {
       fetchedAt: new Date().toISOString(),
     });
 
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 60); // 60 days for long-lived tokens
+    const expiresAtDate = new Date();
+    expiresAtDate.setDate(expiresAtDate.getDate() + 60); // 60 days for long-lived tokens
+    const expiresAt = expiresAtDate.toISOString();
+    const nowIso = new Date().toISOString();
 
     // Check if Meta integration already exists
     const existingIntegration = await db
@@ -156,8 +158,9 @@ export async function GET(request: NextRequest) {
           platform_user_name: userName,
           platform_data: platformData,
           status: 'active',
-          updated_at: new Date(),
+          updated_at: nowIso,
           token_expires_at: expiresAt,
+          connected_at: nowIso,
         })
         .where(eq(integrations.platform, 'meta'));
     } else {
@@ -171,8 +174,8 @@ export async function GET(request: NextRequest) {
         platform_user_name: userName,
         platform_data: platformData,
         status: 'active',
-        connected_at: new Date(),
-        updated_at: new Date(),
+        connected_at: nowIso,
+        updated_at: nowIso,
       });
     }
 
