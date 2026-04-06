@@ -2,10 +2,11 @@
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { Search, Plus, X } from 'lucide-react';
+import { Search, Plus, X, LayoutGrid, GanttChartSquare } from 'lucide-react';
 import Button from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import CampaignCard from '@/components/campaigns/campaign-card';
+import CampaignTimeline from '@/components/campaigns/campaign-timeline';
 import Modal from '@/components/ui/modal';
 
 type CampaignStatus = 'Szkic' | 'Aktywne' | 'Zakończone' | 'Wstrzymane';
@@ -129,6 +130,7 @@ export default function CampaignsPage() {
   const [statusFilter, setStatusFilter] = useState<'Wszystkie' | CampaignStatus>('Wszystkie');
   const [channelFilter, setChannelFilter] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('timeline');
 
   // Form state
   const [formName, setFormName] = useState('');
@@ -208,10 +210,37 @@ export default function CampaignsPage() {
             Zarządzaj kampaniami marketingowymi Brown House & Tea
           </p>
         </div>
-        <Button variant="primary" size="md" className="flex items-center gap-2" onClick={handleOpenModal}>
-          <Plus size={16} />
-          Nowa kampania
-        </Button>
+        <div className="flex items-center gap-3">
+          {/* View toggle */}
+          <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
+            <button
+              onClick={() => setViewMode('timeline')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
+                viewMode === 'timeline'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <GanttChartSquare size={14} />
+              Oś czasu
+            </button>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-white text-slate-900 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <LayoutGrid size={14} />
+              Karty
+            </button>
+          </div>
+          <Button variant="primary" size="md" className="flex items-center gap-2" onClick={handleOpenModal}>
+            <Plus size={16} />
+            Nowa kampania
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -255,8 +284,10 @@ export default function CampaignsPage() {
         </div>
       </div>
 
-      {/* Campaign Grid */}
-      {filteredCampaigns.length > 0 ? (
+      {/* Campaign Views */}
+      {viewMode === 'timeline' ? (
+        <CampaignTimeline campaigns={filteredCampaigns} />
+      ) : filteredCampaigns.length > 0 ? (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {filteredCampaigns.map((campaign) => (
             <CampaignCard key={campaign.id} campaign={campaign} />
