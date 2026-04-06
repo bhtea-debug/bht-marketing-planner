@@ -221,7 +221,7 @@ export default function AnalyticsPage() {
         const newData: AnalyticsData = { integrations: integrationsList };
 
         // Fetch Meta data if connected
-        if (integrations.includes('meta')) {
+        if (integrationsList.includes('meta')) {
           try {
             const metaRes = await fetch(`/api/integrations/meta/insights?period=${period}`);
             if (metaRes.ok) {
@@ -237,7 +237,7 @@ export default function AnalyticsPage() {
         }
 
         // Fetch GetResponse data if connected
-        if (integrations.includes('getresponse')) {
+        if (integrationsList.includes('getresponse')) {
           try {
             const getresponseRes = await fetch(`/api/integrations/getresponse/stats`);
             if (getresponseRes.ok) {
