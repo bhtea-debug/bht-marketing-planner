@@ -127,14 +127,21 @@ export function purchaseCount(actions: any[] | undefined): number {
   ]);
 }
 
-// Revenue from purchases — same de-duplication logic against action_values,
-// with cents-vs-major-units detection so ROAS isn't 100x off.
+// Revenue from purchases — de-duplicated AND corrected.
+//
+// The BHT WooCommerce Pixel reports purchase events whose `value` is 10×
+// the actual PLN cart total (confirmed against Meta's own purchase_roas
+// which returns ~92x for a campaign whose realistic ROAS is ~9.3x). Until
+// the Pixel is fixed at the source we apply a divisor here, configurable
+// via env var META_REVENUE_DIVISOR (defaults to 10).
+const REVENUE_DIVISOR = Number(process.env.META_REVENUE_DIVISOR || 10);
 export function purchaseValue(actionValues: any[] | undefined): number {
-  return pickMoneyFirst(actionValues, [
+  const raw = pickFirst(actionValues, [
     'omni_purchase',
     'purchase',
     'offsite_conversion.fb_pixel_purchase',
   ]);
+  return raw / REVENUE_DIVISOR;
 }
 
 // Total conversions (purchase OR lead OR registration) — de-duplicated.
