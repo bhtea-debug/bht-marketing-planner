@@ -69,7 +69,11 @@ export function periodToDatePreset(p: string | null) {
   return p === '7' ? 'last_7d' : p === '90' ? 'last_90d' : 'last_30d';
 }
 
-// Sum action values from Meta insights `actions` array (e.g. conversions)
+// Sum action values from Meta insights `actions` array (e.g. conversions).
+// IMPORTANT: when multiple types in `types` represent the SAME underlying event
+// (e.g. purchase vs omni_purchase vs offsite_conversion.fb_pixel_purchase),
+// summing all of them double-counts. Use `pickBestActions` for de-duplicated
+// purchase / lead counting.
 export function sumActions(actions: any[] | undefined, types: string[]): number {
   if (!actions) return 0;
   return actions
@@ -77,11 +81,45 @@ export function sumActions(actions: any[] | undefined, types: string[]): number 
     .reduce((acc, a) => acc + Number(a.value || 0), 0);
 }
 
-// Compute ROAS from action_values for purchase events
-export function purchaseValue(actionValues: any[] | undefined): number {
-  return sumActions(actionValues, [
-    'purchase',
+// Pick the value from the FIRST matching action_type in `types` order — used
+// when several types represent the same event and you want the most reliable
+// (de-duplicated) figure rather than the sum.
+function pickFirst(actions: any[] | undefined, types: string[]): number {
+  if (!actions) return 0;
+  for (const t of types) {
+    const hit = actions.find((a) => a.action_type === t);
+    if (hit && Number(hit.value || 0) > 0) return Number(hit.value);
+  }
+  return 0;
+}
+
+// Number of purchases — picks the most reliable single source (omni_purchase
+// is Meta's deduplicated total across pixel + app + offline). Avoids
+// double-counting that happens when summing multiple purchase action types.
+export function purchaseCount(actions: any[] | undefined): number {
+  return pickFirst(actions, [
     'omni_purchase',
+    'purchase',
     'offsite_conversion.fb_pixel_purchase',
   ]);
+}
+
+// Revenue from purchases — same de-duplication logic against action_values.
+export function purchaseValue(actionValues: any[] | undefined): number {
+  return pickFirst(actionValues, [
+    'omni_purchase',
+    'purchase',
+    'offsite_conversion.fb_pixel_purchase',
+  ]);
+}
+
+// Total conversions (purchase OR lead OR registration) — de-duplicated.
+export function totalConversions(actions: any[] | undefined): number {
+  const purchases = purchaseCount(actions);
+  const leads = pickFirst(actions, ['lead', 'offsite_conversion.fb_pixel_lead']);
+  const regs = pickFirst(actions, [
+    'complete_registration',
+    'offsite_conversion.fb_pixel_complete_registration',
+  ]);
+  return purchases + leads + regs;
 }

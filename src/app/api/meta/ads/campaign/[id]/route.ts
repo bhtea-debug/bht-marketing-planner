@@ -6,7 +6,7 @@ import {
   metaPost,
   metaDelete,
   periodToDatePreset,
-  sumActions,
+  totalConversions,
   purchaseValue,
 } from '@/lib/meta-api';
 
@@ -60,12 +60,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       spend: Number(d.spend || 0),
       impressions: Number(d.impressions || 0),
       clicks: Number(d.clicks || 0),
-      conversions: sumActions(d.actions, [
-        'purchase',
-        'omni_purchase',
-        'offsite_conversion.fb_pixel_purchase',
-        'lead',
-      ]),
+      conversions: totalConversions(d.actions),
     }));
 
     const adsets = (adsetsRes.data || []).map((a: any) => ({

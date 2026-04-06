@@ -4,7 +4,7 @@ import {
   getMetaToken,
   metaGet,
   periodToDatePreset,
-  sumActions,
+  totalConversions,
   purchaseValue,
 } from '@/lib/meta-api';
 
@@ -83,13 +83,7 @@ export async function GET(req: NextRequest) {
       const cpc = Number(i.cpc || 0);
       const ctr = Number(i.ctr || 0);
       const frequency = Number(i.frequency || 0);
-      const conversions = sumActions(i.actions, [
-        'purchase',
-        'omni_purchase',
-        'offsite_conversion.fb_pixel_purchase',
-        'lead',
-        'complete_registration',
-      ]);
+      const conversions = totalConversions(i.actions);
       const revenue = purchaseValue(i.action_values);
       const roas = spend > 0 ? revenue / spend : 0;
 
@@ -184,12 +178,7 @@ export async function GET(req: NextRequest) {
     const ltEnriched = lifetime.map((i: any) => {
       const c = ltCampMap[i.campaign_id] || {};
       const sp = Number(i.spend || 0);
-      const conv = sumActions(i.actions, [
-        'purchase',
-        'omni_purchase',
-        'offsite_conversion.fb_pixel_purchase',
-        'lead',
-      ]);
+      const conv = totalConversions(i.actions);
       const rev = purchaseValue(i.action_values);
       return {
         id: i.campaign_id,

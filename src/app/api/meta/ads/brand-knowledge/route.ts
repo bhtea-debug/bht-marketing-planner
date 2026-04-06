@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
-import { getMetaToken, metaGet, sumActions, purchaseValue } from '@/lib/meta-api';
+import { getMetaToken, metaGet, totalConversions, purchaseCount, purchaseValue } from '@/lib/meta-api';
 
 // GET /api/meta/ads/brand-knowledge?accountId=act_123
 // Builds a synthesized brand knowledge profile from ALL historical campaigns
@@ -77,13 +77,7 @@ export async function GET(req: NextRequest) {
     const enriched = campaigns.map((c: any) => {
       const i = insightMap[c.id] || {};
       const spend = Number(i.spend || 0);
-      const conv = sumActions(i.actions, [
-        'purchase',
-        'omni_purchase',
-        'offsite_conversion.fb_pixel_purchase',
-        'lead',
-        'complete_registration',
-      ]);
+      const conv = totalConversions(i.actions);
       const revenue = purchaseValue(i.action_values);
       return {
         id: c.id,
@@ -141,12 +135,7 @@ export async function GET(req: NextRequest) {
       gender: d.gender,
       spend: Number(d.spend || 0),
       revenue: purchaseValue(d.action_values),
-      conversions: sumActions(d.actions, [
-        'purchase',
-        'omni_purchase',
-        'offsite_conversion.fb_pixel_purchase',
-        'lead',
-      ]),
+      conversions: totalConversions(d.actions),
     }));
     demoAgg.sort((a, b) => b.revenue - a.revenue);
     const topAudiences = demoAgg.slice(0, 5);

@@ -5,7 +5,7 @@ import {
   metaGet,
   metaPost,
   periodToDatePreset,
-  sumActions,
+  totalConversions,
   purchaseValue,
 } from '@/lib/meta-api';
 
@@ -44,15 +44,11 @@ export async function GET(req: NextRequest) {
     // Combine
     const enriched = campaigns.map((c: any) => {
       const i = insightMap[c.id] || {};
-      const conversions = sumActions(i.actions, [
-        'purchase',
-        'omni_purchase',
-        'offsite_conversion.fb_pixel_purchase',
-        'lead',
-        'complete_registration',
-      ]);
-      const revenue = purchaseValue(i.action_values);
+      const conversions = totalConversions(i.actions);
+      let revenue = purchaseValue(i.action_values);
       const spend = Number(i.spend || 0);
+      // Sanity: revenue without any conversions is inconsistent — drop it
+      if (conversions === 0) revenue = 0;
       return {
         id: c.id,
         name: c.name,
