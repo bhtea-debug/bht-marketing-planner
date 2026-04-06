@@ -1,6 +1,8 @@
 // @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
 import { getMetaToken, metaGet, totalConversions, purchaseCount, purchaseValue } from '@/lib/meta-api';
+import { buildWooSalesContext } from '@/lib/woo-api';
+import { buildPlannerContext } from '@/lib/planner-context';
 
 // GET /api/meta/ads/brand-knowledge?accountId=act_123
 // Builds a synthesized brand knowledge profile from ALL historical campaigns
@@ -216,6 +218,12 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.totalSpend - a.totalSpend)
       .slice(0, 25);
 
+    // ----- Live commerce + planner signals (silent background pulls) --------
+    const [woo, planner] = await Promise.all([
+      buildWooSalesContext(30).catch(() => null),
+      buildPlannerContext(60).catch(() => null),
+    ]);
+
     // ----- Synthesized brand knowledge for the AI prompt context -------------
     const knowledge = {
       brand: 'Brown House & Tea',
@@ -247,7 +255,30 @@ export async function GET(req: NextRequest) {
         topWinners,
         topLosers,
         placeAgg,
+        woo,
+        planner,
       }),
+      commerce: woo && woo.configured
+        ? {
+            windowDays: woo.windowDays,
+            orderCount: woo.orderCount,
+            revenue: woo.revenue,
+            averageOrderValue: woo.averageOrderValue,
+            topProducts: woo.topProducts,
+            slowProducts: woo.slowProducts,
+            lowStock: woo.lowStock,
+            onSale: woo.onSale,
+            catalogSize: woo.totalCatalogSize,
+            categories: woo.categoriesActive,
+          }
+        : null,
+      planner: planner
+        ? {
+            upcomingCampaigns: planner.upcomingCampaigns,
+            upcomingTasks: planner.upcomingTasks,
+            windowDays: planner.windowDays,
+          }
+        : null,
     };
 
     return NextResponse.json({ data: knowledge });
@@ -312,5 +343,42 @@ function buildLessons(ctx: any): string[] {
       }.`
     );
   }
+
+  // Live commerce signals
+  if (ctx.woo && ctx.woo.configured) {
+    if (ctx.woo.averageOrderValue > 0) {
+      lessons.push(
+        `Realny AOV ostatnich ${ctx.woo.windowDays} dni z Woo: ${ctx.woo.averageOrderValue} zł (${ctx.woo.orderCount} zamówień, przychód ${ctx.woo.revenue} zł).`
+      );
+    }
+    if (ctx.woo.topProducts?.length) {
+      const top = ctx.woo.topProducts.slice(0, 3).map((p: any) => `${p.name} (${p.quantity} szt)`);
+      lessons.push(`Top sprzedawane produkty teraz: ${top.join(', ')} — to są naturalni kandydaci do skalowania reklam.`);
+    }
+    if (ctx.woo.lowStock?.length) {
+      lessons.push(
+        `Niski stan magazynowy: ${ctx.woo.lowStock.slice(0, 3).map((p: any) => p.name).join(', ')} — uważaj ze skalowaniem kampanii pod te SKU.`
+      );
+    }
+    if (ctx.woo.slowProducts?.length >= 5) {
+      lessons.push(
+        `${ctx.woo.slowProducts.length} produktów to slow movery z dostępnym stockiem — kandydaci na kampanie clearance/promo.`
+      );
+    }
+  }
+
+  // Planned activity from local DB
+  if (ctx.planner?.upcomingCampaigns?.length) {
+    const next = ctx.planner.upcomingCampaigns
+      .slice(0, 3)
+      .map((c: any) => `"${c.name}"${c.startDate ? ` (${c.startDate})` : ''}`);
+    lessons.push(`Zaplanowane kampanie marki: ${next.join(', ')} — paid Meta powinien je wzmacniać, nie konkurować.`);
+  }
+  if (ctx.planner?.upcomingTasks?.length >= 5) {
+    lessons.push(
+      `${ctx.planner.upcomingTasks.length} zaplanowanych zadań w kalendarzu w najbliższych tygodniach — synchronizuj launch reklam z publikacjami organicznymi.`
+    );
+  }
+
   return lessons;
 }
