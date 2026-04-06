@@ -93,24 +93,27 @@ function pickFirst(actions: any[] | undefined, types: string[]): number {
   return 0;
 }
 
-// Same as pickFirst but treats the raw value as MONEY: if Meta returns the
-// value as an integer string without a decimal separator (e.g. "150000"
-// instead of "1500.00"), it's in minor units (grosze) and must be divided
-// by 100. Detected heuristically by checking the raw string for '.' or ','.
-function pickMoneyFirst(actions: any[] | undefined, types: string[]): number {
-  if (!actions) return 0;
-  for (const t of types) {
-    const hit = actions.find((a) => a.action_type === t);
-    if (hit) {
-      const raw = String(hit.value ?? '');
-      const num = Number(raw);
-      if (num > 0) {
-        const hasDecimal = raw.includes('.') || raw.includes(',');
-        return hasDecimal ? num : num / 100;
-      }
-    }
+// Pick a ROAS RATIO directly from Meta's purchase_roas / *_roas fields,
+// which Meta computes itself — avoids any unit ambiguity (cents vs major)
+// in action_values. Returns 0 if no usable value.
+export function pickRoas(roasArr: any[] | undefined): number {
+  if (!roasArr || !roasArr.length) return 0;
+  // Prefer omni (deduplicated), then website purchase, then plain purchase
+  const order = [
+    'omni_purchase',
+    'purchase',
+    'offsite_conversion.fb_pixel_purchase',
+  ];
+  for (const t of order) {
+    const hit = roasArr.find((a) => a.action_type === t);
+    if (hit && Number(hit.value || 0) > 0) return Number(hit.value);
   }
-  return 0;
+  // Fallback: take the largest entry
+  const max = roasArr.reduce(
+    (m, a) => Math.max(m, Number(a.value || 0)),
+    0
+  );
+  return max;
 }
 
 // Number of purchases — picks the most reliable single source (omni_purchase
