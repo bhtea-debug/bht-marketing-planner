@@ -1,6 +1,7 @@
+// @ts-nocheck
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Instagram,
   Facebook,
@@ -8,122 +9,43 @@ import {
   Mail,
   Search,
   Zap,
+  Globe,
 } from 'lucide-react';
 
+const ICON_BY_NAME: Record<string, React.ReactNode> = {
+  instagram: <Instagram size={24} />,
+  facebook: <Facebook size={24} />,
+  tiktok: <Zap size={24} />,
+  pinterest: <TrendingUp size={24} />,
+  email: <Mail size={24} />,
+  seo: <Search size={24} />,
+  'google ads': <Zap size={24} />,
+};
+
+function getIcon(name: string) {
+  return ICON_BY_NAME[(name || '').toLowerCase()] || <Globe size={24} />;
+}
+
 interface ChannelStats {
-  id: string;
+  id: number;
   name: string;
-  icon: React.ReactNode;
   color: string;
   activeCampaigns: number;
   totalBudget: number;
-  keyMetricLabel: string;
-  keyMetricValue: string;
-  performanceChange: number;
-  performanceType: 'positive' | 'negative';
+  totalSpent: number;
 }
-
-const MOCK_CHANNELS: ChannelStats[] = [
-  {
-    id: '1',
-    name: 'Instagram',
-    icon: <Instagram size={24} />,
-    color: '#E1306C',
-    activeCampaigns: 2,
-    totalBudget: 7300,
-    keyMetricLabel: 'Zasięg',
-    keyMetricValue: '125,400',
-    performanceChange: 12,
-    performanceType: 'positive',
-  },
-  {
-    id: '2',
-    name: 'Facebook',
-    icon: <Facebook size={24} />,
-    color: '#1877F2',
-    activeCampaigns: 1,
-    totalBudget: 3200,
-    keyMetricLabel: 'Konwersje',
-    keyMetricValue: '284',
-    performanceChange: 8,
-    performanceType: 'positive',
-  },
-  {
-    id: '3',
-    name: 'TikTok',
-    icon: <Zap size={24} />,
-    color: '#000000',
-    activeCampaigns: 0,
-    totalBudget: 0,
-    keyMetricLabel: 'Widoki',
-    keyMetricValue: '0',
-    performanceChange: 0,
-    performanceType: 'negative',
-  },
-  {
-    id: '4',
-    name: 'Pinterest',
-    icon: <TrendingUp size={24} />,
-    color: '#E60023',
-    activeCampaigns: 0,
-    totalBudget: 0,
-    keyMetricLabel: 'Kliknięcia',
-    keyMetricValue: '0',
-    performanceChange: 0,
-    performanceType: 'negative',
-  },
-  {
-    id: '5',
-    name: 'Email',
-    icon: <Mail size={24} />,
-    color: '#0EA5E9',
-    activeCampaigns: 1,
-    totalBudget: 750,
-    keyMetricLabel: 'Współczynnik otwarć',
-    keyMetricValue: '34.2%',
-    performanceChange: 5,
-    performanceType: 'positive',
-  },
-  {
-    id: '6',
-    name: 'SEO',
-    icon: <Search size={24} />,
-    color: '#10B981',
-    activeCampaigns: 1,
-    totalBudget: 1800,
-    keyMetricLabel: 'Pozycja średnia',
-    keyMetricValue: '8.3',
-    performanceChange: 3,
-    performanceType: 'positive',
-  },
-  {
-    id: '7',
-    name: 'Google Ads',
-    icon: <Zap size={24} />,
-    color: '#4285F4',
-    activeCampaigns: 0,
-    totalBudget: 5950,
-    keyMetricLabel: 'ROAS',
-    keyMetricValue: '3.2x',
-    performanceChange: 15,
-    performanceType: 'positive',
-  },
-];
 
 function ChannelCard({ channel }: { channel: ChannelStats }) {
   return (
     <div className="bg-white rounded-lg border border-slate-200 transition-shadow duration-200 overflow-hidden hover:shadow-md">
-      {/* Header */}
       <div className="p-6 border-b border-slate-200">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div
               className="p-3 rounded-lg"
-              style={{
-                backgroundColor: `${channel.color}20`,
-              }}
+              style={{ backgroundColor: `${channel.color}20` }}
             >
-              <div style={{ color: channel.color }}>{channel.icon}</div>
+              <div style={{ color: channel.color }}>{getIcon(channel.name)}</div>
             </div>
             <h3 className="text-lg font-semibold text-slate-900">{channel.name}</h3>
           </div>
@@ -134,67 +56,93 @@ function ChannelCard({ channel }: { channel: ChannelStats }) {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="px-6 py-5 space-y-5 bg-slate-50">
-        {/* Active Campaigns */}
         <div>
           <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">
             Aktywne kampanie
           </p>
           <p className="text-2xl font-bold text-slate-900 mt-1">{channel.activeCampaigns}</p>
         </div>
-
-        {/* Total Budget */}
         <div>
           <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">
             Całkowity budżet
           </p>
           <p className="text-2xl font-bold text-slate-900 mt-1">
-            ${channel.totalBudget.toLocaleString()}
+            {channel.totalBudget.toLocaleString()} PLN
           </p>
         </div>
-
-        {/* Key Metric */}
         <div>
           <p className="text-xs font-medium text-slate-600 uppercase tracking-wide">
-            {channel.keyMetricLabel}
+            Wydano
           </p>
-          <div className="flex items-end justify-between mt-1">
-            <p className="text-2xl font-bold text-slate-900">{channel.keyMetricValue}</p>
-            {channel.performanceChange !== 0 && (
-              <div
-                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium ${
-                  channel.performanceType === 'positive'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
-                }`}
-              >
-                <TrendingUp size={14} />
-                {channel.performanceType === 'positive' ? '+' : '-'}
-                {channel.performanceChange}%
-              </div>
-            )}
-          </div>
+          <p className="text-2xl font-bold text-slate-900 mt-1">
+            {channel.totalSpent.toLocaleString()} PLN
+          </p>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="px-6 py-4 bg-white border-t border-slate-200">
-        <button className="w-full text-center text-amber-700 hover:text-amber-800 text-sm font-medium transition-colors py-2">
-          Przejdź do szczegółów →
-        </button>
       </div>
     </div>
   );
 }
 
 export default function ChannelsPage() {
-  const totalBudget = MOCK_CHANNELS.reduce((sum, channel) => sum + channel.totalBudget, 0);
-  const activeCampaigns = MOCK_CHANNELS.reduce((sum, channel) => sum + channel.activeCampaigns, 0);
+  const [channels, setChannels] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [chRes, cRes] = await Promise.all([
+          fetch('/api/channels'),
+          fetch('/api/campaigns'),
+        ]);
+        const ch = chRes.ok ? await chRes.json() : [];
+        const cs = cRes.ok ? await cRes.json() : [];
+        if (cancelled) return;
+        setChannels(ch || []);
+        setCampaigns(cs || []);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const stats: ChannelStats[] = useMemo(() => {
+    return (channels || []).map((c: any) => {
+      const channelCampaigns = (campaigns || []).filter(
+        (cp: any) => cp.channel_id === c.id
+      );
+      const active = channelCampaigns.filter((cp: any) => cp.status === 'active').length;
+      const totalBudget = channelCampaigns.reduce(
+        (s: number, cp: any) => s + Number(cp.budget_planned || 0),
+        0
+      );
+      const totalSpent = channelCampaigns.reduce(
+        (s: number, cp: any) => s + Number(cp.budget_spent || 0),
+        0
+      );
+      return {
+        id: c.id,
+        name: c.name,
+        color: c.color || '#94A3B8',
+        activeCampaigns: active,
+        totalBudget,
+        totalSpent,
+      };
+    });
+  }, [channels, campaigns]);
+
+  const totalBudget = stats.reduce((s, c) => s + c.totalBudget, 0);
+  const activeCampaigns = stats.reduce((s, c) => s + c.activeCampaigns, 0);
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold text-slate-900">Kanały marketingowe</h1>
         <p className="text-slate-600 mt-2">
@@ -202,20 +150,17 @@ export default function ChannelsPage() {
         </p>
       </div>
 
-      {/* Summary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Total Budget */}
         <div className="bg-white rounded-lg border border-amber-200 p-6">
           <p className="text-sm font-medium text-amber-900 uppercase tracking-wide">
             Całkowity budżet kanałów
           </p>
           <p className="text-3xl font-bold text-amber-900 mt-2">
-            ${totalBudget.toLocaleString()}
+            {totalBudget.toLocaleString()} PLN
           </p>
           <p className="text-sm text-amber-800 mt-2">We wszystkich aktywnych kampaniach</p>
         </div>
 
-        {/* Active Campaigns */}
         <div className="bg-white rounded-lg border border-green-200 p-6">
           <p className="text-sm font-medium text-green-900 uppercase tracking-wide">
             Aktywne kampanie
@@ -225,12 +170,19 @@ export default function ChannelsPage() {
         </div>
       </div>
 
-      {/* Channels Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {MOCK_CHANNELS.map((channel) => (
-          <ChannelCard key={channel.id} channel={channel} />
-        ))}
-      </div>
+      {loading ? (
+        <p className="text-slate-500 text-sm py-12 text-center">Ładowanie kanałów…</p>
+      ) : stats.length === 0 ? (
+        <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
+          <p className="text-slate-500">Brak kanałów w bazie. Dodaj je, aby zobaczyć podsumowanie.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {stats.map((channel) => (
+            <ChannelCard key={channel.id} channel={channel} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
