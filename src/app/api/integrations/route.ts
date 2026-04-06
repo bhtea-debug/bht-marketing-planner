@@ -43,7 +43,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const validPlatforms = ['meta', 'mailchimp'];
+    const validPlatforms = ['meta', 'getresponse'];
     if (!validPlatforms.includes(platform)) {
       return NextResponse.json(
         { error: 'Invalid platform' },

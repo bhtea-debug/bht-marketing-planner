@@ -115,7 +115,7 @@ export const kpi_entries = sqliteTable('kpi_entries', {
 export const integrations = sqliteTable('integrations', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   platform: text('platform', {
-    enum: ['meta', 'google', 'mailchimp', 'tiktok'],
+    enum: ['meta', 'google', 'getresponse', 'tiktok'],
   }).notNull(),
   access_token: text('access_token').notNull(),
   refresh_token: text('refresh_token'),

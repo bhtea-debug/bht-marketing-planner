@@ -50,47 +50,47 @@ const DEMO_DATA = {
       budgetLimit: 5000,
     },
   },
-  mailchimp: {
+  getresponse: {
     totalSubscribers: 2547,
     totalLists: 3,
     averageOpenRate: 35.2,
     averageClickRate: 4.2,
     lastCampaigns: [
       {
-        name: 'Spring Tea Collection - 20% Off',
-        sendDate: '2024-04-01',
+        name: 'Wiosenna Kolekcja Herbat - 20% rabatu',
+        sendDate: '2026-04-01',
         openRate: 38.5,
         clickRate: 5.2,
         status: 'sent',
         recipients: 2401,
       },
       {
-        name: 'Weekly Newsletter - April Edition',
-        sendDate: '2024-03-28',
+        name: 'Newsletter Tygodniowy - Kwiecień',
+        sendDate: '2026-03-28',
         openRate: 34.2,
         clickRate: 3.8,
         status: 'sent',
         recipients: 2389,
       },
       {
-        name: 'New Herbal Blends Available Now',
-        sendDate: '2024-03-21',
+        name: 'Nowe Mieszanki Ziołowe w Ofercie',
+        sendDate: '2026-03-21',
         openRate: 36.1,
         clickRate: 4.6,
         status: 'sent',
         recipients: 2350,
       },
       {
-        name: 'Customer Appreciation - Exclusive Offer',
-        sendDate: '2024-03-14',
+        name: 'Wielkanocna Oferta Specjalna',
+        sendDate: '2026-03-14',
         openRate: 32.8,
         clickRate: 3.5,
         status: 'sent',
         recipients: 2320,
       },
       {
-        name: 'Spring Wellness Guide + Recipe',
-        sendDate: '2024-03-07',
+        name: 'Wiosenny Poradnik Wellness + Przepis',
+        sendDate: '2026-03-07',
         openRate: 35.9,
         clickRate: 4.1,
         status: 'sent',
@@ -103,12 +103,12 @@ const DEMO_DATA = {
 interface AnalyticsData {
   integrations: string[];
   meta?: any;
-  mailchimp?: any;
+  getresponse?: any;
 }
 
 interface Errors {
   meta?: string;
-  mailchimp?: string;
+  getresponse?: string;
 }
 
 const StatCard = ({
@@ -183,7 +183,7 @@ const PercentageBar = ({ percentage, label }: { percentage: number; label: strin
 const PlatformNotConnected = ({ platform, icon: Icon }: { platform: string; icon: React.ReactNode }) => {
   const labels: Record<string, string> = {
     meta: 'Meta',
-    mailchimp: 'Mailchimp',
+    getresponse: 'GetResponse',
   };
 
   return (
@@ -191,7 +191,7 @@ const PlatformNotConnected = ({ platform, icon: Icon }: { platform: string; icon
       <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">{Icon}</div>
       <h3 className="text-lg font-semibold text-slate-900 mb-2">Połącz {labels[platform]}</h3>
       <p className="text-slate-600 text-sm mb-6">Aby zobaczyć statystyki ze swojego konta {labels[platform]}, najpierw je połącz.</p>
-      <Button variant="primary" size="md" onClick={() => (window.location.href = `/api/auth/${platform}`)}>
+      <Button variant="primary" size="md" onClick={() => (window.location.href = `/integrations`)}>
         Połącz {labels[platform]}
       </Button>
     </div>
@@ -213,9 +213,12 @@ export default function AnalyticsPage() {
         // Fetch integrations
         const integrationsRes = await fetch('/api/integrations');
         const integrationsData = await integrationsRes.json();
-        const integrations = integrationsData.integrations || [];
+        // API returns array of integration objects, extract active platform names
+        const integrationsList = Array.isArray(integrationsData)
+          ? integrationsData.filter((i: any) => i.status === 'active').map((i: any) => i.platform)
+          : [];
 
-        const newData: AnalyticsData = { integrations };
+        const newData: AnalyticsData = { integrations: integrationsList };
 
         // Fetch Meta data if connected
         if (integrations.includes('meta')) {
@@ -233,19 +236,19 @@ export default function AnalyticsPage() {
           }
         }
 
-        // Fetch Mailchimp data if connected
-        if (integrations.includes('mailchimp')) {
+        // Fetch GetResponse data if connected
+        if (integrations.includes('getresponse')) {
           try {
-            const mailchimpRes = await fetch(`/api/integrations/mailchimp/stats?period=${period}`);
-            if (mailchimpRes.ok) {
-              const mailchimpData = await mailchimpRes.json();
-              newData.mailchimp = mailchimpData.data || DEMO_DATA.mailchimp;
+            const getresponseRes = await fetch(`/api/integrations/getresponse/stats`);
+            if (getresponseRes.ok) {
+              const getresponseData = await getresponseRes.json();
+              newData.getresponse = getresponseData.data || DEMO_DATA.getresponse;
             } else {
-              newData.mailchimp = DEMO_DATA.mailchimp;
+              newData.getresponse = DEMO_DATA.getresponse;
             }
           } catch (err) {
-            newData.mailchimp = DEMO_DATA.mailchimp;
-            setErrors((prev) => ({ ...prev, mailchimp: 'Failed to fetch Mailchimp data' }));
+            newData.getresponse = DEMO_DATA.getresponse;
+            setErrors((prev) => ({ ...prev, getresponse: 'Failed to fetch GetResponse data' }));
           }
         }
 
@@ -544,31 +547,31 @@ export default function AnalyticsPage() {
               )
             )}
 
-            {/* Mailchimp Section */}
-            {data.integrations.includes('mailchimp') && data.mailchimp ? (
+            {/* GetResponse Section */}
+            {data.integrations.includes('getresponse') && data.getresponse ? (
               <div className="space-y-6">
-                <h2 className="text-2xl font-bold text-slate-900">Mailchimp</h2>
+                <h2 className="text-2xl font-bold text-slate-900">GetResponse</h2>
 
                 {/* Overview Stats */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <p className="text-xs text-slate-600 font-medium mb-2">Wszyscy subskrybenci</p>
-                    <p className="text-3xl font-bold text-slate-900">{data.mailchimp.totalSubscribers.toLocaleString()}</p>
+                    <p className="text-3xl font-bold text-slate-900">{data.getresponse.totalSubscribers.toLocaleString()}</p>
                   </div>
 
                   <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <p className="text-xs text-slate-600 font-medium mb-2">Listy e-mail</p>
-                    <p className="text-3xl font-bold text-slate-900">{data.mailchimp.totalLists}</p>
+                    <p className="text-3xl font-bold text-slate-900">{data.getresponse.totalLists}</p>
                   </div>
 
                   <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <p className="text-xs text-slate-600 font-medium mb-2">Średni open rate</p>
-                    <p className="text-3xl font-bold text-slate-900">{data.mailchimp.averageOpenRate.toFixed(1)}%</p>
+                    <p className="text-3xl font-bold text-slate-900">{data.getresponse.averageOpenRate.toFixed(1)}%</p>
                   </div>
 
                   <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <p className="text-xs text-slate-600 font-medium mb-2">Średni click rate</p>
-                    <p className="text-3xl font-bold text-slate-900">{data.mailchimp.averageClickRate.toFixed(1)}%</p>
+                    <p className="text-3xl font-bold text-slate-900">{data.getresponse.averageClickRate.toFixed(1)}%</p>
                   </div>
                 </div>
 
@@ -589,7 +592,7 @@ export default function AnalyticsPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {data.mailchimp.lastCampaigns.map((campaign: any, idx: number) => (
+                        {data.getresponse.lastCampaigns.map((campaign: any, idx: number) => (
                           <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                             <td className="py-4 px-4">
                               <p className="font-medium text-slate-900">{campaign.name}</p>
@@ -617,8 +620,8 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             ) : (
-              data.integrations.includes('mailchimp') && (
-                <PlatformNotConnected platform="mailchimp" icon={<Mail className="w-8 h-8 text-slate-400" />} />
+              data.integrations.includes('getresponse') && (
+                <PlatformNotConnected platform="getresponse" icon={<Mail className="w-8 h-8 text-slate-400" />} />
               )
             )}
           </>
