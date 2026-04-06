@@ -8,6 +8,7 @@ import {
   purchaseValue,
 } from '@/lib/meta-api';
 import { buildWooSalesContext } from '@/lib/woo-api';
+import { buildPlannerContext } from '@/lib/planner-context';
 
 type Rec = {
   severity: 'critical' | 'warning' | 'info' | 'success';
@@ -237,6 +238,61 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.spend - a.spend)
       .slice(0, 3);
 
+    // ----- Planner context (planned campaigns + calendar tasks) ------------
+    const planner = await buildPlannerContext(60).catch(() => null);
+
+    if (planner) {
+      // Suggest paid Meta support for upcoming planned campaigns that don't
+      // yet have a matching active Meta campaign.
+      const activeMetaNames = (campaigns || [])
+        .filter((c: any) => c.effective_status === 'ACTIVE')
+        .map((c: any) => (c.name || '').toLowerCase());
+
+      const tokenize = (s: string) =>
+        (s || '').toLowerCase().split(/[^a-ząćęłńóśźż0-9]+/i).filter((w) => w.length > 3);
+
+      for (const pc of planner.upcomingCampaigns.slice(0, 5)) {
+        const tokens = tokenize(pc.name);
+        const hasMetaSupport = activeMetaNames.some((n: string) =>
+          tokens.some((t) => n.includes(t))
+        );
+        if (!hasMetaSupport) {
+          const start = pc.startDate ? new Date(pc.startDate) : null;
+          const daysOut = start
+            ? Math.round((start.getTime() - Date.now()) / 86400_000)
+            : null;
+          recs.unshift({
+            severity: 'info',
+            title: `Zaplanowana kampania bez wsparcia Meta: "${pc.name}"`,
+            description: `${pc.channel ? `Kanał: ${pc.channel}. ` : ''}${
+              daysOut !== null ? `Start za ${daysOut} dni. ` : ''
+            }Brak aktywnej kampanii Meta dopasowanej do tej inicjatywy. Postaw test sprzedażowy z budżetem ~${Math.max(
+              50,
+              Math.round(pc.budgetPlanned * 0.3)
+            )} zł aby wzmocnić launch.`,
+            action: 'create_meta_support_campaign',
+          });
+        }
+      }
+
+      // High-density calendar weeks → push tactical reminder
+      if (planner.upcomingTasks.length >= 10) {
+        const within7 = planner.upcomingTasks.filter((t: any) => {
+          if (!t.scheduledDate) return false;
+          const d = new Date(t.scheduledDate);
+          return d.getTime() - Date.now() < 7 * 86400_000;
+        });
+        if (within7.length >= 5) {
+          recs.push({
+            severity: 'info',
+            title: 'Intensywny tydzień w kalendarzu',
+            description: `${within7.length} zaplanowanych zadań w najbliższych 7 dniach. Skoordynuj launch reklam tak, aby paid push trafił w te same dni co publikacje organiczne — wzmacnia to konwersję.`,
+            action: 'sync_paid_with_calendar',
+          });
+        }
+      }
+    }
+
     // ----- WooCommerce sales context (silent, real-time) -------------------
     // Pulls sales velocity, top movers and stock signals so the planner can
     // recommend WHICH products to push, scale, or pause campaigns for.
@@ -325,6 +381,12 @@ export async function GET(req: NextRequest) {
             spend: c.spend,
             roas: c.roas,
           })),
+          planner: planner
+            ? {
+                upcomingCampaignCount: planner.upcomingCampaigns.length,
+                upcomingTaskCount: planner.upcomingTasks.length,
+              }
+            : null,
           woo: woo && woo.configured
             ? {
                 windowDays: woo.windowDays,
