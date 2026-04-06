@@ -97,9 +97,9 @@ export async function GET(request: NextRequest) {
     const userId = userData.id;
     const userName = userData.name;
 
-    // Fetch pages
+    // Fetch pages with page-level access tokens (required for Page Insights)
     const pagesResponse = await fetch(
-      `https://graph.facebook.com/v21.0/me/accounts?access_token=${accessToken}`
+      `https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,category,tasks&access_token=${accessToken}`
     );
 
     let pages = [];
