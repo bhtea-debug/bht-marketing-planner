@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
       const i = insightMap[c.id] || {};
       const spend = Number(i.spend || 0);
       const conv = totalConversions(i.actions);
-      const revenue = purchaseValue(i.action_values);
+      const revenue = purchaseValue(i.action_values, conv);
       return {
         id: c.id,
         name: c.name,
@@ -130,24 +130,31 @@ export async function GET(req: NextRequest) {
     }));
 
     // Audience signals from demographics
-    const demoAgg = demographics.map((d: any) => ({
-      age: d.age,
-      gender: d.gender,
-      spend: Number(d.spend || 0),
-      revenue: purchaseValue(d.action_values),
-      conversions: totalConversions(d.actions),
-    }));
+    const demoAgg = demographics.map((d: any) => {
+      const conv = totalConversions(d.actions);
+      return {
+        age: d.age,
+        gender: d.gender,
+        spend: Number(d.spend || 0),
+        revenue: purchaseValue(d.action_values, conv),
+        conversions: conv,
+      };
+    });
     demoAgg.sort((a, b) => b.revenue - a.revenue);
     const topAudiences = demoAgg.slice(0, 5);
 
     // Placements
-    const placeAgg = placements.map((p: any) => ({
-      platform: p.publisher_platform,
-      position: p.platform_position,
-      spend: Number(p.spend || 0),
-      revenue: purchaseValue(p.action_values),
-      roas: Number(p.spend) > 0 ? purchaseValue(p.action_values) / Number(p.spend) : 0,
-    }));
+    const placeAgg = placements.map((p: any) => {
+      const conv = totalConversions(p.actions);
+      const revenue = purchaseValue(p.action_values, conv);
+      return {
+        platform: p.publisher_platform,
+        position: p.platform_position,
+        spend: Number(p.spend || 0),
+        revenue,
+        roas: Number(p.spend) > 0 ? revenue / Number(p.spend) : 0,
+      };
+    });
     placeAgg.sort((a, b) => b.roas - a.roas);
 
     // Theme extraction from campaign names — naive keyword frequency

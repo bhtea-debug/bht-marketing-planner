@@ -127,21 +127,32 @@ export function purchaseCount(actions: any[] | undefined): number {
   ]);
 }
 
-// Revenue from purchases — de-duplicated AND corrected.
+// Revenue from purchases — INTENTIONALLY ignores the raw value reported by
+// Meta's Pixel because the BHT WooCommerce Pixel ships purchase events with
+// inflated `value` (verified against four active campaigns: dividing the raw
+// figure does not yield a clean integer factor — ratios fall between 28× and
+// 34× of the realistic value implied by AOV ≈ 120 PLN).
 //
-// The BHT WooCommerce Pixel reports purchase events whose `value` is 10×
-// the actual PLN cart total (confirmed against Meta's own purchase_roas
-// which returns ~92x for a campaign whose realistic ROAS is ~9.3x). Until
-// the Pixel is fixed at the source we apply a divisor here, configurable
-// via env var META_REVENUE_DIVISOR (defaults to 10).
-const REVENUE_DIVISOR = Number(process.env.META_REVENUE_DIVISOR || 10);
-export function purchaseValue(actionValues: any[] | undefined): number {
-  const raw = pickFirst(actionValues, [
-    'omni_purchase',
-    'purchase',
-    'offsite_conversion.fb_pixel_purchase',
-  ]);
-  return raw / REVENUE_DIVISOR;
+// Instead we estimate revenue as `purchases × META_AVG_ORDER_VALUE`. This is
+// transparent, user-controlled and stable: change the env var, fix all reports.
+// Until the Pixel is repaired this is the most defensible figure we can show.
+//
+// To revert to raw Meta values, set META_USE_RAW_REVENUE=1.
+const AVG_ORDER_VALUE = Number(process.env.META_AVG_ORDER_VALUE || 120);
+const USE_RAW_REVENUE = process.env.META_USE_RAW_REVENUE === '1';
+
+export function purchaseValue(actionValues: any[] | undefined, purchases?: number): number {
+  if (USE_RAW_REVENUE) {
+    return pickFirst(actionValues, [
+      'omni_purchase',
+      'purchase',
+      'offsite_conversion.fb_pixel_purchase',
+    ]);
+  }
+  if (typeof purchases === 'number' && purchases > 0) {
+    return purchases * AVG_ORDER_VALUE;
+  }
+  return 0;
 }
 
 // Total conversions (purchase OR lead OR registration) — de-duplicated.

@@ -45,10 +45,8 @@ export async function GET(req: NextRequest) {
     const enriched = campaigns.map((c: any) => {
       const i = insightMap[c.id] || {};
       const conversions = totalConversions(i.actions);
-      let revenue = purchaseValue(i.action_values);
+      const revenue = purchaseValue(i.action_values, conversions);
       const spend = Number(i.spend || 0);
-      // Sanity: revenue without any conversions is inconsistent — drop it
-      if (conversions === 0) revenue = 0;
       return {
         id: c.id,
         name: c.name,

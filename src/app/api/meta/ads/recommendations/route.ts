@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
       const ctr = Number(i.ctr || 0);
       const frequency = Number(i.frequency || 0);
       const conversions = totalConversions(i.actions);
-      const revenue = purchaseValue(i.action_values);
+      const revenue = purchaseValue(i.action_values, conversions);
       const roas = spend > 0 ? revenue / spend : 0;
 
       // Rule 1: Active campaign with spend but zero conversions
@@ -179,7 +179,7 @@ export async function GET(req: NextRequest) {
       const c = ltCampMap[i.campaign_id] || {};
       const sp = Number(i.spend || 0);
       const conv = totalConversions(i.actions);
-      const rev = purchaseValue(i.action_values);
+      const rev = purchaseValue(i.action_values, conv);
       return {
         id: i.campaign_id,
         name: i.campaign_name || c.name,
