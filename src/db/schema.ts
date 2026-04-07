@@ -135,6 +135,9 @@ export const integrations = sqliteTable('integrations', {
 // for these and the suggest-timing endpoint can recommend an optimal date.
 export const product_launches = sqliteTable('product_launches', {
   id: integer('id').primaryKey({ autoIncrement: true }),
+  launch_type: text('launch_type', { enum: ['single', 'product_line'] })
+    .notNull()
+    .default('single'),
   name: text('name').notNull(),
   short_pitch: text('short_pitch'),
   description: text('description'),
@@ -150,6 +153,8 @@ export const product_launches = sqliteTable('product_launches', {
   planned_launch_date: text('planned_launch_date'),
   ai_suggested_date: text('ai_suggested_date'),
   ai_suggestion_notes: text('ai_suggestion_notes'),
+  ai_suggestion_json: text('ai_suggestion_json'), // full saved suggestion
+  user_notes: text('user_notes'), // user feedback for re-analysis
   notes: text('notes'),
   created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updated_at: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),

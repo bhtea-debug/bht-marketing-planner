@@ -12,6 +12,7 @@ export async function PATCH(
     const { id } = await params;
     const body = await req.json();
     const allowed = [
+      'launch_type',
       'name',
       'short_pitch',
       'description',
@@ -23,10 +24,18 @@ export async function PATCH(
       'planned_launch_date',
       'ai_suggested_date',
       'ai_suggestion_notes',
+      'ai_suggestion_json',
+      'user_notes',
       'notes',
     ];
     const patch: any = { updated_at: new Date().toISOString() };
-    for (const k of allowed) if (k in body) patch[k] = body[k];
+    for (const k of allowed) if (k in body) {
+      if (k === 'ai_suggestion_json' && body[k] && typeof body[k] !== 'string') {
+        patch[k] = JSON.stringify(body[k]);
+      } else {
+        patch[k] = body[k];
+      }
+    }
     const updated = await db
       .update(product_launches)
       .set(patch)

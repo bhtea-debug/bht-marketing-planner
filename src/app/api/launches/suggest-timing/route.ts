@@ -93,7 +93,11 @@ export async function POST(req: NextRequest) {
       return d >= today && d <= horizonEnd;
     });
 
+    const launchType: 'single' | 'product_line' =
+      body.launch_type === 'product_line' ? 'product_line' : 'single';
+
     const productInput = {
+      launch_type: launchType,
       name: body.name,
       short_pitch: body.short_pitch || null,
       description: body.description || null,
@@ -103,6 +107,8 @@ export async function POST(req: NextRequest) {
       target_audience: body.target_audience || null,
       earliest_date: body.earliest_date || todayIso,
       notes: body.notes || null,
+      user_notes: body.user_notes || null,
+      previous_suggestion: body.previous_suggestion || null,
     };
 
     const context = {
@@ -125,12 +131,14 @@ export async function POST(req: NextRequest) {
 
     const system = `Jesteś senior product launch strategist dla polskiego premium e-commerce z herbatą Brown House & Tea.
 
-Dostajesz opis nowego produktu i kontekst rynku/kalendarza. Twoja rola:
-1. Zaproponuj OPTYMALNĄ datę launchu (YYYY-MM-DD) — uwzględnij sezonowość kategorii (np. cold brew → maj-czerwiec, gorące napary → październik-luty), święta z 'holidaysAhead' (synergia lub świadome unikanie), wolne sloty w kalendarzu kampanii (nie kanibalizuj innych launchy), lead time produkcyjny (min 2 tygodnie od dziś dla nowego produktu).
+Dostajesz opis nowego produktu (lub CAŁEJ LINII produktowej) i kontekst rynku/kalendarza. Twoja rola:
+0. Rozpoznaj typ launchu: "single" = jeden SKU, "product_line" = cała nowa linia/kolekcja (np. 4-5 smaków, nowa seria sezonowa). Dla product_line: plan jest szerszy, z większym tease/reveal, hero-product strategy, możliwy staggered reveal. Dla single: szybciej, ostrzej, jeden hero hook.
+1. Zaproponuj OPTYMALNĄ datę launchu (YYYY-MM-DD) — uwzględnij sezonowość kategorii (cold brew → maj-czerwiec, gorące napary → październik-luty), święta z 'holidaysAhead' (synergia lub świadome unikanie), wolne sloty w kalendarzu (nie kanibalizuj innych launchy), lead time produkcyjny (min 2-3 tygodnie od dziś, chyba że user_notes mówią inaczej).
 2. Doprecyzuj target audience na bazie opisu/składu/ceny — kim są ci ludzie, co lubią, gdzie ich szukać.
 3. Sanity-check ceny — czy spójna z premium brandem, czy nie odstaje od kategorii. Jeśli brak ceny, zasugeruj widełki.
 4. Zaproponuj plan launchu: tydzień -2 (tease), tydzień -1 (pre-order/reveal), tydzień launch (push), tydzień +1 (UGC + retargeting). Dla każdego tygodnia: kanały, format, hook.
-5. Zwróć WYŁĄCZNIE valid JSON. Bez markdown, bez code fences, bez prozy.
+5. JEŚLI W INPUT JEST user_notes — potraktuj je jako PRIORYTETOWE dopowiedzenia od właściciela (np. "lead time surowców 6 tygodni", "chcę unikać maja bo mam urlop", "rozważ wersję 20g obok 40g"). Zrewiduj propozycję zgodnie z tymi uwagami i opisz w rationale co zmieniło się vs previous_suggestion (jeśli było).
+6. Zwróć WYŁĄCZNIE valid JSON. Bez markdown, bez code fences, bez prozy.
 
 Schema:
 {
