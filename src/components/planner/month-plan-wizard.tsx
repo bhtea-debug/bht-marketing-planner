@@ -178,9 +178,22 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ month, isoWeek: w, accountId }),
         });
-        const j = await r.json();
+        // Read as text first so we can handle non-JSON (Vercel error pages, timeouts)
+        const raw = await r.text();
+        let j: any = null;
+        try {
+          j = JSON.parse(raw);
+        } catch {
+          // non-JSON: probably a Vercel function-killed error page
+          const snippet = raw.slice(0, 140).replace(/\s+/g, ' ');
+          setWeekErrors((prev) => ({
+            ...prev,
+            [w]: `HTTP ${r.status} (timeout funkcji?): ${snippet}`,
+          }));
+          continue;
+        }
         if (!r.ok) {
-          setWeekErrors((prev) => ({ ...prev, [w]: j.error || 'błąd generacji' }));
+          setWeekErrors((prev) => ({ ...prev, [w]: j.error || `HTTP ${r.status}` }));
         } else {
           const wk = j.data.week;
           runningTotal += Number(wk?.weekly_budget_pln || 0);
@@ -197,6 +210,51 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
       }
     }
 
+    setWeekCurrent(null);
+  }
+
+  async function retryFailedWeeks() {
+    const failed = Object.keys(weekErrors).map(Number);
+    if (failed.length === 0) return;
+    setWeekErrors({});
+    let runningTotal = Number(plan?.totalBudget || 0);
+    for (const w of failed) {
+      setWeekCurrent(w);
+      try {
+        const r = await fetch('/api/planner/week-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ month, isoWeek: w, accountId }),
+        });
+        const raw = await r.text();
+        let j: any = null;
+        try {
+          j = JSON.parse(raw);
+        } catch {
+          const snippet = raw.slice(0, 140).replace(/\s+/g, ' ');
+          setWeekErrors((prev) => ({
+            ...prev,
+            [w]: `HTTP ${r.status} (timeout funkcji?): ${snippet}`,
+          }));
+          continue;
+        }
+        if (!r.ok) {
+          setWeekErrors((prev) => ({ ...prev, [w]: j.error || `HTTP ${r.status}` }));
+        } else {
+          const wk = j.data.week;
+          runningTotal += Number(wk?.weekly_budget_pln || 0);
+          setPlan((prev: any) => ({
+            ...prev,
+            totalBudget: runningTotal,
+            weeks: [...(prev?.weeks || []), wk].sort(
+              (a: any, b: any) => (a.isoWeek || 0) - (b.isoWeek || 0)
+            ),
+          }));
+        }
+      } catch (e: any) {
+        setWeekErrors((prev) => ({ ...prev, [w]: e.message }));
+      }
+    }
     setWeekCurrent(null);
   }
 
@@ -307,12 +365,20 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                 )}
                 {Object.keys(weekErrors).length > 0 && (
                   <div className="mt-2 text-xs text-rose-800">
-                    Błędy w tygodniach:{' '}
-                    {Object.entries(weekErrors).map(([w, err]) => (
-                      <span key={w} className="inline-block mr-2">
-                        T{w}: {err}
-                      </span>
-                    ))}
+                    <div>
+                      Błędy w tygodniach:{' '}
+                      {Object.entries(weekErrors).map(([w, err]) => (
+                        <div key={w} className="ml-2">• T{w}: {err}</div>
+                      ))}
+                    </div>
+                    {weekCurrent === null && (
+                      <button
+                        onClick={retryFailedWeeks}
+                        className="mt-2 bg-rose-600 hover:bg-rose-700 text-white rounded px-3 py-1 text-xs font-medium"
+                      >
+                        Powtórz nieudane tygodnie
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
