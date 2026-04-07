@@ -290,14 +290,7 @@ export async function POST(req: NextRequest) {
     const skill = loadMarketingSkill();
     const client = new Anthropic({ apiKey });
 
-    const resp = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4000,
-      system: skill,
-      messages: [
-        {
-          role: 'user',
-          content: `Wygeneruj plan marketingowy DLA POJEDYNCZEGO TYGODNIA ISO ${isoWeek} (${weekStartIso} → ${weekEndIso}) miesiąca ${month}.
+    const userPrompt = `Wygeneruj plan marketingowy DLA POJEDYNCZEGO TYGODNIA ISO ${isoWeek} (${weekStartIso} → ${weekEndIso}) miesiąca ${month}.
 
 DZIŚ JEST ${todayIso}. Tydzień startuje za ${daysUntilStart} dni.
 Święta w tym tygodniu: ${holidaysInWeek.length ? holidaysInWeek.map((h) => `${h.name} ${h.date}`).join(', ') : 'brak'}.
@@ -345,19 +338,32 @@ ZWRÓĆ JEDEN OBIEKT JSON (NIE tablicę, NIE wrapper "weeks") opisujący ten tyd
 
 Briefy wizualne MUSZĄ wynikać z brandProfile (visual_mood, color_palette, do_list, dont_list, composition_rules, inspiration_keywords). Jeśli brandProfile = null, użyj defaultowej estetyki Brown House & Tea: ciepłe naturalne światło z lewej, papier handmade, drewno orzechowe, szkło borokrzemowe, tony piaskowe (#f5f1ea, #e8dbc4, #8b6f4e, #3d2817), bez sztucznego białego światła ani kolorów neonowych.
 
-Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy, bez code fences. Dane wejściowe:\n\n${JSON.stringify(
-            userPayload,
-            null,
-            2
-          )}`,
-        },
-      ],
-    });
+Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy, bez code fences. Twoja odpowiedź MUSI zaczynać się od { i kończyć na }. Dane wejściowe:\n\n${JSON.stringify(
+      userPayload,
+      null,
+      2
+    )}`;
 
-    const text = resp.content
-      .filter((b: any) => b.type === 'text')
-      .map((b: any) => b.text)
-      .join('\n');
+    async function callLLM(model: string, extraReminder = ''): Promise<string> {
+      const r = await client.messages.create({
+        model,
+        max_tokens: 6000,
+        system: skill,
+        messages: [
+          { role: 'user', content: userPrompt + (extraReminder ? `\n\n${extraReminder}` : '') },
+          // Prefill assistant turn with `{` to force JSON-only continuation.
+          { role: 'assistant', content: '{' },
+        ],
+      });
+      const t = r.content
+        .filter((b: any) => b.type === 'text')
+        .map((b: any) => b.text)
+        .join('');
+      // Re-attach the prefilled `{` so JSON.parse sees a complete object.
+      return '{' + t;
+    }
+
+    let text = await callLLM('claude-sonnet-4-5');
 
     function extractJson(raw: string): string {
       let s = raw.trim();
@@ -371,13 +377,32 @@ Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy
     }
 
     let parsed: any = null;
+    let parseError: string | null = null;
     try {
       parsed = JSON.parse(extractJson(text));
     } catch (e: any) {
+      parseError = e.message;
+    }
+
+    // One-shot retry with strict reminder if first parse failed
+    if (!parsed) {
+      try {
+        text = await callLLM(
+          'claude-sonnet-4-5',
+          'POPRZEDNIA ODPOWIEDŹ BYŁA NIEPOPRAWNYM JSON. Zwróć TYLKO valid JSON, bez tekstu przed/po, bez markdown. Zaczynaj od { i kończ na }.'
+        );
+        parsed = JSON.parse(extractJson(text));
+        parseError = null;
+      } catch (e: any) {
+        parseError = (parseError ? parseError + ' | retry: ' : '') + e.message;
+      }
+    }
+
+    if (!parsed) {
       return NextResponse.json(
         {
           error: 'LLM returned non-JSON',
-          parseError: e.message,
+          parseError,
           raw: text.slice(0, 4000),
         },
         { status: 502 }

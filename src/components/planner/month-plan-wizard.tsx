@@ -193,7 +193,10 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
           continue;
         }
         if (!r.ok) {
-          setWeekErrors((prev) => ({ ...prev, [w]: j.error || `HTTP ${r.status}` }));
+          const detail = j.error || `HTTP ${r.status}`;
+          const extra = j.parseError ? ` | parse: ${j.parseError}` : '';
+          const rawSnip = j.raw ? ` | raw: ${String(j.raw).slice(0, 200).replace(/\s+/g, ' ')}` : '';
+          setWeekErrors((prev) => ({ ...prev, [w]: detail + extra + rawSnip }));
         } else {
           const wk = j.data.week;
           runningTotal += Number(wk?.weekly_budget_pln || 0);
@@ -239,7 +242,10 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
           continue;
         }
         if (!r.ok) {
-          setWeekErrors((prev) => ({ ...prev, [w]: j.error || `HTTP ${r.status}` }));
+          const detail = j.error || `HTTP ${r.status}`;
+          const extra = j.parseError ? ` | parse: ${j.parseError}` : '';
+          const rawSnip = j.raw ? ` | raw: ${String(j.raw).slice(0, 200).replace(/\s+/g, ' ')}` : '';
+          setWeekErrors((prev) => ({ ...prev, [w]: detail + extra + rawSnip }));
         } else {
           const wk = j.data.week;
           runningTotal += Number(wk?.weekly_budget_pln || 0);
