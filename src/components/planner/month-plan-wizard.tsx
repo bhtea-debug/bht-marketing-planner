@@ -272,10 +272,13 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
           }));
           continue;
         }
-        if (!r.ok) {
-          const detail = j.error || `HTTP ${r.status}`;
-          const extra = j.parseError ? ` | parse: ${j.parseError}` : '';
-          const rawSnip = j.raw ? ` | raw: ${String(j.raw).slice(0, 200).replace(/\s+/g, ' ')}` : '';
+        // Streaming endpoint always returns 200; check the body for error.
+        if (!r.ok || j?.error || !j?.data?.week) {
+          const detail = j?.error || `HTTP ${r.status}`;
+          const extra = j?.parseError ? ` | parse: ${j.parseError}` : '';
+          const rawSnip = j?.raw
+            ? ` | raw: ${String(j.raw).slice(0, 300).replace(/\s+/g, ' ')}`
+            : '';
           setWeekErrors((prev) => ({ ...prev, [w]: detail + extra + rawSnip }));
         } else {
           const wk = j.data.week;
