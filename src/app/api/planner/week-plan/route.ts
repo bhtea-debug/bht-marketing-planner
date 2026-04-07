@@ -149,57 +149,154 @@ export async function POST(req: NextRequest) {
     // ----- LLM call -----
     const client = new Anthropic({ apiKey });
 
-    const compactSystem = `Jesteś planerem marketingowym Brown House & Tea (sklep z premium herbatami i akcesoriami matcha). Twoim zadaniem jest zwracać WYŁĄCZNIE valid JSON wg schematu w wiadomości użytkownika. Pisz po polsku. Briefy wizualne odzwierciedlają estetykę BHT: ciepłe naturalne światło, drewno orzechowe, papier handmade, szkło borokrzemowe, tony piaskowe.`;
+    const compactSystem = `Jesteś planerem marketingowym Brown House & Tea (sklep z premium herbatami i akcesoriami matcha). Pisz po polsku. Briefy wizualne odzwierciedlają estetykę BHT: ciepłe naturalne światło, drewno orzechowe, papier handmade, szkło borokrzemowe, tony piaskowe. Wywołaj narzędzie emit_week_plan dokładnie raz, podając kompletny obiekt tygodnia.`;
 
     const userPrompt = `Wygeneruj plan marketingowy DLA POJEDYNCZEGO TYGODNIA ISO ${isoWeek} (${weekStartIso} → ${weekEndIso}) miesiąca ${month}.
 
 DZIŚ JEST ${todayIso}. Tydzień startuje za ${daysUntilStart} dni.
 Święta w tym tygodniu: ${holidaysInWeek.length ? holidaysInWeek.map((h) => `${h.name} ${h.date}`).join(', ') : 'brak'}.
 
-ZWRÓĆ JEDEN OBIEKT JSON (NIE tablicę, NIE wrapper "weeks") opisujący ten tydzień, w schemacie:
-{
-  "isoWeek": ${isoWeek},
-  "label": "Tydzień ${isoWeek} (${weekStartIso} – ${weekEndIso})",
-  "dateRange": "${weekStartIso} – ${weekEndIso}",
-  "start_date": "${weekStartIso}",
-  "end_date": "${weekEndIso}",
-  "theme": "krótki temat tygodnia",
-  "rationale": "1-2 zdania uzasadnienia",
-  "hero_products": [{ "name": "...", "why": "..." }],
-  "promo": { "type": "none|percent|bundle|gift|free_shipping", "value": "...", "mechanics": "..." },
-  "weekly_budget_pln": 0,
-  "designer_summary": "2-3 zdania syntezy wizualnej dla całego tygodnia",
-  "channels": [    // MAKSYMALNIE 4 KANAŁY na tydzień, wybierz najważniejsze
-    {
-      "channel": "meta_ads_prospecting | meta_ads_retargeting | instagram_organic | facebook_organic | email | tiktok | content_blog",
-      "format": "single_image | carousel | reels | story | newsletter | post",
-      "objective": "...",
-      "creative_hook": "...",
-      "headline": "...",
-      "body": "...",
-      "cta": "...",
-      "audience": "...",
-      "expected_kpi": "...",
-      "budget_pln": 0,
-      "visual_brief": {
-        "scene": "co dokładnie pokazujemy w kadrze",
-        "props": ["lista", "rekwizytów"],
-        "lighting": "opis światła",
-        "palette": ["#hex1", "#hex2", "#hex3"],
-        "composition": "framing, hierarchia",
-        "mood_keywords": ["3-5", "kotwic"],
-        "do": "co MUSI być",
-        "dont": "czego NIE robić",
-        "reference_note": "do której referencji się odnosisz"
-      }
-    }
-  ],
-  "linked_calendar_tasks": ["...", "..."]
-}
+Wartości stałe (musisz ich użyć dokładnie tak):
+- isoWeek: ${isoWeek}
+- label: "Tydzień ${isoWeek} (${weekStartIso} – ${weekEndIso})"
+- dateRange: "${weekStartIso} – ${weekEndIso}"
+- start_date: "${weekStartIso}"
+- end_date: "${weekEndIso}"
 
-Briefy wizualne MUSZĄ wynikać z brandProfile. Jeśli brandProfile = null, użyj defaultowej estetyki BHT (ciepłe światło, drewno orzechowe, paleta piaskowa #f5f1ea/#e8dbc4/#8b6f4e/#3d2817, bez sztucznego białego światła).
+Reguły:
+- MAKSYMALNIE 4 kanały, wybierz najważniejsze.
+- Briefy wizualne MUSZĄ wynikać z brandProfile. Jeśli brandProfile = null, użyj defaultowej estetyki BHT (ciepłe światło, drewno orzechowe, paleta piaskowa #f5f1ea/#e8dbc4/#8b6f4e/#3d2817, bez sztucznego białego światła).
+- Nie używaj cudzysłowów (") wewnątrz pól tekstowych — używaj ' lub « ».
 
-Zwróć WYŁĄCZNIE valid JSON, bez markdown, bez prozy. Zaczynaj od { i kończ na }. Dane wejściowe:\n\n${JSON.stringify(userPayload, null, 2)}`;
+Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${JSON.stringify(userPayload, null, 2)}`;
+
+    const weekPlanTool = {
+      name: 'emit_week_plan',
+      description: 'Emituje plan marketingowy na pojedynczy tydzień ISO.',
+      input_schema: {
+        type: 'object',
+        required: [
+          'isoWeek',
+          'label',
+          'dateRange',
+          'start_date',
+          'end_date',
+          'theme',
+          'rationale',
+          'hero_products',
+          'promo',
+          'weekly_budget_pln',
+          'designer_summary',
+          'channels',
+        ],
+        properties: {
+          isoWeek: { type: 'integer' },
+          label: { type: 'string' },
+          dateRange: { type: 'string' },
+          start_date: { type: 'string' },
+          end_date: { type: 'string' },
+          theme: { type: 'string', description: 'Krótki temat tygodnia' },
+          rationale: { type: 'string', description: '1-2 zdania uzasadnienia' },
+          hero_products: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['name', 'why'],
+              properties: {
+                name: { type: 'string' },
+                why: { type: 'string' },
+              },
+            },
+          },
+          promo: {
+            type: 'object',
+            required: ['type'],
+            properties: {
+              type: {
+                type: 'string',
+                enum: ['none', 'percent', 'bundle', 'gift', 'free_shipping'],
+              },
+              value: { type: 'string' },
+              mechanics: { type: 'string' },
+            },
+          },
+          weekly_budget_pln: { type: 'number' },
+          designer_summary: {
+            type: 'string',
+            description: '2-3 zdania syntezy wizualnej dla całego tygodnia',
+          },
+          channels: {
+            type: 'array',
+            maxItems: 4,
+            items: {
+              type: 'object',
+              required: [
+                'channel',
+                'format',
+                'objective',
+                'creative_hook',
+                'cta',
+                'audience',
+                'expected_kpi',
+                'budget_pln',
+                'visual_brief',
+              ],
+              properties: {
+                channel: {
+                  type: 'string',
+                  enum: [
+                    'meta_ads_prospecting',
+                    'meta_ads_retargeting',
+                    'instagram_organic',
+                    'facebook_organic',
+                    'email',
+                    'tiktok',
+                    'content_blog',
+                  ],
+                },
+                format: {
+                  type: 'string',
+                  enum: [
+                    'single_image',
+                    'carousel',
+                    'reels',
+                    'story',
+                    'newsletter',
+                    'post',
+                  ],
+                },
+                objective: { type: 'string' },
+                creative_hook: { type: 'string' },
+                headline: { type: 'string' },
+                body: { type: 'string' },
+                cta: { type: 'string' },
+                audience: { type: 'string' },
+                expected_kpi: { type: 'string' },
+                budget_pln: { type: 'number' },
+                visual_brief: {
+                  type: 'object',
+                  properties: {
+                    scene: { type: 'string' },
+                    props: { type: 'array', items: { type: 'string' } },
+                    lighting: { type: 'string' },
+                    palette: { type: 'array', items: { type: 'string' } },
+                    composition: { type: 'string' },
+                    mood_keywords: { type: 'array', items: { type: 'string' } },
+                    do: { type: 'string' },
+                    dont: { type: 'string' },
+                    reference_note: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+          linked_calendar_tasks: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+        },
+      },
+    };
 
     // Extract the FIRST balanced top-level {...} object from a string.
     // Tracks string state so braces inside string literals don't confuse it.
@@ -281,30 +378,20 @@ Zwróć WYŁĄCZNIE valid JSON, bez markdown, bez prozy. Zaczynaj od { i kończ 
             model: 'claude-haiku-4-5-20251001',
             max_tokens: 4000,
             system: compactSystem,
-            messages: [
-              { role: 'user', content: userPrompt },
-              { role: 'assistant', content: '{' },
-            ],
+            tools: [weekPlanTool as any],
+            tool_choice: { type: 'tool', name: 'emit_week_plan' } as any,
+            messages: [{ role: 'user', content: userPrompt }],
           });
           console.log(
             `[week-plan] iso=${isoWeek} llm took ${Date.now() - t0}ms, in=${llmRes.usage?.input_tokens} out=${llmRes.usage?.output_tokens}`
           );
-          const text =
-            '{' +
-            llmRes.content
-              .filter((b: any) => b.type === 'text')
-              .map((b: any) => b.text)
-              .join('');
 
-          let parsed: any = null;
+          // Find the tool_use block — guaranteed valid JSON via API
+          const toolUse = llmRes.content.find((b: any) => b.type === 'tool_use') as any;
+          let parsed: any = toolUse?.input || null;
           let parseError: string | null = null;
-          try {
-            parsed = JSON.parse(extractJson(text));
-          } catch (e: any) {
-            parseError = e.message;
-          }
-          if (parsed && parsed.weeks && Array.isArray(parsed.weeks) && parsed.weeks[0]) {
-            parsed = parsed.weeks[0];
+          if (!parsed) {
+            parseError = `no tool_use in response (stop_reason=${llmRes.stop_reason})`;
           }
 
           alive = false;
@@ -324,9 +411,9 @@ Zwróć WYŁĄCZNIE valid JSON, bez markdown, bez prozy. Zaczynaj od { i kończ 
                 },
               }
             : {
-                error: 'LLM returned non-JSON',
+                error: 'LLM did not call tool',
                 parseError,
-                raw: text.slice(0, 4000),
+                raw: JSON.stringify(llmRes.content).slice(0, 4000),
               };
           // Marker newline so client can find the JSON after the heartbeat spaces
           controller.enqueue(encoder.encode('\n' + JSON.stringify(payload)));
