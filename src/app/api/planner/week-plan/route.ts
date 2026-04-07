@@ -1,5 +1,6 @@
 // @ts-nocheck
-export const maxDuration = 60;
+export const runtime = 'edge'; // Edge runtime: no 60s serverless limit
+export const maxDuration = 300;
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
@@ -232,25 +233,13 @@ Zwróć WYŁĄCZNIE valid JSON, bez markdown, bez prozy. Zaczynaj od { i kończ 
       return s;
     }
 
-    let text = await callLLM();
+    const text = await callLLM();
     let parsed: any = null;
     let parseError: string | null = null;
     try {
       parsed = JSON.parse(extractJson(text));
     } catch (e: any) {
       parseError = e.message;
-    }
-
-    if (!parsed) {
-      try {
-        text = await callLLM(
-          'POPRZEDNIA ODPOWIEDŹ BYŁA NIEPOPRAWNYM JSON. Zwróć TYLKO valid JSON, zaczynaj od { i kończ na }.'
-        );
-        parsed = JSON.parse(extractJson(text));
-        parseError = null;
-      } catch (e: any) {
-        parseError = (parseError ? parseError + ' | retry: ' : '') + e.message;
-      }
     }
 
     if (!parsed) {
