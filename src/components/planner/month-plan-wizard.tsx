@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { X, Sparkles, Loader2, CheckCircle2, AlertTriangle, Send, Palette } from 'lucide-react';
 
 interface Props {
   initialMonth?: string; // 'YYYY-MM'
@@ -26,6 +26,75 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const [debug, setDebug] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedCount, setSavedCount] = useState(0);
+  const [pushing, setPushing] = useState<string | null>(null);
+  const [pushResults, setPushResults] = useState<Record<string, any>>({});
+
+  function pushKey(wi: number, ci: number) {
+    return `${wi}-${ci}`;
+  }
+
+  async function pushChannel(week: any, ch: any, wi: number, ci: number) {
+    const key = pushKey(wi, ci);
+    setPushing(key);
+    try {
+      const isMeta = (ch.channel || '').toLowerCase().includes('meta');
+      const isEmail = (ch.channel || '').toLowerCase().includes('email');
+      const heroNames = (week.hero_products || []).map((p: any) => p.name || p);
+      const linkUrl = ch.link_url || 'https://brownhouseandtea.pl';
+
+      if (isMeta) {
+        const r = await fetch('/api/push/meta', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tile: {
+              campaign_name: `[Planner] ${week.label || 'W' + week.isoWeek} - ${ch.format}`,
+              adset_name: `${week.theme || 'BHT'} - ${ch.audience || 'broad'}`,
+              ad_name: (ch.creative_hook || '').slice(0, 60),
+              headline: ch.creative_hook || ch.headline || week.theme,
+              body: ch.body || ch.creative_hook,
+              cta: 'SHOP_NOW',
+              link_url: linkUrl,
+              audience_hint: ch.audience,
+              budget_pln: Number(ch.budget_pln || 0),
+              creative_format: (ch.format || '').includes('video') ? 'video' : 'single_image',
+              hero_products: heroNames,
+              start_date: week.start_date || null,
+              end_date: week.end_date || null,
+            },
+            status: 'PAUSED',
+            source_ref: `${month}-w${week.isoWeek}-c${ci}`,
+          }),
+        });
+        const j = await r.json();
+        setPushResults((prev) => ({ ...prev, [key]: r.ok ? j.data : { error: j.error } }));
+      } else if (isEmail) {
+        const r = await fetch('/api/push/getresponse', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tile: {
+              subject: ch.creative_hook || `${week.theme}`,
+              headline: week.theme,
+              body: ch.creative_hook || week.rationale,
+              link_url: linkUrl,
+              cta_label: ch.cta || 'Sprawdź',
+              internal_name: `[Planner] ${week.label || 'W' + week.isoWeek}`,
+            },
+            source_ref: `${month}-w${week.isoWeek}-c${ci}`,
+          }),
+        });
+        const j = await r.json();
+        setPushResults((prev) => ({ ...prev, [key]: r.ok ? j.data : { error: j.error } }));
+      } else {
+        setPushResults((prev) => ({ ...prev, [key]: { error: 'Push obsługiwany tylko dla meta_* i email' } }));
+      }
+    } catch (e: any) {
+      setPushResults((prev) => ({ ...prev, [key]: { error: e.message } }));
+    } finally {
+      setPushing(null);
+    }
+  }
 
   // Load Meta ad accounts on mount
   useEffect(() => {
@@ -172,8 +241,8 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
               )}
 
               <div className="space-y-4">
-                {plan.weeks?.map((w: any, i: number) => (
-                  <div key={i} className="border border-slate-200 rounded-lg p-4">
+                {plan.weeks?.map((w: any, wi: number) => (
+                  <div key={wi} className="border border-slate-200 rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <div className="font-semibold text-slate-900">
@@ -214,27 +283,113 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                       </div>
                     )}
 
-                    <div className="space-y-2">
-                      {w.channels?.map((ch: any, ci: number) => (
-                        <div
-                          key={ci}
-                          className="bg-slate-50 rounded p-2 text-xs flex items-start justify-between gap-3"
-                        >
-                          <div className="flex-1">
-                            <div className="font-medium text-slate-900">
-                              {ch.channel} · {ch.format}
-                              {ch.objective ? ` · ${ch.objective}` : ''}
-                            </div>
-                            <div className="text-slate-700 mt-0.5">"{ch.creative_hook}"</div>
-                            <div className="text-slate-500 mt-0.5">
-                              CTA: {ch.cta} • Audience: {ch.audience} • KPI: {ch.expected_kpi}
-                            </div>
-                          </div>
-                          <div className="text-slate-900 font-medium whitespace-nowrap">
-                            {ch.budget_pln?.toLocaleString()} PLN
-                          </div>
+                    {w.designer_summary && (
+                      <div className="mb-3 bg-amber-50 border border-amber-200 rounded p-2 text-xs">
+                        <div className="font-semibold text-amber-900 flex items-center gap-1">
+                          <Palette className="w-3 h-3" /> Brief wizualny tygodnia
                         </div>
-                      ))}
+                        <div className="text-amber-900 mt-0.5">{w.designer_summary}</div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      {w.channels?.map((ch: any, ci: number) => {
+                        const k = pushKey(wi, ci);
+                        const result = pushResults[k];
+                        const isPushable =
+                          /meta/i.test(ch.channel || '') || /email/i.test(ch.channel || '');
+                        const vb = ch.visual_brief;
+                        return (
+                          <div key={ci} className="bg-slate-50 rounded p-2 text-xs">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <div className="font-medium text-slate-900">
+                                  {ch.channel} · {ch.format}
+                                  {ch.objective ? ` · ${ch.objective}` : ''}
+                                </div>
+                                <div className="text-slate-700 mt-0.5">"{ch.creative_hook}"</div>
+                                <div className="text-slate-500 mt-0.5">
+                                  CTA: {ch.cta} • Audience: {ch.audience} • KPI: {ch.expected_kpi}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-1 whitespace-nowrap">
+                                <div className="text-slate-900 font-medium">
+                                  {ch.budget_pln?.toLocaleString()} PLN
+                                </div>
+                                {isPushable && (
+                                  <button
+                                    onClick={() => pushChannel(w, ch, wi, ci)}
+                                    disabled={pushing === k || result?.campaign_id || result?.newsletter_id}
+                                    className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-[11px] px-2 py-1 rounded flex items-center gap-1"
+                                  >
+                                    {pushing === k ? (
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      <Send className="w-3 h-3" />
+                                    )}
+                                    {result?.campaign_id || result?.newsletter_id ? 'Wysłano' : 'Push'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                            {vb && (
+                              <details className="mt-2">
+                                <summary className="cursor-pointer text-orange-700 font-medium text-[11px]">
+                                  Brief graficzny
+                                </summary>
+                                <div className="mt-1 pl-2 border-l-2 border-orange-200 space-y-0.5 text-[11px]">
+                                  {vb.scene && <div><b>Scena:</b> {vb.scene}</div>}
+                                  {vb.props?.length && <div><b>Rekwizyty:</b> {vb.props.join(', ')}</div>}
+                                  {vb.lighting && <div><b>Światło:</b> {vb.lighting}</div>}
+                                  {vb.composition && <div><b>Kompozycja:</b> {vb.composition}</div>}
+                                  {vb.palette?.length && (
+                                    <div className="flex items-center gap-1">
+                                      <b>Paleta:</b>
+                                      {vb.palette.map((c: string, pi: number) => (
+                                        <span
+                                          key={pi}
+                                          title={c}
+                                          className="inline-block w-3 h-3 rounded-full border border-slate-300"
+                                          style={{ background: c }}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
+                                  {vb.mood_keywords?.length && (
+                                    <div><b>Mood:</b> {vb.mood_keywords.join(' · ')}</div>
+                                  )}
+                                  {vb.do && <div className="text-emerald-700"><b>Do:</b> {vb.do}</div>}
+                                  {vb.dont && <div className="text-red-700"><b>Don't:</b> {vb.dont}</div>}
+                                  {vb.reference_note && (
+                                    <div className="text-slate-500"><b>Ref:</b> {vb.reference_note}</div>
+                                  )}
+                                </div>
+                              </details>
+                            )}
+                            {result && (
+                              <div className="mt-2 text-[11px]">
+                                {result.error ? (
+                                  <div className="text-red-600">⚠ {result.error}</div>
+                                ) : (
+                                  <div className="text-emerald-700">
+                                    ✓ {result.campaign_id ? 'Kampania PAUSED w Meta' : 'Draft w GR'}{' '}
+                                    {result.manage_url && (
+                                      <a
+                                        href={result.manage_url}
+                                        target="_blank"
+                                        rel="noopener"
+                                        className="underline ml-1"
+                                      >
+                                        Otwórz
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
 
                     {w.linked_calendar_tasks?.length > 0 && (

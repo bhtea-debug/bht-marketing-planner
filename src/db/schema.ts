@@ -181,3 +181,57 @@ export type NewKpiEntry = typeof kpi_entries.$inferInsert;
 
 export type Integration = typeof integrations.$inferSelect;
 export type NewIntegration = typeof integrations.$inferInsert;
+
+// Assets - creative assets (images, videos) tied to a product or generic.
+// Stored as external URLs (Cloudinary, Woo media, etc.) - we don't host files.
+export const assets = sqliteTable('assets', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  product_name: text('product_name'), // matches woo product name; null = generic/brand
+  asset_type: text('asset_type', { enum: ['image', 'video'] }).notNull(),
+  url: text('url').notNull(),
+  thumbnail_url: text('thumbnail_url'),
+  alt_text: text('alt_text'),
+  tags: text('tags'), // comma-separated: "matcha,morning,detox"
+  meta_image_hash: text('meta_image_hash'),
+  meta_video_id: text('meta_video_id'),
+  notes: text('notes'),
+  created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Push logs - audit trail of every push to external platform
+export const push_logs = sqliteTable('push_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  platform: text('platform', { enum: ['meta', 'getresponse'] }).notNull(),
+  source_type: text('source_type'),
+  source_ref: text('source_ref'),
+  payload: text('payload'),
+  response: text('response'),
+  external_id: text('external_id'),
+  external_url: text('external_url'),
+  status: text('status', { enum: ['success', 'partial', 'failed'] }).notNull(),
+  error: text('error'),
+  created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export type Asset = typeof assets.$inferSelect;
+export type NewAsset = typeof assets.$inferInsert;
+export type PushLog = typeof push_logs.$inferSelect;
+
+// Brand profile - single-row store for visual identity that AI uses to write briefs
+// Singleton: id always = 1
+export const brand_profile = sqliteTable('brand_profile', {
+  id: integer('id').primaryKey(),
+  brand_voice: text('brand_voice'),                  // tone of voice description
+  visual_mood: text('visual_mood'),                  // free-text mood/aesthetic
+  color_palette: text('color_palette'),              // JSON: [{name, hex}]
+  fonts: text('fonts'),                              // free-text font descriptions
+  do_list: text('do_list'),                          // bullet do's
+  dont_list: text('dont_list'),                      // bullet dont's
+  composition_rules: text('composition_rules'),      // framing, props, lighting
+  reference_image_urls: text('reference_image_urls'),// JSON: [url]
+  inspiration_keywords: text('inspiration_keywords'),// comma-separated
+  target_persona: text('target_persona'),
+  updated_at: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export type BrandProfile = typeof brand_profile.$inferSelect;

@@ -2,8 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
-import { campaigns, channels, product_launches } from '@/db/schema';
-import { and, gte, lte } from 'drizzle-orm';
+import { campaigns, channels, product_launches, brand_profile } from '@/db/schema';
+import { and, eq, gte, lte } from 'drizzle-orm';
+import { ensureAssetsAndPushLogs } from '@/lib/ensure-tables';
 import {
   getMetaToken,
   metaGet,
@@ -301,7 +302,41 @@ export async function POST(req: NextRequest) {
       configuredAOV: Number(process.env.META_AVG_ORDER_VALUE || 120),
     };
 
-    // ----- 6. Call Claude with marketing skill as system prompt ------------
+    // ----- 6. Load brand profile (visual identity) for graphic briefs ------
+    let brandProfile: any = null;
+    try {
+      await ensureAssetsAndPushLogs();
+      const bpRows = await db
+        .select()
+        .from(brand_profile)
+        .where(eq(brand_profile.id, 1))
+        .limit(1);
+      brandProfile = bpRows[0] || null;
+    } catch {}
+
+    function parseMaybe(s: any) {
+      if (!s) return null;
+      if (typeof s !== 'string') return s;
+      try { return JSON.parse(s); } catch { return s; }
+    }
+    const brandForPrompt = brandProfile
+      ? {
+          brand_voice: brandProfile.brand_voice,
+          visual_mood: brandProfile.visual_mood,
+          color_palette: parseMaybe(brandProfile.color_palette),
+          fonts: brandProfile.fonts,
+          do_list: brandProfile.do_list,
+          dont_list: brandProfile.dont_list,
+          composition_rules: brandProfile.composition_rules,
+          inspiration_keywords: brandProfile.inspiration_keywords,
+          target_persona: brandProfile.target_persona,
+          reference_image_urls: parseMaybe(brandProfile.reference_image_urls),
+        }
+      : null;
+
+    userPayload.brandProfile = brandForPrompt;
+
+    // ----- 7. Call Claude with marketing skill as system prompt ------------
     const skill = loadMarketingSkill();
     const client = new Anthropic({ apiKey });
 
@@ -322,7 +357,25 @@ DZIŚ JEST ${todayIso} (tydzień ISO ${currentIsoWeek}). Tygodnie ${pastWeeks.jo
                 : 'brak istotnych świąt'
             }.
 
-Zwróć WYŁĄCZNIE valid JSON wg schematu z systemu, bez markdown, bez prozy, bez code fences. Dane wejściowe:\n\n${JSON.stringify(
+WAŻNE - ROZSZERZONA STRUKTURA WYJŚCIA:
+Każdy blok kanału (channel item) w każdym tygodniu MUSI zawierać OPRÓCZ standardowych pól (channel, format, headline, cta, audience, kpi, budget) DODATKOWO pole "visual_brief" — szczegółowy brief wizualny dla grafika, w formacie:
+{
+  "scene": "co dokładnie pokazujemy w kadrze (1-2 zdania, sensorycznie)",
+  "props": ["lista", "rekwizytów"],
+  "lighting": "opis światła (kierunek, ciepło, godzina dnia)",
+  "palette": ["#hex1", "#hex2", "#hex3"],
+  "composition": "framing, hierarchia, krzywa wzroku",
+  "mood_keywords": ["3-5", "krótkich", "kotwic emocjonalnych"],
+  "do": "co MUSI być (1 zdanie)",
+  "dont": "czego absolutnie NIE robić (1 zdanie)",
+  "reference_note": "do której z 'reference_image_urls' albo 'inspiration_keywords' z brandProfile się odnosisz"
+}
+
+Briefy MUSZĄ wynikać z brandProfile (visual_mood, color_palette, do_list, dont_list, composition_rules, inspiration_keywords). Jeśli brandProfile = null, użyj defaultowej estetyki Brown House & Tea: ciepłe naturalne światło z lewej, papier handmade, drewno orzechowe, szkło borokrzemowe, tony piaskowe (#f5f1ea, #e8dbc4, #8b6f4e, #3d2817), nie używać sztucznego białego światła ani kolorów neonowych.
+
+Każdy tydzień ma też zawierać pole "designer_summary" — 2-3 zdania syntezy wizualnej dla całego tygodnia, żeby grafik wiedział jaki "wygląd tygodnia" ma utrzymać.
+
+Zwróć WYŁĄCZNIE valid JSON wg schematu z systemu (rozszerzonego o powyższe pola), bez markdown, bez prozy, bez code fences. Dane wejściowe (zwróć uwagę na brandProfile w środku):\n\n${JSON.stringify(
               userPayload,
               null,
               2
