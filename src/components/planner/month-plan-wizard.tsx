@@ -211,24 +211,23 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ month, isoWeek: w, context: sharedContext }),
         });
-        // Read as text first so we can handle non-JSON (Vercel error pages, timeouts)
-        const raw = await r.text();
         let j: any = null;
         try {
-          j = JSON.parse(raw);
-        } catch {
-          // non-JSON: probably a Vercel function-killed error page
-          const snippet = raw.slice(0, 140).replace(/\s+/g, ' ');
+          j = await parseStreamedJSON(r);
+        } catch (parseErr: any) {
           setWeekErrors((prev) => ({
             ...prev,
-            [w]: `HTTP ${r.status} (timeout funkcji?): ${snippet}`,
+            [w]: `HTTP ${r.status} (parse): ${parseErr.message}`,
           }));
           continue;
         }
-        if (!r.ok) {
-          const detail = j.error || `HTTP ${r.status}`;
-          const extra = j.parseError ? ` | parse: ${j.parseError}` : '';
-          const rawSnip = j.raw ? ` | raw: ${String(j.raw).slice(0, 200).replace(/\s+/g, ' ')}` : '';
+        // Streaming endpoint always returns 200; check the body for error.
+        if (!r.ok || j?.error || !j?.data?.week) {
+          const detail = j?.error || `HTTP ${r.status}`;
+          const extra = j?.parseError ? ` | parse: ${j.parseError}` : '';
+          const rawSnip = j?.raw
+            ? ` | raw: ${String(j.raw).slice(0, 300).replace(/\s+/g, ' ')}`
+            : '';
           setWeekErrors((prev) => ({ ...prev, [w]: detail + extra + rawSnip }));
         } else {
           const wk = j.data.week;
