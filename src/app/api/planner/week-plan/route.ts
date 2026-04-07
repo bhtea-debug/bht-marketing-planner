@@ -1,26 +1,18 @@
 // @ts-nocheck
-export const maxDuration = 120; // single week LLM call ~20-50s
+export const maxDuration = 60;
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
-import { db } from '@/db';
-import { campaigns, channels, product_launches, brand_profile } from '@/db/schema';
-import { and, eq, gte, lte } from 'drizzle-orm';
-import { ensureAssetsAndPushLogs } from '@/lib/ensure-tables';
-import {
-  getMetaToken,
-  metaGet,
-  totalConversions,
-  purchaseValue,
-} from '@/lib/meta-api';
-import { buildWooSalesContext } from '@/lib/woo-api';
 
 // POST /api/planner/week-plan
-// Body: { month: 'YYYY-MM', isoWeek: number, accountId?: 'act_xxx' }
-// Generates a SINGLE week of the marketing plan. Designed to be called
-// sequentially by the wizard so the user sees progress.
+// Body: { month, isoWeek, context }
+// Pure LLM endpoint. Caller (wizard) is expected to fetch the heavy
+// shared context (Meta history, Woo signals, brand profile, launches) ONCE
+// via /api/planner/plan-context and pass it in here for every week.
+// This keeps each week call to a single Anthropic round-trip (~5-15s with
+// haiku) and never hits the 60s function timeout.
 export async function POST(req: NextRequest) {
   try {
-    const { month, isoWeek, accountId } = await req.json();
+    const { month, isoWeek, context } = await req.json();
     if (!month || !/^\d{4}-\d{2}$/.test(month)) {
       return NextResponse.json({ error: 'month required as YYYY-MM' }, { status: 400 });
     }
@@ -32,21 +24,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 });
     }
 
-    const [yStr, mStr] = month.split('-');
+    const [yStr] = month.split('-');
     const y = Number(yStr);
-    const m = Number(mStr);
-    const monthStart = new Date(Date.UTC(y, m - 1, 1));
-    const monthEnd = new Date(Date.UTC(y, m, 0));
-    const startIso = monthStart.toISOString().slice(0, 10);
-    const endIso = monthEnd.toISOString().slice(0, 10);
-
-    function isoWeekNum(d: Date): number {
-      const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-      const dayNum = t.getUTCDay() || 7;
-      t.setUTCDate(t.getUTCDate() + 4 - dayNum);
-      const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
-      return Math.ceil(((t.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-    }
 
     function isoWeekMonday(year: number, week: number): Date {
       const simple = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
@@ -72,7 +51,7 @@ export async function POST(req: NextRequest) {
       Math.round((weekMonday.getTime() - today.getTime()) / 86400000)
     );
 
-    // Easter for the year
+    // ----- Easter (for in-week holiday filter) -----
     function easterSunday(year: number): Date {
       const a = year % 19;
       const b = Math.floor(year / 100);
@@ -97,7 +76,7 @@ export async function POST(req: NextRequest) {
       { date: `${y}-01-01`, name: 'Nowy Rok' },
       { date: `${y}-01-06`, name: 'Trzech Króli' },
       { date: fmt(easter), name: 'Wielkanoc' },
-      { date: fmt(easterMonday), name: 'Poniedziałek Wielkanocny' },
+      { date: fmt(easterMonday), name: 'Pon. Wielkanocny' },
       { date: `${y}-05-01`, name: 'Święto Pracy' },
       { date: `${y}-05-03`, name: 'Konstytucji 3 Maja' },
       { date: `${y}-05-26`, name: 'Dzień Matki' },
@@ -112,156 +91,26 @@ export async function POST(req: NextRequest) {
       { date: `${y}-12-31`, name: 'Sylwester' },
       { date: `${y}-02-14`, name: 'Walentynki' },
       { date: `${y}-04-22`, name: 'Dzień Ziemi' },
-      { date: `${y}-11-27`, name: 'Black Friday (orientacyjnie)' },
+      { date: `${y}-11-27`, name: 'Black Friday (orient.)' },
     ];
     const holidaysInWeek = allHolidays.filter((h) => {
       const dh = new Date(h.date);
       return dh >= weekMonday && dh <= weekSunday;
     });
 
-    // ----- Existing campaigns just for awareness (compact) ------
-    const channelRows = (await db.select().from(channels).catch(() => [])) as any[];
-    const channelMap: Record<number, string> = {};
-    for (const c of channelRows) channelMap[c.id] = c.name;
+    // ----- Filter pre-built context to this week -----
+    const allLaunches = Array.isArray(context?.launches) ? context.launches : [];
+    const launchesInWeek = allLaunches
+      .filter((l: any) => {
+        const d = l.launchDate;
+        if (!d) return false;
+        const dd = new Date(d);
+        const preStart = new Date(dd);
+        preStart.setUTCDate(dd.getUTCDate() - 14);
+        return preStart <= weekSunday && dd >= weekMonday;
+      })
+      .slice(0, 3);
 
-    let weekCampaigns: any[] = [];
-    try {
-      const all = await db
-        .select()
-        .from(campaigns)
-        .where(and(gte(campaigns.start_date, startIso), lte(campaigns.start_date, endIso)));
-      weekCampaigns = all.filter(
-        (c: any) => c.start_date && isoWeekNum(new Date(c.start_date)) === isoWeek
-      );
-    } catch {}
-
-    // ----- Compact Meta context (winners/losers only) ------
-    let metaContext: any = { configured: false };
-    try {
-      const auth = await getMetaToken();
-      if (!auth.error && accountId) {
-        const [campRes, lifeRes] = await Promise.all([
-          metaGet(`${accountId}/campaigns`, auth.token, {
-            fields: 'id,name,objective,effective_status',
-            limit: 200,
-          }),
-          metaGet(`${accountId}/insights`, auth.token, {
-            level: 'campaign',
-            fields: 'campaign_id,campaign_name,spend,actions,action_values,ctr,cpc',
-            date_preset: 'maximum',
-            limit: 200,
-          }),
-        ]);
-        const camps = campRes.data || [];
-        const insights = lifeRes.data || [];
-        const map: Record<string, any> = {};
-        for (const c of camps) map[c.id] = c;
-        const CONV = new Set([
-          'OUTCOME_SALES',
-          'OUTCOME_LEADS',
-          'CONVERSIONS',
-          'PRODUCT_CATALOG_SALES',
-          'LEAD_GENERATION',
-        ]);
-        const enriched = insights
-          .map((i: any) => {
-            const c = map[i.campaign_id] || {};
-            const sp = Number(i.spend || 0);
-            const conv = totalConversions(i.actions);
-            const rev = purchaseValue(i.action_values, conv);
-            return {
-              name: i.campaign_name || c.name,
-              objective: c.objective,
-              spend: sp,
-              roas: sp > 0 ? rev / sp : 0,
-              isConv: CONV.has(c.objective || ''),
-            };
-          })
-          .filter((c: any) => c.isConv && c.spend >= 50);
-        const winners = [...enriched].sort((a, b) => b.roas - a.roas).slice(0, 3);
-        const losers = [...enriched]
-          .filter((c) => c.roas < 1)
-          .sort((a, b) => b.spend - a.spend)
-          .slice(0, 3);
-        metaContext = {
-          configured: true,
-          winners: winners.map((w: any) => ({
-            name: w.name,
-            roas: Number(w.roas.toFixed(2)),
-            spend: Math.round(w.spend),
-          })),
-          losers: losers.map((l: any) => ({
-            name: l.name,
-            roas: Number(l.roas.toFixed(2)),
-            spend: Math.round(l.spend),
-          })),
-        };
-      }
-    } catch (e) {
-      console.warn('[week-plan] meta context failed', e);
-    }
-
-    // ----- Live Woo commerce context ------
-    const commerce = await buildWooSalesContext(30).catch(() => null);
-
-    // ----- Launches relevant to this week's pre-launch window ------
-    let relevantLaunches: any[] = [];
-    try {
-      const all = await db.select().from(product_launches);
-      relevantLaunches = all
-        .filter((l: any) => {
-          const d = l.planned_launch_date || l.ai_suggested_date;
-          if (!d) return false;
-          if (l.status === 'launched' || l.status === 'cancelled') return false;
-          const dd = new Date(d);
-          const preStart = new Date(dd);
-          preStart.setUTCDate(dd.getUTCDate() - 14);
-          // overlaps this week?
-          return preStart <= weekSunday && dd >= weekMonday;
-        })
-        .map((l: any) => ({
-          id: l.id,
-          name: l.name,
-          short_pitch: l.short_pitch,
-          category: l.category,
-          price_pln: l.price_pln,
-          launchDate: l.planned_launch_date || l.ai_suggested_date,
-          isSuggestedByAI: !l.planned_launch_date && !!l.ai_suggested_date,
-        }));
-    } catch {}
-
-    // ----- Brand profile ------
-    let brandProfile: any = null;
-    try {
-      await ensureAssetsAndPushLogs();
-      const bpRows = await db
-        .select()
-        .from(brand_profile)
-        .where(eq(brand_profile.id, 1))
-        .limit(1);
-      brandProfile = bpRows[0] || null;
-    } catch {}
-    function parseMaybe(s: any) {
-      if (!s) return null;
-      if (typeof s !== 'string') return s;
-      try { return JSON.parse(s); } catch { return s; }
-    }
-    const brandForPrompt = brandProfile
-      ? {
-          brand_voice: brandProfile.brand_voice,
-          visual_mood: brandProfile.visual_mood,
-          color_palette: parseMaybe(brandProfile.color_palette),
-          fonts: brandProfile.fonts,
-          do_list: brandProfile.do_list,
-          dont_list: brandProfile.dont_list,
-          composition_rules: brandProfile.composition_rules,
-          inspiration_keywords: brandProfile.inspiration_keywords,
-          target_persona: brandProfile.target_persona,
-          reference_image_urls: parseMaybe(brandProfile.reference_image_urls),
-        }
-      : null;
-
-    // ----- Build payload (small) ------
     const userPayload = {
       month,
       today: todayIso,
@@ -272,28 +121,17 @@ export async function POST(req: NextRequest) {
         daysUntilStart,
       },
       holidaysInWeek,
-      existingCampaignsThisWeek: weekCampaigns.map((c: any) => ({
-        name: c.name,
-        channel: channelMap[c.channel_id] || null,
-        budgetPlanned: Number(c.budget_planned || 0),
-        status: c.status,
-      })),
-      meta: metaContext,
-      commerce:
-        commerce && commerce.configured
-          ? {
-              topSellers: (commerce.topSellers || commerce.bestSellers || []).slice(0, 5),
-              lowStock: (commerce.lowStock || []).slice(0, 3),
-              newProducts: (commerce.newProducts || []).slice(0, 3),
-            }
-          : null,
-      relevantLaunches: relevantLaunches.slice(0, 3),
-      brandProfile: brandForPrompt,
-      configuredAOV: Number(process.env.META_AVG_ORDER_VALUE || 120),
+      meta: context?.meta || { configured: false },
+      commerce: context?.commerce || null,
+      launchesInWeek,
+      brandProfile: context?.brandProfile || null,
+      configuredAOV: Number(context?.configuredAOV || 120),
     };
 
-    // ----- LLM call ------
+    // ----- LLM call -----
     const client = new Anthropic({ apiKey });
+
+    const compactSystem = `Jesteś planerem marketingowym Brown House & Tea (sklep z premium herbatami i akcesoriami matcha). Twoim zadaniem jest zwracać WYŁĄCZNIE valid JSON wg schematu w wiadomości użytkownika. Pisz po polsku. Briefy wizualne odzwierciedlają estetykę BHT: ciepłe naturalne światło, drewno orzechowe, papier handmade, szkło borokrzemowe, tony piaskowe.`;
 
     const userPrompt = `Wygeneruj plan marketingowy DLA POJEDYNCZEGO TYGODNIA ISO ${isoWeek} (${weekStartIso} → ${weekEndIso}) miesiąca ${month}.
 
@@ -308,15 +146,15 @@ ZWRÓĆ JEDEN OBIEKT JSON (NIE tablicę, NIE wrapper "weeks") opisujący ten tyd
   "start_date": "${weekStartIso}",
   "end_date": "${weekEndIso}",
   "theme": "krótki temat tygodnia",
-  "rationale": "1-2 zdania uzasadnienia (sezon, dane, święta, launche)",
+  "rationale": "1-2 zdania uzasadnienia",
   "hero_products": [{ "name": "...", "why": "..." }],
   "promo": { "type": "none|percent|bundle|gift|free_shipping", "value": "...", "mechanics": "..." },
   "weekly_budget_pln": 0,
-  "designer_summary": "2-3 zdania syntezy wizualnej dla całego tygodnia (mood + paleta + kluczowy obiekt)",
+  "designer_summary": "2-3 zdania syntezy wizualnej dla całego tygodnia",
   "channels": [
     {
-      "channel": "meta_ads_prospecting | meta_ads_retargeting | instagram_organic | facebook_organic | email | tiktok | influencer | content_blog",
-      "format": "single_image | carousel | reels | story | newsletter | post | ...",
+      "channel": "meta_ads_prospecting | meta_ads_retargeting | instagram_organic | facebook_organic | email | tiktok | content_blog",
+      "format": "single_image | carousel | reels | story | newsletter | post",
       "objective": "...",
       "creative_hook": "...",
       "headline": "...",
@@ -326,42 +164,32 @@ ZWRÓĆ JEDEN OBIEKT JSON (NIE tablicę, NIE wrapper "weeks") opisujący ten tyd
       "expected_kpi": "...",
       "budget_pln": 0,
       "visual_brief": {
-        "scene": "co dokładnie pokazujemy w kadrze (1-2 zdania, sensorycznie)",
+        "scene": "co dokładnie pokazujemy w kadrze",
         "props": ["lista", "rekwizytów"],
-        "lighting": "opis światła (kierunek, ciepło, godzina dnia)",
+        "lighting": "opis światła",
         "palette": ["#hex1", "#hex2", "#hex3"],
-        "composition": "framing, hierarchia, krzywa wzroku",
-        "mood_keywords": ["3-5", "krótkich", "kotwic"],
-        "do": "co MUSI być (1 zdanie)",
-        "dont": "czego NIE robić (1 zdanie)",
-        "reference_note": "do której referencji z brandProfile się odnosisz"
+        "composition": "framing, hierarchia",
+        "mood_keywords": ["3-5", "kotwic"],
+        "do": "co MUSI być",
+        "dont": "czego NIE robić",
+        "reference_note": "do której referencji się odnosisz"
       }
     }
   ],
   "linked_calendar_tasks": ["...", "..."]
 }
 
-Briefy wizualne MUSZĄ wynikać z brandProfile (visual_mood, color_palette, do_list, dont_list, composition_rules, inspiration_keywords). Jeśli brandProfile = null, użyj defaultowej estetyki Brown House & Tea: ciepłe naturalne światło z lewej, papier handmade, drewno orzechowe, szkło borokrzemowe, tony piaskowe (#f5f1ea, #e8dbc4, #8b6f4e, #3d2817), bez sztucznego białego światła ani kolorów neonowych.
+Briefy wizualne MUSZĄ wynikać z brandProfile. Jeśli brandProfile = null, użyj defaultowej estetyki BHT (ciepłe światło, drewno orzechowe, paleta piaskowa #f5f1ea/#e8dbc4/#8b6f4e/#3d2817, bez sztucznego białego światła).
 
-Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy, bez code fences. Twoja odpowiedź MUSI zaczynać się od { i kończyć na }. Dane wejściowe:\n\n${JSON.stringify(
-      userPayload,
-      null,
-      2
-    )}`;
+Zwróć WYŁĄCZNIE valid JSON, bez markdown, bez prozy. Zaczynaj od { i kończ na }. Dane wejściowe:\n\n${JSON.stringify(userPayload, null, 2)}`;
 
-    // Compact system prompt — full marketing-skill is too heavy for a single
-    // week call and pushes us over the function timeout. Inline only the
-    // essentials.
-    const compactSystem = `Jesteś planerem marketingowym Brown House & Tea (sklep z premium herbatami i akcesoriami matcha). Twoim zadaniem jest zwracać WYŁĄCZNIE valid JSON wg schematu w wiadomości użytkownika. Pisz po polsku. Briefy wizualne odzwierciedlają estetykę BHT: ciepłe naturalne światło, drewno orzechowe, papier handmade, szkło borokrzemowe, tony piaskowe.`;
-
-    async function callLLM(model: string, extraReminder = ''): Promise<string> {
+    async function callLLM(extraReminder = ''): Promise<string> {
       const r = await client.messages.create({
-        model,
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 4500,
         system: compactSystem,
         messages: [
           { role: 'user', content: userPrompt + (extraReminder ? `\n\n${extraReminder}` : '') },
-          // Prefill assistant turn with `{` to force JSON-only continuation.
           { role: 'assistant', content: '{' },
         ],
       });
@@ -369,11 +197,8 @@ Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy
         .filter((b: any) => b.type === 'text')
         .map((b: any) => b.text)
         .join('');
-      // Re-attach the prefilled `{` so JSON.parse sees a complete object.
       return '{' + t;
     }
-
-    let text = await callLLM('claude-haiku-4-5-20251001');
 
     function extractJson(raw: string): string {
       let s = raw.trim();
@@ -386,6 +211,7 @@ Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy
       return s;
     }
 
+    let text = await callLLM();
     let parsed: any = null;
     let parseError: string | null = null;
     try {
@@ -394,12 +220,10 @@ Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy
       parseError = e.message;
     }
 
-    // One-shot retry with strict reminder if first parse failed
     if (!parsed) {
       try {
         text = await callLLM(
-          'claude-haiku-4-5-20251001',
-          'POPRZEDNIA ODPOWIEDŹ BYŁA NIEPOPRAWNYM JSON. Zwróć TYLKO valid JSON, bez tekstu przed/po, bez markdown. Zaczynaj od { i kończ na }.'
+          'POPRZEDNIA ODPOWIEDŹ BYŁA NIEPOPRAWNYM JSON. Zwróć TYLKO valid JSON, zaczynaj od { i kończ na }.'
         );
         parsed = JSON.parse(extractJson(text));
         parseError = null;
@@ -419,7 +243,6 @@ Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy
       );
     }
 
-    // Defensive: if model wrapped in {weeks:[...]}, unwrap.
     if (parsed && parsed.weeks && Array.isArray(parsed.weeks) && parsed.weeks[0]) {
       parsed = parsed.weeks[0];
     }
@@ -431,10 +254,7 @@ Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy
           isoWeek,
           weekStartIso,
           weekEndIso,
-          metaConfigured: metaContext.configured,
-          commerceConfigured: Boolean(commerce && commerce.configured),
-          launchesInWindow: relevantLaunches.length,
-          existingCampaignsThisWeek: weekCampaigns.length,
+          launchesInWeek: launchesInWeek.length,
         },
       },
     });

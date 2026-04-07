@@ -33,6 +33,7 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const [weekDoneCount, setWeekDoneCount] = useState(0);
   const [weekCurrent, setWeekCurrent] = useState<number | null>(null);
   const [weekErrors, setWeekErrors] = useState<Record<number, string>>({});
+  const [sharedContext, setSharedContext] = useState<any>(null);
 
   // ----- ISO week helpers (mirror of server-side) -----
   function isoWeekNum(d: Date): number {
@@ -157,6 +158,24 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
     setWeekQueue(weeks);
     setStep('generating');
 
+    // Step 1: fetch the heavy shared context ONCE (Meta + Woo + brand + launches)
+    let sharedContext: any = null;
+    try {
+      const cr = await fetch('/api/planner/plan-context', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ month, accountId }),
+      });
+      const cj = await cr.json();
+      if (!cr.ok) throw new Error(cj.error || 'plan-context failed');
+      sharedContext = cj.data;
+      setSharedContext(sharedContext);
+    } catch (e: any) {
+      setError('Nie udało się pobrać kontekstu (Meta/Woo/brand): ' + e.message);
+      setStep('error');
+      return;
+    }
+
     // Seed an empty plan that we'll fill week-by-week
     const seed: any = {
       summary: `Plan tygodniowy dla ${month}`,
@@ -176,7 +195,7 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
         const r = await fetch('/api/planner/week-plan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ month, isoWeek: w, accountId }),
+          body: JSON.stringify({ month, isoWeek: w, context: sharedContext }),
         });
         // Read as text first so we can handle non-JSON (Vercel error pages, timeouts)
         const raw = await r.text();
@@ -227,7 +246,7 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
         const r = await fetch('/api/planner/week-plan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ month, isoWeek: w, accountId }),
+          body: JSON.stringify({ month, isoWeek: w, context: sharedContext }),
         });
         const raw = await r.text();
         let j: any = null;
@@ -345,8 +364,8 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
           {step === 'generating' && (
             <div className="flex flex-col items-center py-12 gap-3">
               <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
-              <p className="text-sm text-slate-600">Analizuję historię, sprzedaż, stocki i kalendarz…</p>
-              <p className="text-xs text-slate-500">To może zająć 20–40 sekund.</p>
+              <p className="text-sm text-slate-600">Pobieram historię Meta, sprzedaż Woo i profil marki…</p>
+              <p className="text-xs text-slate-500">To zajmie 5–20 sekund. Potem polecą tygodnie.</p>
             </div>
           )}
 
