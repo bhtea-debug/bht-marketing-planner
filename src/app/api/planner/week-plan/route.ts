@@ -201,15 +201,61 @@ Briefy wizualne MUSZĄ wynikać z brandProfile. Jeśli brandProfile = null, uży
 
 Zwróć WYŁĄCZNIE valid JSON, bez markdown, bez prozy. Zaczynaj od { i kończ na }. Dane wejściowe:\n\n${JSON.stringify(userPayload, null, 2)}`;
 
+    // Extract the FIRST balanced top-level {...} object from a string.
+    // Tracks string state so braces inside string literals don't confuse it.
     function extractJson(raw: string): string {
       let s = raw.trim();
       s = s.replace(/```json/gi, '').replace(/```/g, '').trim();
-      const first = s.indexOf('{');
-      const last = s.lastIndexOf('}');
-      if (first !== -1 && last !== -1 && last > first) {
-        s = s.slice(first, last + 1);
+      const start = s.indexOf('{');
+      if (start === -1) return s;
+      let depth = 0;
+      let inStr = false;
+      let escape = false;
+      for (let i = start; i < s.length; i++) {
+        const ch = s[i];
+        if (escape) {
+          escape = false;
+          continue;
+        }
+        if (ch === '\\') {
+          escape = true;
+          continue;
+        }
+        if (ch === '"') {
+          inStr = !inStr;
+          continue;
+        }
+        if (inStr) continue;
+        if (ch === '{') depth++;
+        else if (ch === '}') {
+          depth--;
+          if (depth === 0) return s.slice(start, i + 1);
+        }
       }
-      return s;
+      // No balanced close — try to repair truncated JSON by closing open
+      // strings, arrays, and braces in order.
+      let repaired = s.slice(start);
+      if (inStr) repaired += '"';
+      // count remaining open brackets
+      let openBraces = 0;
+      let openBrackets = 0;
+      let str = false;
+      let esc = false;
+      for (const ch of repaired) {
+        if (esc) { esc = false; continue; }
+        if (ch === '\\') { esc = true; continue; }
+        if (ch === '"') { str = !str; continue; }
+        if (str) continue;
+        if (ch === '{') openBraces++;
+        else if (ch === '}') openBraces--;
+        else if (ch === '[') openBrackets++;
+        else if (ch === ']') openBrackets--;
+      }
+      // strip dangling comma before closing
+      repaired = repaired.replace(/,\s*$/, '');
+      while (openBrackets-- > 0) repaired += ']';
+      while (openBraces-- > 0) repaired += '}';
+      return repaired;
     }
 
     // ----- Streaming response with heartbeat -----
@@ -233,7 +279,7 @@ Zwróć WYŁĄCZNIE valid JSON, bez markdown, bez prozy. Zaczynaj od { i kończ 
         try {
           const llmRes = await client.messages.create({
             model: 'claude-haiku-4-5-20251001',
-            max_tokens: 2800,
+            max_tokens: 4000,
             system: compactSystem,
             messages: [
               { role: 'user', content: userPrompt },
