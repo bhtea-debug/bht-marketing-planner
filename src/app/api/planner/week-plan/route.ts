@@ -13,7 +13,6 @@ import {
   purchaseValue,
 } from '@/lib/meta-api';
 import { buildWooSalesContext } from '@/lib/woo-api';
-import { loadMarketingSkill } from '@/lib/marketing-skill';
 
 // POST /api/planner/week-plan
 // Body: { month: 'YYYY-MM', isoWeek: number, accountId?: 'act_xxx' }
@@ -280,14 +279,20 @@ export async function POST(req: NextRequest) {
         status: c.status,
       })),
       meta: metaContext,
-      commerce: commerce && commerce.configured ? commerce : null,
-      relevantLaunches,
+      commerce:
+        commerce && commerce.configured
+          ? {
+              topSellers: (commerce.topSellers || commerce.bestSellers || []).slice(0, 5),
+              lowStock: (commerce.lowStock || []).slice(0, 3),
+              newProducts: (commerce.newProducts || []).slice(0, 3),
+            }
+          : null,
+      relevantLaunches: relevantLaunches.slice(0, 3),
       brandProfile: brandForPrompt,
       configuredAOV: Number(process.env.META_AVG_ORDER_VALUE || 120),
     };
 
     // ----- LLM call ------
-    const skill = loadMarketingSkill();
     const client = new Anthropic({ apiKey });
 
     const userPrompt = `Wygeneruj plan marketingowy DLA POJEDYNCZEGO TYGODNIA ISO ${isoWeek} (${weekStartIso} → ${weekEndIso}) miesiąca ${month}.
@@ -344,11 +349,16 @@ Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy
       2
     )}`;
 
+    // Compact system prompt — full marketing-skill is too heavy for a single
+    // week call and pushes us over the function timeout. Inline only the
+    // essentials.
+    const compactSystem = `Jesteś planerem marketingowym Brown House & Tea (sklep z premium herbatami i akcesoriami matcha). Twoim zadaniem jest zwracać WYŁĄCZNIE valid JSON wg schematu w wiadomości użytkownika. Pisz po polsku. Briefy wizualne odzwierciedlają estetykę BHT: ciepłe naturalne światło, drewno orzechowe, papier handmade, szkło borokrzemowe, tony piaskowe.`;
+
     async function callLLM(model: string, extraReminder = ''): Promise<string> {
       const r = await client.messages.create({
         model,
-        max_tokens: 6000,
-        system: skill,
+        max_tokens: 4500,
+        system: compactSystem,
         messages: [
           { role: 'user', content: userPrompt + (extraReminder ? `\n\n${extraReminder}` : '') },
           // Prefill assistant turn with `{` to force JSON-only continuation.
@@ -363,7 +373,7 @@ Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy
       return '{' + t;
     }
 
-    let text = await callLLM('claude-sonnet-4-5');
+    let text = await callLLM('claude-haiku-4-5-20251001');
 
     function extractJson(raw: string): string {
       let s = raw.trim();
@@ -388,7 +398,7 @@ Zwróć WYŁĄCZNIE valid JSON jednego obiektu tygodnia, bez markdown, bez prozy
     if (!parsed) {
       try {
         text = await callLLM(
-          'claude-sonnet-4-5',
+          'claude-haiku-4-5-20251001',
           'POPRZEDNIA ODPOWIEDŹ BYŁA NIEPOPRAWNYM JSON. Zwróć TYLKO valid JSON, bez tekstu przed/po, bez markdown. Zaczynaj od { i kończ na }.'
         );
         parsed = JSON.parse(extractJson(text));
