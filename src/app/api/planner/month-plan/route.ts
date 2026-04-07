@@ -1,4 +1,5 @@
 // @ts-nocheck
+export const maxDuration = 300; // 5 min for LLM call
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
