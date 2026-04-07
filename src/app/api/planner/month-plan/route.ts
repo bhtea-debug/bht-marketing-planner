@@ -192,12 +192,12 @@ export async function POST(req: NextRequest) {
 
     const resp = await client.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 4096,
+      max_tokens: 16000,
       system: skill,
       messages: [
         {
           role: 'user',
-          content: `Wygeneruj plan marketingowy dla miesiąca ${month}. Zwróć WYŁĄCZNIE valid JSON wg schematu z systemu, bez markdown i bez prozy. Dane wejściowe:\n\n${JSON.stringify(
+          content: `Wygeneruj plan marketingowy dla miesiąca ${month}. Zwróć WYŁĄCZNIE valid JSON wg schematu z systemu, bez markdown i bez prozy, bez code fences. Dane wejściowe:\n\n${JSON.stringify(
             userPayload,
             null,
             2
@@ -211,20 +211,28 @@ export async function POST(req: NextRequest) {
       .map((b: any) => b.text)
       .join('\n');
 
+    // Robust JSON extraction: strip fences anywhere, then carve out the
+    // outermost {...} block so a stray prefix/suffix can't break parsing.
+    function extractJson(raw: string): string {
+      let s = raw.trim();
+      s = s.replace(/```json/gi, '').replace(/```/g, '').trim();
+      const first = s.indexOf('{');
+      const last = s.lastIndexOf('}');
+      if (first !== -1 && last !== -1 && last > first) {
+        s = s.slice(first, last + 1);
+      }
+      return s;
+    }
+
     let parsed: any = null;
     try {
-      // Strip any accidental code fences
-      const cleaned = text
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/```\s*$/i, '')
-        .trim();
-      parsed = JSON.parse(cleaned);
-    } catch (e) {
+      parsed = JSON.parse(extractJson(text));
+    } catch (e: any) {
       return NextResponse.json(
         {
           error: 'LLM returned non-JSON',
-          raw: text,
+          parseError: e.message,
+          raw: text.slice(0, 4000),
         },
         { status: 502 }
       );
