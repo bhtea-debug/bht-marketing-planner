@@ -117,6 +117,21 @@ export async function POST(req: NextRequest) {
       return dh >= monthStart && dh <= monthEnd;
     });
 
+    // Lead-time map per future week: how many days from today until that week starts
+    function isoWeekMonday(year: number, week: number): Date {
+      const simple = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
+      const dow = simple.getUTCDay() || 7;
+      const monday = new Date(simple);
+      monday.setUTCDate(simple.getUTCDate() - dow + 1);
+      return monday;
+    }
+    const futureWeeksWithLeadTime = futureWeeks.map((w) => {
+      const monday = isoWeekMonday(y, w);
+      const diffMs = monday.getTime() - today.getTime();
+      const days = Math.max(0, Math.round(diffMs / 86400000));
+      return { isoWeek: w, mondayDate: fmt(monday), daysUntilStart: days };
+    });
+
     // ----- 2. Existing planner state for this month ------------------------
     const channelRows = (await db.select().from(channels).catch(() => [])) as any[];
     const channelMap: Record<number, string> = {};
@@ -232,6 +247,7 @@ export async function POST(req: NextRequest) {
       iso_weeks_in_month: weeksInMonth,
       pastWeeks,
       futureWeeks,
+      futureWeeksLeadTime: futureWeeksWithLeadTime,
       holidays: holidaysThisMonth,
       existingPlan: {
         plannedWeeks: [...plannedWeeks],
