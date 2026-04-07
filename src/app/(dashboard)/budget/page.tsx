@@ -2,9 +2,10 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { DollarSign, TrendingDown, AlertCircle, CheckCircle } from 'lucide-react';
+import { DollarSign, TrendingDown, AlertCircle, CheckCircle, Sparkles } from 'lucide-react';
 import Card from '@/components/ui/card';
 import StatsCard from '@/components/ui/stats-card';
+import MonthPlanWizard from '@/components/planner/month-plan-wizard';
 
 const MONTH_NAMES = [
   'Styczeń',
@@ -24,6 +25,19 @@ const MONTH_NAMES = [
 export default function BudgetPage() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [wizardMonth, setWizardMonth] = useState<string | null>(null);
+
+  // Build the next 6 months including current
+  const upcomingMonths = useMemo(() => {
+    const out: { key: string; label: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      out.push({ key, label: `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}` });
+    }
+    return out;
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,6 +126,32 @@ export default function BudgetPage() {
         />
       </div>
 
+      <Card
+        title="Planowanie miesięczne z AI"
+        subtitle="AI zidentyfikuje luki w planie, ściągnie historię + sprzedaż + stocki i zaproponuje plan tygodniowy"
+      >
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+          {upcomingMonths.map((m) => {
+            const hasPlan = monthlyRows.some((r) => r.month === m.label);
+            return (
+              <button
+                key={m.key}
+                onClick={() => setWizardMonth(m.key)}
+                className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition hover:border-amber-400 hover:bg-amber-50 ${
+                  hasPlan ? 'border-slate-200 bg-white' : 'border-amber-300 bg-amber-50/40'
+                }`}
+              >
+                <div className="flex items-center gap-1 text-xs text-amber-700">
+                  <Sparkles className="w-3 h-3" />
+                  {hasPlan ? 'Edytuj plan' : 'Zaplanuj'}
+                </div>
+                <div className="text-sm font-medium text-slate-900">{m.label}</div>
+              </button>
+            );
+          })}
+        </div>
+      </Card>
+
       <Card title="Budżet miesięczny" subtitle="Porównanie planu z rzeczywistością">
         {loading ? (
           <p className="text-slate-500 text-sm py-6 text-center">Ładowanie danych…</p>
@@ -165,6 +205,13 @@ export default function BudgetPage() {
           </div>
         )}
       </Card>
+
+      {wizardMonth && (
+        <MonthPlanWizard
+          initialMonth={wizardMonth}
+          onClose={() => setWizardMonth(null)}
+        />
+      )}
     </div>
   );
 }
