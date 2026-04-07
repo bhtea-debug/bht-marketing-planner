@@ -201,27 +201,6 @@ Briefy wizualne MUSZĄ wynikać z brandProfile. Jeśli brandProfile = null, uży
 
 Zwróć WYŁĄCZNIE valid JSON, bez markdown, bez prozy. Zaczynaj od { i kończ na }. Dane wejściowe:\n\n${JSON.stringify(userPayload, null, 2)}`;
 
-    async function callLLM(extraReminder = ''): Promise<string> {
-      const t0 = Date.now();
-      const r = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2800,
-        system: compactSystem,
-        messages: [
-          { role: 'user', content: userPrompt + (extraReminder ? `\n\n${extraReminder}` : '') },
-          { role: 'assistant', content: '{' },
-        ],
-      });
-      console.log(
-        `[week-plan] iso=${isoWeek} llm took ${Date.now() - t0}ms, in=${r.usage?.input_tokens} out=${r.usage?.output_tokens}`
-      );
-      const t = r.content
-        .filter((b: any) => b.type === 'text')
-        .map((b: any) => b.text)
-        .join('');
-      return '{' + t;
-    }
-
     function extractJson(raw: string): string {
       let s = raw.trim();
       s = s.replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -233,39 +212,98 @@ Zwróć WYŁĄCZNIE valid JSON, bez markdown, bez prozy. Zaczynaj od { i kończ 
       return s;
     }
 
-    const text = await callLLM();
-    let parsed: any = null;
-    let parseError: string | null = null;
-    try {
-      parsed = JSON.parse(extractJson(text));
-    } catch (e: any) {
-      parseError = e.message;
-    }
+    // ----- Streaming response with heartbeat -----
+    // Vercel Edge functions get killed if there's no response activity within
+    // a short window. We open a ReadableStream immediately, emit a single
+    // space byte every 3 seconds while Anthropic generates, then write a
+    // newline + the final JSON payload at the end. The client reads the whole
+    // body, splits on the LAST newline, and parses the trailing JSON.
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const t0 = Date.now();
+        let alive = true;
+        const heartbeat = setInterval(() => {
+          if (!alive) return;
+          try {
+            controller.enqueue(encoder.encode(' '));
+          } catch {}
+        }, 3000);
 
-    if (!parsed) {
-      return NextResponse.json(
-        {
-          error: 'LLM returned non-JSON',
-          parseError,
-          raw: text.slice(0, 4000),
-        },
-        { status: 502 }
-      );
-    }
+        try {
+          const llmRes = await client.messages.create({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 2800,
+            system: compactSystem,
+            messages: [
+              { role: 'user', content: userPrompt },
+              { role: 'assistant', content: '{' },
+            ],
+          });
+          console.log(
+            `[week-plan] iso=${isoWeek} llm took ${Date.now() - t0}ms, in=${llmRes.usage?.input_tokens} out=${llmRes.usage?.output_tokens}`
+          );
+          const text =
+            '{' +
+            llmRes.content
+              .filter((b: any) => b.type === 'text')
+              .map((b: any) => b.text)
+              .join('');
 
-    if (parsed && parsed.weeks && Array.isArray(parsed.weeks) && parsed.weeks[0]) {
-      parsed = parsed.weeks[0];
-    }
+          let parsed: any = null;
+          let parseError: string | null = null;
+          try {
+            parsed = JSON.parse(extractJson(text));
+          } catch (e: any) {
+            parseError = e.message;
+          }
+          if (parsed && parsed.weeks && Array.isArray(parsed.weeks) && parsed.weeks[0]) {
+            parsed = parsed.weeks[0];
+          }
 
-    return NextResponse.json({
-      data: {
-        week: parsed,
-        debug: {
-          isoWeek,
-          weekStartIso,
-          weekEndIso,
-          launchesInWeek: launchesInWeek.length,
-        },
+          alive = false;
+          clearInterval(heartbeat);
+
+          const payload = parsed
+            ? {
+                data: {
+                  week: parsed,
+                  debug: {
+                    isoWeek,
+                    weekStartIso,
+                    weekEndIso,
+                    launchesInWeek: launchesInWeek.length,
+                    elapsedMs: Date.now() - t0,
+                  },
+                },
+              }
+            : {
+                error: 'LLM returned non-JSON',
+                parseError,
+                raw: text.slice(0, 4000),
+              };
+          // Marker newline so client can find the JSON after the heartbeat spaces
+          controller.enqueue(encoder.encode('\n' + JSON.stringify(payload)));
+          controller.close();
+        } catch (e: any) {
+          alive = false;
+          clearInterval(heartbeat);
+          console.error('[week-plan] stream error', e);
+          try {
+            controller.enqueue(
+              encoder.encode('\n' + JSON.stringify({ error: e.message || String(e) }))
+            );
+            controller.close();
+          } catch {}
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'X-Content-Type-Options': 'nosniff',
+        'Cache-Control': 'no-cache, no-transform',
       },
     });
   } catch (e: any) {

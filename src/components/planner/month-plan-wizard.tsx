@@ -35,6 +35,20 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const [weekErrors, setWeekErrors] = useState<Record<number, string>>({});
   const [sharedContext, setSharedContext] = useState<any>(null);
 
+  // Parse a streamed response: heartbeat spaces followed by '\n' + final JSON.
+  // Falls back to plain JSON if no newline found (backwards compat).
+  async function parseStreamedJSON(r: Response): Promise<any> {
+    const raw = await r.text();
+    const lastNewline = raw.lastIndexOf('\n');
+    const jsonPart = lastNewline >= 0 ? raw.slice(lastNewline + 1) : raw;
+    try {
+      return JSON.parse(jsonPart);
+    } catch {
+      // not JSON — bubble up so caller can show snippet
+      throw new Error(jsonPart.slice(0, 200) || raw.slice(0, 200) || 'empty response');
+    }
+  }
+
   // ----- ISO week helpers (mirror of server-side) -----
   function isoWeekNum(d: Date): number {
     const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
@@ -248,15 +262,13 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ month, isoWeek: w, context: sharedContext }),
         });
-        const raw = await r.text();
         let j: any = null;
         try {
-          j = JSON.parse(raw);
-        } catch {
-          const snippet = raw.slice(0, 140).replace(/\s+/g, ' ');
+          j = await parseStreamedJSON(r);
+        } catch (parseErr: any) {
           setWeekErrors((prev) => ({
             ...prev,
-            [w]: `HTTP ${r.status} (timeout funkcji?): ${snippet}`,
+            [w]: `HTTP ${r.status} (parse): ${parseErr.message}`,
           }));
           continue;
         }
