@@ -111,6 +111,23 @@ export async function POST(req: NextRequest) {
       })
       .slice(0, 3);
 
+    // Trim long brand fields to keep input tokens small
+    const trim = (s: any, n = 240) =>
+      typeof s === 'string' && s.length > n ? s.slice(0, n) + '…' : s;
+    const bp = context?.brandProfile || null;
+    const compactBrand = bp
+      ? {
+          brand_voice: trim(bp.brand_voice, 200),
+          visual_mood: trim(bp.visual_mood, 200),
+          color_palette: bp.color_palette,
+          do_list: trim(bp.do_list, 240),
+          dont_list: trim(bp.dont_list, 240),
+          composition_rules: trim(bp.composition_rules, 200),
+          inspiration_keywords: trim(bp.inspiration_keywords, 200),
+          target_persona: trim(bp.target_persona, 160),
+        }
+      : null;
+
     const userPayload = {
       month,
       today: todayIso,
@@ -124,7 +141,7 @@ export async function POST(req: NextRequest) {
       meta: context?.meta || { configured: false },
       commerce: context?.commerce || null,
       launchesInWeek,
-      brandProfile: context?.brandProfile || null,
+      brandProfile: compactBrand,
       configuredAOV: Number(context?.configuredAOV || 120),
     };
 
@@ -151,7 +168,7 @@ ZWRÓĆ JEDEN OBIEKT JSON (NIE tablicę, NIE wrapper "weeks") opisujący ten tyd
   "promo": { "type": "none|percent|bundle|gift|free_shipping", "value": "...", "mechanics": "..." },
   "weekly_budget_pln": 0,
   "designer_summary": "2-3 zdania syntezy wizualnej dla całego tygodnia",
-  "channels": [
+  "channels": [    // MAKSYMALNIE 4 KANAŁY na tydzień, wybierz najważniejsze
     {
       "channel": "meta_ads_prospecting | meta_ads_retargeting | instagram_organic | facebook_organic | email | tiktok | content_blog",
       "format": "single_image | carousel | reels | story | newsletter | post",
@@ -184,15 +201,19 @@ Briefy wizualne MUSZĄ wynikać z brandProfile. Jeśli brandProfile = null, uży
 Zwróć WYŁĄCZNIE valid JSON, bez markdown, bez prozy. Zaczynaj od { i kończ na }. Dane wejściowe:\n\n${JSON.stringify(userPayload, null, 2)}`;
 
     async function callLLM(extraReminder = ''): Promise<string> {
+      const t0 = Date.now();
       const r = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 4500,
+        max_tokens: 2800,
         system: compactSystem,
         messages: [
           { role: 'user', content: userPrompt + (extraReminder ? `\n\n${extraReminder}` : '') },
           { role: 'assistant', content: '{' },
         ],
       });
+      console.log(
+        `[week-plan] iso=${isoWeek} llm took ${Date.now() - t0}ms, in=${r.usage?.input_tokens} out=${r.usage?.output_tokens}`
+      );
       const t = r.content
         .filter((b: any) => b.type === 'text')
         .map((b: any) => b.text)
