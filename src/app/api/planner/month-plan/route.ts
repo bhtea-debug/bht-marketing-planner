@@ -58,6 +58,65 @@ export async function POST(req: NextRequest) {
       if (!weeksInMonth.includes(w)) weeksInMonth.push(w);
     }
 
+    // Today + current ISO week, used to disqualify past weeks
+    const today = new Date();
+    const todayIso = today.toISOString().slice(0, 10);
+    const currentIsoWeek = isoWeek(today);
+    const pastWeeks = weeksInMonth.filter((w) => w < currentIsoWeek);
+    const futureWeeks = weeksInMonth.filter((w) => w >= currentIsoWeek);
+
+    // Computus — accurate Easter Sunday for any year (Anonymous Gregorian algo)
+    function easterSunday(year: number): Date {
+      const a = year % 19;
+      const b = Math.floor(year / 100);
+      const c = year % 100;
+      const d2 = Math.floor(b / 4);
+      const e = b % 4;
+      const f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3);
+      const h = (19 * a + b - d2 - g + 15) % 30;
+      const i = Math.floor(c / 4);
+      const k = c % 4;
+      const l = (32 + 2 * e + 2 * i - h - k) % 7;
+      const mm = Math.floor((a + 11 * h + 22 * l) / 451);
+      const month0 = Math.floor((h + l - 7 * mm + 114) / 31); // 3=Mar, 4=Apr
+      const day = ((h + l - 7 * mm + 114) % 31) + 1;
+      return new Date(Date.UTC(year, month0 - 1, day));
+    }
+    function fmt(d: Date) {
+      return d.toISOString().slice(0, 10);
+    }
+    const easter = easterSunday(y);
+    const easterMonday = new Date(easter);
+    easterMonday.setUTCDate(easter.getUTCDate() + 1);
+    // Polish public/cultural holidays for context — only those in this month
+    const allHolidays: Array<{ date: string; name: string }> = [
+      { date: `${y}-01-01`, name: 'Nowy Rok' },
+      { date: `${y}-01-06`, name: 'Trzech Króli' },
+      { date: fmt(easter), name: 'Wielkanoc' },
+      { date: fmt(easterMonday), name: 'Poniedziałek Wielkanocny' },
+      { date: `${y}-05-01`, name: 'Święto Pracy' },
+      { date: `${y}-05-03`, name: 'Święto Konstytucji 3 Maja' },
+      { date: `${y}-05-26`, name: 'Dzień Matki' },
+      { date: `${y}-06-01`, name: 'Dzień Dziecka' },
+      { date: `${y}-06-23`, name: 'Dzień Ojca' },
+      { date: `${y}-08-15`, name: 'Wniebowzięcie NMP' },
+      { date: `${y}-11-01`, name: 'Wszystkich Świętych' },
+      { date: `${y}-11-11`, name: 'Święto Niepodległości' },
+      { date: `${y}-12-24`, name: 'Wigilia' },
+      { date: `${y}-12-25`, name: 'Boże Narodzenie' },
+      { date: `${y}-12-26`, name: 'Drugi dzień świąt' },
+      { date: `${y}-12-31`, name: 'Sylwester' },
+      // Cultural / commerce dates
+      { date: `${y}-02-14`, name: 'Walentynki' },
+      { date: `${y}-04-22`, name: 'Dzień Ziemi' },
+      { date: `${y}-11-27`, name: 'Black Friday (orientacyjnie)' },
+    ];
+    const holidaysThisMonth = allHolidays.filter((h) => {
+      const dh = new Date(h.date);
+      return dh >= monthStart && dh <= monthEnd;
+    });
+
     // ----- 2. Existing planner state for this month ------------------------
     const channelRows = (await db.select().from(channels).catch(() => [])) as any[];
     const channelMap: Record<number, string> = {};
@@ -168,10 +227,16 @@ export async function POST(req: NextRequest) {
     // ----- 5. Build the user message for the LLM --------------------------
     const userPayload = {
       month,
+      today: todayIso,
+      currentIsoWeek,
       iso_weeks_in_month: weeksInMonth,
+      pastWeeks,
+      futureWeeks,
+      holidays: holidaysThisMonth,
       existingPlan: {
         plannedWeeks: [...plannedWeeks],
-        gapWeeks,
+        gapWeeks: gapWeeks.filter((w) => w >= currentIsoWeek),
+        pastGapWeeks: gapWeeks.filter((w) => w < currentIsoWeek),
         existingCampaigns: monthCampaigns.map((c: any) => ({
           name: c.name,
           channel: channelMap[c.channel_id] || null,
@@ -197,11 +262,21 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `Wygeneruj plan marketingowy dla miesiąca ${month}. Zwróć WYŁĄCZNIE valid JSON wg schematu z systemu, bez markdown i bez prozy, bez code fences. Dane wejściowe:\n\n${JSON.stringify(
-            userPayload,
-            null,
-            2
-          )}`,
+          content: `Wygeneruj plan marketingowy dla miesiąca ${month}.
+
+DZIŚ JEST ${todayIso} (tydzień ISO ${currentIsoWeek}). Tygodnie ${pastWeeks.join(', ') || '(brak)'} JUŻ MINĘŁY — NIE planuj dla nich nic. Planuj tylko dla tygodni ${futureWeeks.join(', ')}.
+
+Święta w tym miesiącu (jedyne źródło prawdy o datach): ${
+              holidaysThisMonth.length
+                ? holidaysThisMonth.map((h) => `${h.name} ${h.date}`).join(', ')
+                : 'brak istotnych świąt'
+            }.
+
+Zwróć WYŁĄCZNIE valid JSON wg schematu z systemu, bez markdown, bez prozy, bez code fences. Dane wejściowe:\n\n${JSON.stringify(
+              userPayload,
+              null,
+              2
+            )}`,
         },
       ],
     });

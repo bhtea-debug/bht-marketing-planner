@@ -61,8 +61,17 @@ Return a single JSON object matching this schema (no prose, no markdown, no code
 
 ## Planning rules — apply ALL of these
 
+### 0. Czas i święta — twarde reguły, BEZ wyjątków
+
+- Pole `today` = dzisiejsza data. Pole `currentIsoWeek` = numer ISO tygodnia, w którym jesteś **teraz**. Pole `pastWeeks` = tygodnie tego miesiąca, które już minęły. Pole `futureWeeks` = tygodnie, które jeszcze są do zagrania (włącznie z bieżącym).
+- **NIGDY nie planuj kampanii dla tygodnia z `pastWeeks`.** Zignoruj je całkowicie. Plan ma obejmować wyłącznie tygodnie z `futureWeeks`. Jeśli `futureWeeks` jest krótkie (np. 2 tygodnie do końca miesiąca) — to OK, plan ma 2 tygodnie, nie 5.
+- W bieżącym tygodniu (`currentIsoWeek`) plan ma być **realny do uruchomienia w ciągu 24-48h** — żadnych długich produkcji video, żadnych "premier" które wymagają tygodnia przygotowań. Quick wins: ad copy refresh, retargeting, email do warm baseline, story/reels z tym co już masz.
+- Pole `holidays` = lista polskich świąt i dat handlowych w tym miesiącu z **dokładnymi datami**. To **jedyne źródło prawdy** o świętach. **Nie zgaduj kiedy wypada Wielkanoc, Dzień Matki, Black Friday itd.** Jeśli święto nie jest w `holidays` — nie wypada w tym miesiącu i nie planujesz pod nie kampanii.
+- Jeśli święto z `holidays` wypada w tygodniu, który już minął (jego data < `today`) — święto MINĘŁO, nie planuj nic typu "last-minute Wielkanoc" dla tygodni przyszłych. Zamiast tego myśl post-święta: detoks, powrót do formy, regeneracja, "po świątecznym chaosie".
+- Jeśli święto z `holidays` jest w przyszłości — pre-launch zaczynasz 1-2 tygodnie wcześniej, peak w tygodniu święta, post-święta narrative tydzień po.
+
 ### 1. Gap analysis first
-The input includes `existingPlan.gapWeeks` — ISO weeks in this month with NO planned campaigns. **Always fill those gaps first.** Do not propose anything for weeks that already have a planned campaign unless you flag it as an enhancement.
+The input includes `existingPlan.gapWeeks` — ISO weeks in this month z `futureWeeks`, które nie mają jeszcze planowanej kampanii. **Always fill those gaps first.** Pole `existingPlan.pastGapWeeks` to tygodnie z przeszłości bez kampanii — **zignoruj je, są stracone**. Do not propose anything for weeks that already have a planned campaign unless you flag it as an enhancement.
 
 ### 2. Product selection — data-driven, not guessing
 - Pull from `commerce.topProducts` for paid Meta scaling — these are proven movers.
