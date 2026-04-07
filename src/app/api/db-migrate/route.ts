@@ -6,6 +6,57 @@ import { sql } from 'drizzle-orm';
 
 export async function GET() {
   try {
+    // Core planner tables
+    await db.run(sql`CREATE TABLE IF NOT EXISTS channels (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      color TEXT NOT NULL,
+      icon TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await db.run(sql`CREATE TABLE IF NOT EXISTS campaigns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      channel_id INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'draft',
+      start_date TEXT,
+      end_date TEXT,
+      budget_planned REAL DEFAULT 0,
+      budget_spent REAL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await db.run(sql`CREATE TABLE IF NOT EXISTS tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaign_id INTEGER NOT NULL,
+      channel_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      status TEXT NOT NULL DEFAULT 'todo',
+      priority TEXT NOT NULL DEFAULT 'medium',
+      scheduled_date TEXT,
+      completed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await db.run(sql`CREATE TABLE IF NOT EXISTS budget_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaign_id INTEGER NOT NULL,
+      channel_id INTEGER NOT NULL,
+      month TEXT NOT NULL,
+      planned_amount REAL DEFAULT 0,
+      actual_amount REAL DEFAULT 0,
+      category TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await db.run(sql`CREATE TABLE IF NOT EXISTS kpi_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      campaign_id INTEGER NOT NULL,
+      metric_name TEXT NOT NULL,
+      metric_value REAL NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`);
+
     // Create integrations table if not exists
     await db.run(sql`CREATE TABLE IF NOT EXISTS integrations (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

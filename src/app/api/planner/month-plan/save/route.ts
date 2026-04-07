@@ -2,6 +2,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
 import { campaigns, channels, tasks } from '@/db/schema';
+import { sql } from 'drizzle-orm';
+
+// Ensure the core tables exist on Turso. Idempotent — runs CREATE TABLE IF NOT
+// EXISTS for the planner core. Cheaper than redirecting users to /api/db-migrate.
+async function ensureCoreTables() {
+  await db.run(sql`CREATE TABLE IF NOT EXISTS channels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL,
+    icon TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await db.run(sql`CREATE TABLE IF NOT EXISTS campaigns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    channel_id INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
+    start_date TEXT,
+    end_date TEXT,
+    budget_planned REAL DEFAULT 0,
+    budget_spent REAL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await db.run(sql`CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    campaign_id INTEGER NOT NULL,
+    channel_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    status TEXT NOT NULL DEFAULT 'todo',
+    priority TEXT NOT NULL DEFAULT 'medium',
+    scheduled_date TEXT,
+    completed_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`);
+}
 
 // POST /api/planner/month-plan/save
 // Body: { plan: <generated plan JSON>, month: 'YYYY-MM' }
@@ -13,6 +51,8 @@ export async function POST(req: NextRequest) {
     if (!plan || !plan.weeks) {
       return NextResponse.json({ error: 'plan.weeks required' }, { status: 400 });
     }
+
+    await ensureCoreTables();
 
     // Map channel name → id (create if missing)
     const existingChannels = (await db.select().from(channels)) as any[];
