@@ -28,6 +28,35 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const [savedCount, setSavedCount] = useState(0);
   const [pushing, setPushing] = useState<string | null>(null);
   const [pushResults, setPushResults] = useState<Record<string, any>>({});
+  // week-by-week generation progress
+  const [weekQueue, setWeekQueue] = useState<number[]>([]);
+  const [weekDoneCount, setWeekDoneCount] = useState(0);
+  const [weekCurrent, setWeekCurrent] = useState<number | null>(null);
+  const [weekErrors, setWeekErrors] = useState<Record<number, string>>({});
+
+  // ----- ISO week helpers (mirror of server-side) -----
+  function isoWeekNum(d: Date): number {
+    const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+    const dayNum = t.getUTCDay() || 7;
+    t.setUTCDate(t.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+    return Math.ceil(((t.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  }
+  function futureIsoWeeksOfMonth(monthYYYYMM: string): number[] {
+    const [yStr, mStr] = monthYYYYMM.split('-');
+    const y = Number(yStr);
+    const m = Number(mStr);
+    const monthStart = new Date(Date.UTC(y, m - 1, 1));
+    const monthEnd = new Date(Date.UTC(y, m, 0));
+    const weeks: number[] = [];
+    for (let d = new Date(monthStart); d <= monthEnd; d.setUTCDate(d.getUTCDate() + 1)) {
+      const w = isoWeekNum(d);
+      if (!weeks.includes(w)) weeks.push(w);
+    }
+    const today = new Date();
+    const currentWeek = isoWeekNum(today);
+    return weeks.filter((w) => w >= currentWeek);
+  }
 
   function pushKey(wi: number, ci: number) {
     return `${wi}-${ci}`;
@@ -112,23 +141,63 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   }, []);
 
   async function generate() {
-    setStep('generating');
     setError(null);
-    try {
-      const r = await fetch('/api/planner/month-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ month, accountId }),
-      });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j.error || 'generation failed');
-      setPlan(j.data.plan);
-      setDebug(j.data.debug);
-      setStep('review');
-    } catch (e: any) {
-      setError(e.message);
+    setWeekErrors({});
+    setWeekDoneCount(0);
+    setPlan(null);
+    setDebug(null);
+
+    const weeks = futureIsoWeeksOfMonth(month);
+    if (weeks.length === 0) {
+      setError('Brak nadchodzących tygodni w tym miesiącu (wszystkie minęły).');
       setStep('error');
+      return;
     }
+
+    setWeekQueue(weeks);
+    setStep('generating');
+
+    // Seed an empty plan that we'll fill week-by-week
+    const seed: any = {
+      summary: `Plan tygodniowy dla ${month}`,
+      totalBudget: 0,
+      weeks: [],
+      warnings: [],
+      next_actions: [],
+    };
+    setPlan(seed);
+    // Switch to review immediately so user sees progress + tiles as they arrive
+    setStep('review');
+
+    let runningTotal = 0;
+    for (const w of weeks) {
+      setWeekCurrent(w);
+      try {
+        const r = await fetch('/api/planner/week-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ month, isoWeek: w, accountId }),
+        });
+        const j = await r.json();
+        if (!r.ok) {
+          setWeekErrors((prev) => ({ ...prev, [w]: j.error || 'błąd generacji' }));
+        } else {
+          const wk = j.data.week;
+          runningTotal += Number(wk?.weekly_budget_pln || 0);
+          setPlan((prev: any) => ({
+            ...prev,
+            totalBudget: runningTotal,
+            weeks: [...(prev?.weeks || []), wk],
+          }));
+        }
+      } catch (e: any) {
+        setWeekErrors((prev) => ({ ...prev, [w]: e.message }));
+      } finally {
+        setWeekDoneCount((c) => c + 1);
+      }
+    }
+
+    setWeekCurrent(null);
   }
 
   async function save() {
@@ -222,9 +291,30 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                 <h3 className="font-semibold text-amber-900 mb-1">{plan.summary}</h3>
                 <div className="text-xs text-amber-800">
-                  Tygodnie z luką: {debug?.gapWeeks?.join(', ') || 'brak'} • Łączny budżet propozycji:{' '}
-                  {plan.totalBudget?.toLocaleString()} PLN
+                  Tygodni: {plan.weeks?.length || 0} / {weekQueue.length} • Łączny budżet:{' '}
+                  {plan.totalBudget?.toLocaleString() || 0} PLN
                 </div>
+                {weekCurrent !== null && (
+                  <div className="mt-2 flex items-center gap-2 text-xs text-amber-900">
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Generuję tydzień {weekCurrent}… ({weekDoneCount}/{weekQueue.length})
+                  </div>
+                )}
+                {weekCurrent === null && weekDoneCount > 0 && weekDoneCount === weekQueue.length && (
+                  <div className="mt-2 text-xs text-emerald-800 font-medium">
+                    ✓ Wszystkie tygodnie wygenerowane
+                  </div>
+                )}
+                {Object.keys(weekErrors).length > 0 && (
+                  <div className="mt-2 text-xs text-rose-800">
+                    Błędy w tygodniach:{' '}
+                    {Object.entries(weekErrors).map(([w, err]) => (
+                      <span key={w} className="inline-block mr-2">
+                        T{w}: {err}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {plan.warnings?.length > 0 && (
@@ -421,9 +511,10 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                 </button>
                 <button
                   onClick={save}
-                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg px-4 py-2 text-sm font-medium"
+                  disabled={weekCurrent !== null || !(plan?.weeks?.length > 0)}
+                  className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white rounded-lg px-4 py-2 text-sm font-medium"
                 >
-                  Zapisz jako kampanie draft
+                  {weekCurrent !== null ? 'Czekaj na zakończenie generacji…' : 'Zapisz jako kampanie draft'}
                 </button>
               </div>
             </div>
