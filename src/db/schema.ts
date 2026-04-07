@@ -130,6 +130,34 @@ export const integrations = sqliteTable('integrations', {
   updated_at: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
+// Product launches table - upcoming new products that need their own
+// launch campaign + space in the calendar. The AI planner reserves slots
+// for these and the suggest-timing endpoint can recommend an optimal date.
+export const product_launches = sqliteTable('product_launches', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  short_pitch: text('short_pitch'),
+  description: text('description'),
+  ingredients: text('ingredients'),
+  category: text('category'),
+  price_pln: real('price_pln'),
+  target_audience: text('target_audience'),
+  status: text('status', {
+    enum: ['idea', 'in_development', 'ready', 'launched', 'cancelled'],
+  })
+    .notNull()
+    .default('idea'),
+  planned_launch_date: text('planned_launch_date'),
+  ai_suggested_date: text('ai_suggested_date'),
+  ai_suggestion_notes: text('ai_suggestion_notes'),
+  notes: text('notes'),
+  created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  updated_at: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export type ProductLaunch = typeof product_launches.$inferSelect;
+export type NewProductLaunch = typeof product_launches.$inferInsert;
+
 // Type exports for TypeScript
 export type Channel = typeof channels.$inferSelect;
 export type NewChannel = typeof channels.$inferInsert;

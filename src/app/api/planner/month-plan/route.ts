@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
-import { campaigns, channels } from '@/db/schema';
+import { campaigns, channels, product_launches } from '@/db/schema';
 import { and, gte, lte } from 'drizzle-orm';
 import {
   getMetaToken,
@@ -239,6 +239,39 @@ export async function POST(req: NextRequest) {
     // ----- 4. Live Woo commerce context ------------------------------------
     const commerce = await buildWooSalesContext(30).catch(() => null);
 
+    // ----- 4b. Upcoming product launches relevant to this month ------------
+    let upcomingLaunches: any[] = [];
+    try {
+      const all = await db.select().from(product_launches);
+      upcomingLaunches = all
+        .filter((l: any) => {
+          const d = l.planned_launch_date || l.ai_suggested_date;
+          if (!d) return false;
+          if (l.status === 'launched' || l.status === 'cancelled') return false;
+          const dd = new Date(d);
+          // launches whose pre-launch window (-14d) overlaps this month or
+          // whose actual date falls in this month
+          const preStart = new Date(dd);
+          preStart.setUTCDate(dd.getUTCDate() - 14);
+          return preStart <= monthEnd && dd >= monthStart;
+        })
+        .map((l: any) => {
+          const d = l.planned_launch_date || l.ai_suggested_date;
+          return {
+            id: l.id,
+            name: l.name,
+            short_pitch: l.short_pitch,
+            category: l.category,
+            price_pln: l.price_pln,
+            target_audience: l.target_audience,
+            launchDate: d,
+            launchIsoWeek: d ? isoWeek(new Date(d)) : null,
+            status: l.status,
+            isSuggestedByAI: !l.planned_launch_date && !!l.ai_suggested_date,
+          };
+        });
+    } catch {}
+
     // ----- 5. Build the user message for the LLM --------------------------
     const userPayload = {
       month,
@@ -264,6 +297,7 @@ export async function POST(req: NextRequest) {
       },
       meta: metaContext,
       commerce: commerce && commerce.configured ? commerce : null,
+      upcomingLaunches,
       configuredAOV: Number(process.env.META_AVG_ORDER_VALUE || 120),
     };
 

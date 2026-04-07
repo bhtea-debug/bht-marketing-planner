@@ -77,6 +77,18 @@ Return a single JSON object matching this schema (no prose, no markdown, no code
 - Jeśli święto z `holidays` wypada w tygodniu, który już minął (jego data < `today`) — święto MINĘŁO, nie planuj nic typu "last-minute Wielkanoc" dla tygodni przyszłych. Zamiast tego myśl post-święta: detoks, powrót do formy, regeneracja, "po świątecznym chaosie".
 - Jeśli święto z `holidays` jest w przyszłości — pre-launch zaczynasz 1-2 tygodnie wcześniej, peak w tygodniu święta, post-święta narrative tydzień po.
 
+### 0b. Launche nowości — zawsze rezerwuj im miejsce
+
+Pole `upcomingLaunches` zawiera listę nowych produktów, które mają wystartować w tym miesiącu (lub w jego pre-launch oknie). Dla każdej pozycji:
+
+- **Tydzień launchu** (`launchIsoWeek`) ma być zdominowany przez kampanię launchową tego produktu — paid push, organic reveal, email do całej bazy. Nie wciskaj tam innego dużego tematu.
+- **Tydzień -1** (jeśli mieści się w `futureWeeks`) = pre-launch tease: story countdown, email "coming soon", organic post z hintem o składzie/aromacie.
+- **Tydzień -2** (jeśli mieści się w `futureWeeks`) = soft tease: 1-2 organic posty w nastroju, ankieta "co byś chciał spróbować".
+- **Tydzień +1** = follow-up: UGC repost, retargeting do tych co kliknęli ale nie kupili, email z reviews.
+- Jeśli launch jest oznaczony `isSuggestedByAI: true` to znaczy, że data jest jeszcze do potwierdzenia przez człowieka — zaznacz to w `warnings` ("launch X ma datę sugerowaną przez AI, wymaga akceptacji").
+- Jeśli launchDate koliduje z istniejącą kampanią w tym tygodniu — flag w warnings, ale i tak priorytet ma launch (chyba że istniejąca kampania jest większa, np. Black Friday).
+- Jeśli upcomingLaunches jest puste — nic nie rób, pracuj normalnie.
+
 ### 1. Gap analysis first
 The input includes `existingPlan.gapWeeks` — ISO weeks in this month z `futureWeeks`, które nie mają jeszcze planowanej kampanii. **Always fill those gaps first.** Pole `existingPlan.pastGapWeeks` to tygodnie z przeszłości bez kampanii — **zignoruj je, są stracone**. Do not propose anything for weeks that already have a planned campaign unless you flag it as an enhancement.
 
