@@ -157,30 +157,6 @@ Schema:
 }`;
 
     const client = new Anthropic({ apiKey });
-    const resp = await client.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 8000,
-      system,
-      messages: [
-        {
-          role: 'user',
-          content: `DZIŚ JEST ${todayIso}. Zaproponuj optymalny launch dla tego produktu:\n\n${JSON.stringify(
-            productInput,
-            null,
-            2
-          )}\n\nKontekst kalendarza i rynku:\n\n${JSON.stringify(
-            context,
-            null,
-            2
-          )}\n\nZwróć tylko JSON wg schematu z systemu.`,
-        },
-      ],
-    });
-
-    const text = resp.content
-      .filter((b: any) => b.type === 'text')
-      .map((b: any) => b.text)
-      .join('\n');
 
     function extractJson(raw: string): string {
       let s = raw.trim().replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -190,12 +166,54 @@ Schema:
       return s;
     }
 
+    const userPrompt = `DZIŚ JEST ${todayIso}. Zaproponuj optymalny launch dla tego produktu:\n\n${JSON.stringify(
+      productInput,
+      null,
+      2
+    )}\n\nKontekst kalendarza i rynku:\n\n${JSON.stringify(
+      context,
+      null,
+      2
+    )}\n\nZwróć tylko JSON wg schematu z systemu.`;
+
+    async function callLLM(prompt: string, sys: string) {
+      const r = await client.messages.create({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 16000,
+        system: sys,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      return r.content
+        .filter((b: any) => b.type === 'text')
+        .map((b: any) => b.text)
+        .join('\n');
+    }
+
+    let text = await callLLM(userPrompt, system);
     let parsed: any = null;
+    let parseError: string | null = null;
     try {
       parsed = JSON.parse(extractJson(text));
     } catch (e: any) {
+      parseError = e.message;
+    }
+
+    // Retry with stricter, smaller schema if first attempt failed or got truncated
+    if (!parsed) {
+      const fallbackSystem = `${system}\n\nUWAGA: poprzednia próba zwróciła niepoprawny JSON (prawdopodobnie ucięty). TYM RAZEM: maks 3 fazy w launch_plan, maks 2 kanały na fazę, maks 3 hero_hooks, maks 2 warnings. ZWRÓĆ WYŁĄCZNIE valid JSON, bez prozy, bez markdown.`;
+      const fallbackPrompt = `${userPrompt}\n\nWAŻNE: zwięzłe wartości, max 3 fazy launch_plan, max 2 kanały/fazę, max 3 hero_hooks. Tylko JSON.`;
+      try {
+        text = await callLLM(fallbackPrompt, fallbackSystem);
+        parsed = JSON.parse(extractJson(text));
+        parseError = null;
+      } catch (e: any) {
+        parseError = e.message;
+      }
+    }
+
+    if (!parsed) {
       return NextResponse.json(
-        { error: 'LLM returned non-JSON', parseError: e.message, raw: text.slice(0, 4000) },
+        { error: 'LLM returned non-JSON', parseError, raw: text.slice(0, 4000) },
         { status: 502 }
       );
     }
