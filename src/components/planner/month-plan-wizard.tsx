@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Loader2, CheckCircle2, AlertTriangle, Send, Palette } from 'lucide-react';
+import { X, Sparkles, Loader2, CheckCircle2, AlertTriangle, Send, Palette, Wand2, Rocket, Trash2 } from 'lucide-react';
 
 interface Props {
   initialMonth?: string; // 'YYYY-MM'
@@ -34,8 +34,19 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const [weekCurrent, setWeekCurrent] = useState<number | null>(null);
   const [weekErrors, setWeekErrors] = useState<Record<number, string>>({});
   const [sharedContext, setSharedContext] = useState<any>(null);
-  // which weeks are checked for save → calendar/tasks (default: all)
+  // selection just gates the bulk-deploy action below
   const [selectedWeeks, setSelectedWeeks] = useState<Record<number, boolean>>({});
+  // which weeks have been deployed (campaigns + tasks created)
+  const [deployedWeeks, setDeployedWeeks] = useState<Record<number, { ok: boolean; error?: string; createdCount?: number }>>({});
+  // which week is currently being deployed (for spinner)
+  const [deployingWeek, setDeployingWeek] = useState<number | null>(null);
+  // open AI-refine prompt input for this isoWeek (null = closed)
+  const [refineOpenFor, setRefineOpenFor] = useState<number | null>(null);
+  const [refinePrompt, setRefinePrompt] = useState<string>('');
+  const [refiningWeek, setRefiningWeek] = useState<number | null>(null);
+  // wipe-data confirmation
+  const [wiping, setWiping] = useState<boolean>(false);
+  const [wipeMsg, setWipeMsg] = useState<string | null>(null);
 
   function toggleWeek(isoWeek: number) {
     setSelectedWeeks((prev) => ({ ...prev, [isoWeek]: !(prev[isoWeek] ?? true) }));
@@ -45,6 +56,117 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
     const next: Record<number, boolean> = {};
     for (const w of plan.weeks) next[w.isoWeek] = value;
     setSelectedWeeks(next);
+  }
+  // patch a single field on a single week (immutable update)
+  function updateWeek(isoWeek: number, patch: any) {
+    setPlan((prev: any) => ({
+      ...prev,
+      weeks: (prev?.weeks || []).map((w: any) =>
+        w.isoWeek === isoWeek ? { ...w, ...patch } : w
+      ),
+    }));
+  }
+  // patch a single channel inside a week
+  function updateChannel(isoWeek: number, channelIdx: number, patch: any) {
+    setPlan((prev: any) => ({
+      ...prev,
+      weeks: (prev?.weeks || []).map((w: any) => {
+        if (w.isoWeek !== isoWeek) return w;
+        return {
+          ...w,
+          channels: (w.channels || []).map((c: any, i: number) =>
+            i === channelIdx ? { ...c, ...patch } : c
+          ),
+        };
+      }),
+    }));
+  }
+  // wipe all campaigns + tasks (DEV cleanup)
+  async function wipeAllCampaignsAndTasks() {
+    if (!confirm('Na pewno wyczyścić WSZYSTKIE kampanie i zadania kalendarza? Tej operacji nie da się cofnąć.')) return;
+    setWiping(true);
+    setWipeMsg(null);
+    try {
+      const r = await fetch('/api/admin/wipe-campaigns', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'YES' }),
+      });
+      const j = await r.json();
+      if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
+      const c = j.deleted || {};
+      setWipeMsg(`Wyczyszczono: kampanie ${c.campaigns ?? '?'}, zadania ${c.tasks ?? '?'}, budget ${c.budget_entries ?? '?'}, KPI ${c.kpi_entries ?? '?'}`);
+    } catch (e: any) {
+      setWipeMsg('Błąd: ' + e.message);
+    } finally {
+      setWiping(false);
+    }
+  }
+  // re-generate a single week with extra instructions
+  async function refineWeekWithAI(isoWeek: number) {
+    const instructions = refinePrompt.trim();
+    if (!instructions) return;
+    const currentWeek = (plan?.weeks || []).find((w: any) => w.isoWeek === isoWeek);
+    if (!currentWeek) return;
+    setRefiningWeek(isoWeek);
+    try {
+      const r = await fetch('/api/planner/week-plan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          month,
+          isoWeek,
+          context: sharedContext,
+          additionalInstructions: instructions,
+          currentWeek,
+        }),
+      });
+      let j: any = null;
+      try { j = await parseStreamedJSON(r); } catch (e: any) {
+        throw new Error('parse: ' + e.message);
+      }
+      if (!r.ok || j?.error || !j?.data?.week) {
+        throw new Error(j?.error || `HTTP ${r.status}`);
+      }
+      const wk = j.data.week;
+      // replace the week in-place (preserve insertion order)
+      setPlan((prev: any) => ({
+        ...prev,
+        weeks: (prev?.weeks || []).map((w: any) =>
+          w.isoWeek === isoWeek ? wk : w
+        ),
+      }));
+      setRefinePrompt('');
+      setRefineOpenFor(null);
+    } catch (e: any) {
+      alert('Nie udało się poprawić tygodnia: ' + e.message);
+    } finally {
+      setRefiningWeek(null);
+    }
+  }
+  // deploy ONE week: creates draft campaigns + linked calendar tasks
+  async function acceptAndDeployWeek(isoWeek: number) {
+    const wk = (plan?.weeks || []).find((w: any) => w.isoWeek === isoWeek);
+    if (!wk) return;
+    if (!confirm(`Wdrożyć tydzień ${isoWeek} (${wk.label || ''}) jako kampanie draft + zadania kalendarza? Po wdrożeniu możesz nadal edytować je w widoku Kampanie.`)) return;
+    setDeployingWeek(isoWeek);
+    try {
+      const r = await fetch('/api/planner/month-plan/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: { ...plan, weeks: [wk] }, month }),
+      });
+      const j = await r.json();
+      if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
+      setDeployedWeeks((prev) => ({
+        ...prev,
+        [isoWeek]: { ok: true, createdCount: j.data?.createdCount || 0 },
+      }));
+    } catch (e: any) {
+      setDeployedWeeks((prev) => ({ ...prev, [isoWeek]: { ok: false, error: e.message } }));
+    } finally {
+      setDeployingWeek(null);
+    }
   }
 
   // Parse a streamed response: heartbeat spaces followed by '\n' + final JSON.
@@ -316,12 +438,13 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   async function save() {
     setStep('saving');
     try {
-      // only persist weeks the user has checked
+      // only persist weeks that are checked AND not already deployed
       const filteredWeeks = (plan?.weeks || []).filter(
-        (w: any) => selectedWeeks[w.isoWeek] !== false
+        (w: any) =>
+          selectedWeeks[w.isoWeek] !== false && !deployedWeeks[w.isoWeek]?.ok
       );
       if (filteredWeeks.length === 0) {
-        setError('Nie zaznaczono żadnego tygodnia do zapisu.');
+        setError('Brak nowych tygodni do wdrożenia (wszystkie już wdrożone lub odznaczone).');
         setStep('error');
         return;
       }
@@ -334,6 +457,10 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || 'save failed');
       setSavedCount(j.data.createdCount || 0);
+      // Mark all the weeks we just saved as deployed in the local state.
+      const justDeployed: Record<number, { ok: boolean; createdCount: number }> = {};
+      for (const w of filteredWeeks) justDeployed[w.isoWeek] = { ok: true, createdCount: 0 };
+      setDeployedWeeks((prev) => ({ ...prev, ...justDeployed }));
       setStep('done');
     } catch (e: any) {
       setError(e.message);
@@ -398,6 +525,22 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                 <Sparkles className="w-4 h-4" />
                 Wygeneruj plan
               </button>
+
+              {/* DEV cleanup */}
+              <div className="border-t border-slate-200 pt-3 mt-2">
+                <button
+                  onClick={wipeAllCampaignsAndTasks}
+                  disabled={wiping}
+                  className="w-full text-xs text-rose-600 hover:text-rose-800 underline disabled:text-slate-400"
+                >
+                  {wiping ? 'Czyszczę…' : 'Wyczyść WSZYSTKIE kampanie + zadania (dev reset)'}
+                </button>
+                {wipeMsg && (
+                  <div className="mt-2 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded p-2">
+                    {wipeMsg}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -490,11 +633,18 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
               <div className="space-y-4">
                 {plan.weeks?.map((w: any, wi: number) => {
                   const isSelected = selectedWeeks[w.isoWeek] !== false;
+                  const deployed = deployedWeeks[w.isoWeek];
+                  const isDeploying = deployingWeek === w.isoWeek;
+                  const isRefining = refiningWeek === w.isoWeek;
                   return (
                   <div
                     key={wi}
                     className={`border rounded-lg p-4 transition-colors ${
-                      isSelected ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200 bg-white opacity-70'
+                      deployed?.ok
+                        ? 'border-emerald-300 bg-emerald-50/40'
+                        : isSelected
+                          ? 'border-amber-300 bg-amber-50/30'
+                          : 'border-slate-200 bg-white opacity-70'
                     }`}
                   >
                     <div className="flex items-start justify-between mb-2 gap-3">
@@ -506,22 +656,49 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                           className="mt-1 w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 focus:ring-2 cursor-pointer flex-shrink-0"
                           title="Zaznacz aby zaimportować ten tydzień jako kampanie / zadania"
                         />
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <div className="font-semibold text-slate-900">
                             {w.label || `Tydzień ${w.isoWeek}`}
                           </div>
-                          <div className="text-xs text-slate-500">
-                            {w.dateRange} • {w.theme}
-                          </div>
+                          <div className="text-xs text-slate-500 mb-1">{w.dateRange}</div>
+                          <input
+                            type="text"
+                            value={w.theme || ''}
+                            onChange={(e) => updateWeek(w.isoWeek, { theme: e.target.value })}
+                            placeholder="Temat tygodnia"
+                            disabled={!!deployed?.ok}
+                            className="w-full text-sm font-medium text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-amber-500 focus:outline-none px-0 py-0.5 disabled:opacity-60"
+                          />
                         </div>
                       </label>
-                      <div className="text-right flex-shrink-0">
-                        <div className="text-sm font-semibold text-slate-900">
-                          {w.weekly_budget_pln?.toLocaleString()} PLN
+                      <div className="text-right flex-shrink-0 flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-1 text-sm font-semibold text-slate-900">
+                          <input
+                            type="number"
+                            value={w.weekly_budget_pln ?? 0}
+                            onChange={(e) =>
+                              updateWeek(w.isoWeek, { weekly_budget_pln: Number(e.target.value) || 0 })
+                            }
+                            disabled={!!deployed?.ok}
+                            className="w-24 text-right bg-transparent border-b border-transparent hover:border-slate-300 focus:border-amber-500 focus:outline-none disabled:opacity-60"
+                          />
+                          <span className="text-xs text-slate-500">PLN</span>
                         </div>
+                        {deployed?.ok && (
+                          <div className="text-[10px] text-emerald-700 font-medium flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Wdrożony ({deployed.createdCount} kamp.)
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <p className="text-xs text-slate-600 mb-3">{w.rationale}</p>
+                    <textarea
+                      value={w.rationale || ''}
+                      onChange={(e) => updateWeek(w.isoWeek, { rationale: e.target.value })}
+                      rows={2}
+                      disabled={!!deployed?.ok}
+                      placeholder="Uzasadnienie"
+                      className="w-full text-xs text-slate-600 mb-3 bg-transparent border border-transparent hover:border-slate-200 focus:border-amber-400 rounded px-2 py-1 resize-y focus:outline-none disabled:opacity-60"
+                    />
 
                     {w.hero_products?.length > 0 && (
                       <div className="mb-3">
@@ -565,19 +742,39 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                         return (
                           <div key={ci} className="bg-slate-50 rounded p-2 text-xs">
                             <div className="flex items-start justify-between gap-3">
-                              <div className="flex-1">
+                              <div className="flex-1 min-w-0">
                                 <div className="font-medium text-slate-900">
                                   {ch.channel} · {ch.format}
                                   {ch.objective ? ` · ${ch.objective}` : ''}
                                 </div>
-                                <div className="text-slate-700 mt-0.5">"{ch.creative_hook}"</div>
+                                <input
+                                  type="text"
+                                  value={ch.creative_hook || ''}
+                                  onChange={(e) =>
+                                    updateChannel(w.isoWeek, ci, { creative_hook: e.target.value })
+                                  }
+                                  disabled={!!deployed?.ok}
+                                  placeholder="Hook kreatywny"
+                                  className="w-full mt-0.5 text-slate-700 italic bg-transparent border border-transparent hover:border-slate-300 focus:border-amber-400 rounded px-1 py-0.5 focus:outline-none disabled:opacity-60"
+                                />
                                 <div className="text-slate-500 mt-0.5">
                                   CTA: {ch.cta} • Audience: {ch.audience} • KPI: {ch.expected_kpi}
                                 </div>
                               </div>
                               <div className="flex flex-col items-end gap-1 whitespace-nowrap">
-                                <div className="text-slate-900 font-medium">
-                                  {ch.budget_pln?.toLocaleString()} PLN
+                                <div className="flex items-center gap-1 text-slate-900 font-medium">
+                                  <input
+                                    type="number"
+                                    value={ch.budget_pln ?? 0}
+                                    onChange={(e) =>
+                                      updateChannel(w.isoWeek, ci, {
+                                        budget_pln: Number(e.target.value) || 0,
+                                      })
+                                    }
+                                    disabled={!!deployed?.ok}
+                                    className="w-20 text-right bg-transparent border-b border-transparent hover:border-slate-300 focus:border-amber-500 focus:outline-none disabled:opacity-60"
+                                  />
+                                  <span className="text-[10px] text-slate-500">PLN</span>
                                 </div>
                                 {isPushable && (
                                   <button
@@ -660,6 +857,82 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                         Kalendarz: {w.linked_calendar_tasks.join(' · ')}
                       </div>
                     )}
+
+                    {/* Per-week action toolbar */}
+                    {!deployed?.ok && (
+                      <div className="mt-3 pt-3 border-t border-slate-200/70 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <button
+                            onClick={() => {
+                              setRefineOpenFor(refineOpenFor === w.isoWeek ? null : w.isoWeek);
+                              setRefinePrompt('');
+                            }}
+                            disabled={isRefining || isDeploying}
+                            className="text-[11px] bg-purple-100 hover:bg-purple-200 text-purple-800 px-2.5 py-1 rounded flex items-center gap-1 disabled:opacity-50"
+                          >
+                            <Wand2 className="w-3 h-3" />
+                            {isRefining ? 'Poprawiam…' : 'Popraw z AI'}
+                          </button>
+                          <button
+                            onClick={() => acceptAndDeployWeek(w.isoWeek)}
+                            disabled={isRefining || isDeploying}
+                            className="text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded flex items-center gap-1 disabled:opacity-50 ml-auto"
+                          >
+                            {isDeploying ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <Rocket className="w-3 h-3" />
+                            )}
+                            Akceptuj i wdroż do kalendarza
+                          </button>
+                        </div>
+                        {refineOpenFor === w.isoWeek && (
+                          <div className="bg-purple-50 border border-purple-200 rounded p-2">
+                            <textarea
+                              value={refinePrompt}
+                              onChange={(e) => setRefinePrompt(e.target.value)}
+                              placeholder="Co poprawić? np. 'zmień motyw na bardziej minimalistyczny', 'dodaj kanał email z newsletterem o detoksie', 'zmniejsz budżet o 30%', 'mocniejszy hook do pierwszej reklamy'"
+                              rows={3}
+                              className="w-full text-xs bg-white border border-purple-200 rounded px-2 py-1 focus:outline-none focus:border-purple-400 resize-y"
+                            />
+                            <div className="flex justify-end gap-2 mt-2">
+                              <button
+                                onClick={() => {
+                                  setRefineOpenFor(null);
+                                  setRefinePrompt('');
+                                }}
+                                className="text-[11px] text-slate-500 hover:text-slate-800 px-2 py-1"
+                              >
+                                Anuluj
+                              </button>
+                              <button
+                                onClick={() => refineWeekWithAI(w.isoWeek)}
+                                disabled={!refinePrompt.trim() || isRefining}
+                                className="text-[11px] bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 text-white px-3 py-1 rounded flex items-center gap-1"
+                              >
+                                {isRefining ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <Wand2 className="w-3 h-3" />
+                                )}
+                                Wygeneruj poprawkę
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {deployed?.ok && (
+                      <div className="mt-3 pt-3 border-t border-emerald-200 text-xs text-emerald-800 flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Wdrożony jako {deployed.createdCount} kampanii draft + zadania kalendarza. Edytuj dalej w widoku Kampanie.
+                      </div>
+                    )}
+                    {deployed && !deployed.ok && (
+                      <div className="mt-3 pt-3 border-t border-rose-200 text-xs text-rose-700">
+                        Błąd wdrożenia: {deployed.error}
+                      </div>
+                    )}
                   </div>
                   );
                 })}
@@ -684,22 +957,26 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                   Wstecz
                 </button>
                 {(() => {
-                  const selectedCount = (plan?.weeks || []).filter(
-                    (w: any) => selectedWeeks[w.isoWeek] !== false
-                  ).length;
+                  // bulk: only weeks that are selected AND not yet deployed
+                  const pending = (plan?.weeks || []).filter(
+                    (w: any) =>
+                      selectedWeeks[w.isoWeek] !== false && !deployedWeeks[w.isoWeek]?.ok
+                  );
+                  const pendingCount = pending.length;
                   return (
                     <button
                       onClick={save}
                       disabled={
-                        weekCurrent !== null || !(plan?.weeks?.length > 0) || selectedCount === 0
+                        weekCurrent !== null || !(plan?.weeks?.length > 0) || pendingCount === 0
                       }
                       className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white rounded-lg px-4 py-2 text-sm font-medium"
+                      title="Hurtowe wdrożenie wszystkich zaznaczonych jeszcze nie wdrożonych tygodni"
                     >
                       {weekCurrent !== null
                         ? 'Czekaj na zakończenie generacji…'
-                        : selectedCount === 0
-                          ? 'Zaznacz tygodnie do zapisu'
-                          : `Zapisz ${selectedCount} ${selectedCount === 1 ? 'tydzień' : 'tygodni'} jako kampanie draft`}
+                        : pendingCount === 0
+                          ? 'Wszystko już wdrożone lub odznaczone'
+                          : `Wdroż wszystkie zaznaczone (${pendingCount})`}
                     </button>
                   );
                 })()}

@@ -13,7 +13,7 @@ import Anthropic from '@anthropic-ai/sdk';
 // haiku) and never hits the 60s function timeout.
 export async function POST(req: NextRequest) {
   try {
-    const { month, isoWeek, context } = await req.json();
+    const { month, isoWeek, context, additionalInstructions, currentWeek } = await req.json();
     if (!month || !/^\d{4}-\d{2}$/.test(month)) {
       return NextResponse.json({ error: 'month required as YYYY-MM' }, { status: 400 });
     }
@@ -151,7 +151,12 @@ export async function POST(req: NextRequest) {
 
     const compactSystem = `Jesteś planerem marketingowym Brown House & Tea (sklep z premium herbatami i akcesoriami matcha). Pisz po polsku. Briefy wizualne odzwierciedlają estetykę BHT: ciepłe naturalne światło, drewno orzechowe, papier handmade, szkło borokrzemowe, tony piaskowe. Wywołaj narzędzie emit_week_plan dokładnie raz, podając kompletny obiekt tygodnia.`;
 
-    const userPrompt = `Wygeneruj plan marketingowy DLA POJEDYNCZEGO TYGODNIA ISO ${isoWeek} (${weekStartIso} → ${weekEndIso}) miesiąca ${month}.
+    // If we're refining an existing week, show the previous version + the user's instructions
+    const refineBlock = additionalInstructions
+      ? `\n\nPOPRAWKA OD UŻYTKOWNIKA — to jest druga (lub kolejna) iteracja tego tygodnia. Poprzednia wersja:\n${JSON.stringify(currentWeek || {}, null, 2)}\n\nInstrukcje użytkownika do poprawy: ${additionalInstructions}\n\nWygeneruj poprawioną wersję — ZACHOWAJ to co działa, popraw tylko to o co prosi użytkownik. Pisz po polsku.`
+      : '';
+
+    const userPrompt = `Wygeneruj plan marketingowy DLA POJEDYNCZEGO TYGODNIA ISO ${isoWeek} (${weekStartIso} → ${weekEndIso}) miesiąca ${month}.${refineBlock}
 
 DZIŚ JEST ${todayIso}. Tydzień startuje za ${daysUntilStart} dni.
 Święta w tym tygodniu: ${holidaysInWeek.length ? holidaysInWeek.map((h) => `${h.name} ${h.date}`).join(', ') : 'brak'}.
