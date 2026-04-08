@@ -130,6 +130,26 @@ export async function POST(req: NextRequest) {
         }
       : null;
 
+    // ----- Build whitelist of REAL product names from Woo + launches -----
+    // The AI is HARD-LOCKED to these names — no inventing.
+    const commerceObj = context?.commerce || null;
+    const collectNames = (arr: any): string[] =>
+      Array.isArray(arr)
+        ? arr.map((p: any) => (p && typeof p.name === 'string' ? p.name.trim() : '')).filter(Boolean)
+        : [];
+    const allowedProductNames: string[] = Array.from(
+      new Set([
+        ...collectNames(commerceObj?.topSellers),
+        ...collectNames(commerceObj?.topProducts),
+        ...collectNames(commerceObj?.bestSellers),
+        ...collectNames(commerceObj?.slowProducts),
+        ...collectNames(commerceObj?.lowStock),
+        ...collectNames(commerceObj?.newProducts),
+        ...collectNames(commerceObj?.onSale),
+        ...collectNames(launchesInWeek),
+      ])
+    );
+
     const userPayload = {
       month,
       today: todayIso,
@@ -141,10 +161,11 @@ export async function POST(req: NextRequest) {
       },
       holidaysInWeek,
       meta: context?.meta || { configured: false },
-      commerce: context?.commerce || null,
+      commerce: commerceObj,
       launchesInWeek,
       brandProfile: compactBrand,
       configuredAOV: Number(context?.configuredAOV || 120),
+      allowedProductNames,
     };
 
     // ----- LLM call -----
@@ -213,9 +234,19 @@ DOBRZE: "Kod WIOSNA15 ważny pn-czw, automat na koszyku >120 PLN. Email do warm 
 theme = max 6 słów, konkretny motyw nie kategoria (NIE "Wiosenne herbaty", TAK "Pierwsze ciepło na balkonie")
 rationale = 2 zdania: (1) jaki sygnał z danych to wywołał (Woo top mover X / Meta winner Y / sezon Z), (2) dlaczego ten konkretny tydzień
 
-## 5. Spójność produktów
+## 5. Spójność produktów — TWARDA REGUŁA, ZERO TOLERANCJI
 
-Nazwy produktów w copy MUSZĄ pochodzić z hero_products[].name lub commerce.topProducts. Nie wymyślaj nazw. Jeśli nie znasz dokładnej nazwy — pisz kategorią ("nasza zielona z jaśminem"), nie zmyślaj brandowej nazwy.
+WSZYSTKIE pozycje w \`hero_products[].name\` MUSZĄ być dokładnym ciągiem znaków z listy \`allowedProductNames\` w danych wejściowych. Lista pochodzi z WooCommerce (topSellers + slowProducts + lowStock + newProducts + onSale) plus zaplanowane launche.
+
+ZAKAZY:
+- ❌ NIE wymyślaj nazw produktów ("Earl Grey Premium", "Złoty Yunnan Reserve", "Zimowa Mieszanka BHT" — jeśli tego nie ma w \`allowedProductNames\`, NIE WOLNO tego użyć)
+- ❌ NIE tłumacz, nie skracaj, nie modyfikuj nazw (jeśli w Woo jest "Earl Grey z bławatkiem 100g", to wpisujesz dokładnie "Earl Grey z bławatkiem 100g", nie "Earl Grey")
+- ❌ NIE używaj kategorii zamiast nazwy ("nasza zielona", "zimowy blend") jako wartości w \`hero_products[].name\`
+- ❌ Jeśli \`allowedProductNames\` jest pusta — jako \`hero_products[].name\` użyj dosłownie \`"(brak danych Woo)"\` i dodaj \`warning\` w designer_summary; NIGDY nie zmyślaj nazw
+
+W copy (creative_hook, headline, body) MOŻESZ używać nazw z \`allowedProductNames\` LUB ogólnej kategorii (np. "nasza zielona z jaśminem") jeśli pasuje rytmicznie — ale konkretne nazwy własne MUSZĄ pokrywać się z listą.
+
+Jeśli zauważysz że twój pierwszy pomysł na hero product nie pasuje do \`allowedProductNames\` — wybierz inny produkt z listy zamiast forsować swój pomysł.
 
 ## 6. Body / headline
 
@@ -250,6 +281,10 @@ Reguły:
 - MAKSYMALNIE 4 kanały, wybierz najważniejsze.
 - Briefy wizualne MUSZĄ wynikać z brandProfile. Jeśli brandProfile = null, użyj defaultowej estetyki BHT (ciepłe światło, drewno orzechowe, paleta piaskowa #f5f1ea/#e8dbc4/#8b6f4e/#3d2817, bez sztucznego białego światła).
 - Nie używaj cudzysłowów (") wewnątrz pól tekstowych — używaj ' lub « ».
+- TWARDA REGUŁA PRODUKTÓW: \`hero_products[].name\` MUSI być DOKŁADNIE jednym z ciągów w \`allowedProductNames\` poniżej. Tool API odrzuci output z wymyśloną nazwą — twój request padnie. Jeśli lista jest pusta, użyj dosłownie "(brak danych Woo)".
+
+ALLOWED PRODUCT NAMES (lista ${allowedProductNames.length} pozycji z WooCommerce — wybieraj WYŁĄCZNIE z tej listy):
+${allowedProductNames.length > 0 ? allowedProductNames.map((n) => `  - ${n}`).join('\n') : '  (pusta — Woo niedostępne, użyj "(brak danych Woo)" jako name i dodaj warning w designer_summary)'}
 
 Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${JSON.stringify(userPayload, null, 2)}`;
 
@@ -286,7 +321,19 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
               type: 'object',
               required: ['name', 'why'],
               properties: {
-                name: { type: 'string' },
+                name:
+                  allowedProductNames.length > 0
+                    ? {
+                        type: 'string',
+                        enum: [...allowedProductNames, '(brak danych Woo)'],
+                        description:
+                          'MUSI być dokładnym ciągiem z allowedProductNames (z WooCommerce). Brak zmyślania.',
+                      }
+                    : {
+                        type: 'string',
+                        description:
+                          'allowedProductNames pusta — wpisz "(brak danych Woo)" i dodaj warning.',
+                      },
                 why: { type: 'string' },
               },
             },
