@@ -44,3 +44,18 @@ export async function ensureAssetsAndPushLogs() {
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`);
 }
+
+export async function ensurePlanDrafts() {
+  await db.run(sql`CREATE TABLE IF NOT EXISTS month_plan_drafts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    month TEXT NOT NULL,
+    name TEXT,
+    payload TEXT NOT NULL,
+    weeks_count INTEGER DEFAULT 0,
+    deployed_count INTEGER DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'draft',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`);
+  await db.run(sql`CREATE INDEX IF NOT EXISTS idx_month_plan_drafts_month ON month_plan_drafts(month)`);
+}

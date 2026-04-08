@@ -235,3 +235,23 @@ export const brand_profile = sqliteTable('brand_profile', {
 });
 
 export type BrandProfile = typeof brand_profile.$inferSelect;
+
+// Month-plan drafts — full wizard state persisted between sessions.
+// Lets the user save a generated plan, come back, edit, and only deploy
+// after acceptance. payload = JSON of the entire wizard plan + per-week
+// selections + deployment status.
+export const month_plan_drafts = sqliteTable('month_plan_drafts', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  month: text('month').notNull(),                   // "YYYY-MM"
+  name: text('name'),                                // optional human label
+  payload: text('payload').notNull(),                // JSON blob of wizard state
+  weeks_count: integer('weeks_count').default(0),
+  deployed_count: integer('deployed_count').default(0),
+  status: text('status', { enum: ['draft', 'partial', 'deployed'] })
+    .notNull()
+    .default('draft'),
+  created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  updated_at: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export type MonthPlanDraft = typeof month_plan_drafts.$inferSelect;
