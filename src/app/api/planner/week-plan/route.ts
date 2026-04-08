@@ -153,11 +153,80 @@ export async function POST(req: NextRequest) {
     // Full marketing-planner skill (the deterministic playbook that drives quality)
     // is bundled as a string so it works in the Edge runtime. The minimal preamble
     // tells the model to call the tool exactly once.
-    const fullSystem = `${MARKETING_SKILL}
+    const QUALITY_DIRECTIVES = `
 
 ---
 
-INSTRUKCJA WYKONAWCZA: Wywołaj narzędzie emit_week_plan dokładnie raz z kompletnym obiektem tygodnia. Pisz po polsku. Stosuj się ŚCIŚLE do playbooka powyżej (wybór produktów na podstawie sygnałów Woo + Meta, mechaniki promocji adekwatne do tygodnia, hooki sensoryczne nie korporacyjne, briefy wizualne wynikające z brandProfile). Każdy kanał musi mieć konkretny, niepowtarzalny pomysł — żadnych ogólników typu "promuj produkt" czy "zwiększ świadomość".`;
+# DYREKTYWY JAKOŚCI — twarde reguły, łamanie = output do wyrzucenia
+
+## 1. Hooki copy (creative_hook) — sensoryka, nie slogany
+
+KAŻDY creative_hook musi:
+- mieć MIN. 2 zakotwiczenia sensoryczne (zapach, smak, dotyk, dźwięk, obraz, temperatura, ruch)
+- odnosić się do KONKRETNEGO momentu w czasie / sytuacji w życiu odbiorcy (nie "miłośnicy herbaty", tylko np. "sobotni poranek przed wstaniem dzieci")
+- mieć max 14 słów po polsku
+- być NIEPOWTARZALNY w obrębie tygodnia — żadne dwa kanały nie mogą mieć podobnego hooka
+
+ŹLE (NIE rób tak):
+- "Odkryj wyjątkowe herbaty Brown House & Tea"
+- "Najlepsza herbata na zimowe wieczory"
+- "Premium loose leaf tea — sprawdź teraz"
+- "Twój idealny rytuał z herbatą"
+- "Smak, który pokochasz"
+
+DOBRZE (rób tak):
+- "Para z kubka pierwszego earl greya, kiedy kot jeszcze śpi na fotelu"
+- "Liście rozwijają się w 78°C — zegnij się, popatrz, poczekaj 90 sekund"
+- "Kiedy mama pyta 'jak w pracy' i ty po prostu nalewasz drugą"
+- "Mokry kamień w ogrodzie i zielona herbata, której nie chce się odstawiać"
+
+## 2. visual_brief — KAŻDY zupełnie inny
+
+W obrębie JEDNEGO TYGODNIA briefy wizualne 4 kanałów MUSZĄ się różnić co najmniej 3 z 4 wymiarów:
+- scene (sceneria/setting)
+- composition (kadr — flat lay, makro, środowiskowy, portretowy, still life, w ruchu)
+- lighting (poranne okno, golden hour, świece, neonowe, cień drzewa, ciemne tło z punktowym)
+- props (rekwizyty)
+
+Jeśli zauważasz że dwa briefy są podobne — przepisz jeden od zera.
+
+KAŻDY visual_brief MUSI zawierać:
+- scene: konkretne miejsce + pora dnia + 1 osoba LUB 1 element narracyjny (nie "stół z herbatą")
+- composition: dokładny typ kadru ("makro 1:1 na powierzchnię liści", "wide 16:9 z osobą po lewej w 1/3 kadru", "flat lay z góry 4:5 z asymetrycznym układem")
+- lighting: konkretne źródło światła ("miękkie światło z okna z lewej, godzina 8:00, lekka mgła") nie "ciepłe światło"
+- props: 3-6 konkretnych rekwizytów po nazwie (nie "akcesoria do herbaty")
+- mood_keywords: 3-5 słów oddających emocję
+- reference_note: krótkie odniesienie do realnego stylu wizualnego (np. "jak Kinfolk magazine, ale ciemniejsze")
+
+## 3. promo.mechanics — myśl mechanicznie
+
+Jeśli promo.type ≠ none, mechanics MUSI opisywać:
+- jak klient odbiera (kod / automat / wymóg minimum / okno czasowe)
+- co dostaje warm baseline vs cold traffic
+- jak komunikujemy w mailu vs paid vs organic (1 zdanie każdy)
+
+ŹLE: "Standardowa zniżka -15%"
+DOBRZE: "Kod WIOSNA15 ważny pn-czw, automat na koszyku >120 PLN. Email do warm bazy 7 dni wcześniej z personalizacją 'twoja zniżka', paid retargeting z hookiem 'wracają twoje ulubione', organic IG bez ceny — tylko nastrój."
+
+## 4. theme i rationale
+
+theme = max 6 słów, konkretny motyw nie kategoria (NIE "Wiosenne herbaty", TAK "Pierwsze ciepło na balkonie")
+rationale = 2 zdania: (1) jaki sygnał z danych to wywołał (Woo top mover X / Meta winner Y / sezon Z), (2) dlaczego ten konkretny tydzień
+
+## 5. Spójność produktów
+
+Nazwy produktów w copy MUSZĄ pochodzić z hero_products[].name lub commerce.topProducts. Nie wymyślaj nazw. Jeśli nie znasz dokładnej nazwy — pisz kategorią ("nasza zielona z jaśminem"), nie zmyślaj brandowej nazwy.
+
+## 6. Body / headline
+
+Jeśli kanał ma format reklamy (single_image, carousel, reels) WYPEŁNIJ headline (max 8 słów) i body (2-3 zdania). Nie zostawiaj pustego. Body musi prowadzić od sensorycznego obrazu do CTA, bez sprzedażowego krzyku.
+
+---
+`;
+
+    const fullSystem = `${MARKETING_SKILL}${QUALITY_DIRECTIVES}
+
+INSTRUKCJA WYKONAWCZA: Wywołaj narzędzie emit_week_plan dokładnie raz z kompletnym obiektem tygodnia. Pisz po polsku. Stosuj się ŚCIŚLE do playbooka i dyrektyw jakości powyżej. Zanim wywołasz narzędzie, w głowie sprawdź każdy kanał: czy hook ma 2 zakotwiczenia sensoryczne? czy briefy się od siebie różnią w 3+ wymiarach? czy headline/body są wypełnione? Jeśli nie — przepisz, dopiero potem wywołaj narzędzie.`;
 
     // If we're refining an existing week, show the previous version + the user's instructions
     const isRefine = !!additionalInstructions;
@@ -287,18 +356,21 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
                 audience: { type: 'string' },
                 expected_kpi: { type: 'string' },
                 budget_pln: { type: 'number' },
+                headline: { type: 'string', description: 'max 8 słów, wymagane dla single_image/carousel/reels/post' },
+                body: { type: 'string', description: '2-3 zdania, sensorycznie do CTA, wymagane dla single_image/carousel/reels/newsletter' },
                 visual_brief: {
                   type: 'object',
+                  required: ['scene', 'composition', 'lighting', 'props', 'mood_keywords', 'reference_note'],
                   properties: {
-                    scene: { type: 'string' },
-                    props: { type: 'array', items: { type: 'string' } },
-                    lighting: { type: 'string' },
+                    scene: { type: 'string', description: 'konkretne miejsce + pora dnia + element narracyjny' },
+                    props: { type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 6 },
+                    lighting: { type: 'string', description: 'konkretne źródło + kierunek + pora' },
                     palette: { type: 'array', items: { type: 'string' } },
-                    composition: { type: 'string' },
-                    mood_keywords: { type: 'array', items: { type: 'string' } },
+                    composition: { type: 'string', description: 'typ kadru + proporcje + układ' },
+                    mood_keywords: { type: 'array', items: { type: 'string' }, minItems: 3, maxItems: 5 },
                     do: { type: 'string' },
                     dont: { type: 'string' },
-                    reference_note: { type: 'string' },
+                    reference_note: { type: 'string', description: 'krótkie odniesienie wizualne' },
                   },
                 },
               },
@@ -388,12 +460,12 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
         }, 3000);
 
         try {
-          // Refine path uses Sonnet for higher quality. Initial generation stays
-          // on Haiku to keep first-pass latency low; the user can then iterate.
-          const model = isRefine ? 'claude-sonnet-4-5' : 'claude-haiku-4-5-20251001';
+          // Always use Sonnet — Haiku produces repetitive, generic creatives.
+          // Edge runtime + heartbeat stream gives us up to 5 minutes so latency is fine.
+          const model = 'claude-sonnet-4-5';
           const llmRes = await client.messages.create({
             model,
-            max_tokens: isRefine ? 6000 : 4000,
+            max_tokens: 8000,
             system: fullSystem,
             tools: [weekPlanTool as any],
             tool_choice: { type: 'tool', name: 'emit_week_plan' } as any,
