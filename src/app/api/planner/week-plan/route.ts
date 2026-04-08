@@ -3,6 +3,7 @@ export const runtime = 'edge'; // Edge runtime: no 60s serverless limit
 export const maxDuration = 300;
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { MARKETING_SKILL } from '@/lib/marketing-skill-bundled';
 
 // POST /api/planner/week-plan
 // Body: { month, isoWeek, context }
@@ -149,11 +150,19 @@ export async function POST(req: NextRequest) {
     // ----- LLM call -----
     const client = new Anthropic({ apiKey });
 
-    const compactSystem = `Jesteś planerem marketingowym Brown House & Tea (sklep z premium herbatami i akcesoriami matcha). Pisz po polsku. Briefy wizualne odzwierciedlają estetykę BHT: ciepłe naturalne światło, drewno orzechowe, papier handmade, szkło borokrzemowe, tony piaskowe. Wywołaj narzędzie emit_week_plan dokładnie raz, podając kompletny obiekt tygodnia.`;
+    // Full marketing-planner skill (the deterministic playbook that drives quality)
+    // is bundled as a string so it works in the Edge runtime. The minimal preamble
+    // tells the model to call the tool exactly once.
+    const fullSystem = `${MARKETING_SKILL}
+
+---
+
+INSTRUKCJA WYKONAWCZA: Wywołaj narzędzie emit_week_plan dokładnie raz z kompletnym obiektem tygodnia. Pisz po polsku. Stosuj się ŚCIŚLE do playbooka powyżej (wybór produktów na podstawie sygnałów Woo + Meta, mechaniki promocji adekwatne do tygodnia, hooki sensoryczne nie korporacyjne, briefy wizualne wynikające z brandProfile). Każdy kanał musi mieć konkretny, niepowtarzalny pomysł — żadnych ogólników typu "promuj produkt" czy "zwiększ świadomość".`;
 
     // If we're refining an existing week, show the previous version + the user's instructions
-    const refineBlock = additionalInstructions
-      ? `\n\nPOPRAWKA OD UŻYTKOWNIKA — to jest druga (lub kolejna) iteracja tego tygodnia. Poprzednia wersja:\n${JSON.stringify(currentWeek || {}, null, 2)}\n\nInstrukcje użytkownika do poprawy: ${additionalInstructions}\n\nWygeneruj poprawioną wersję — ZACHOWAJ to co działa, popraw tylko to o co prosi użytkownik. Pisz po polsku.`
+    const isRefine = !!additionalInstructions;
+    const refineBlock = isRefine
+      ? `\n\n========== POPRAWKA OD UŻYTKOWNIKA ==========\nTo jest kolejna iteracja tego tygodnia. Użytkownik widział poprzednią wersję i prosi o konkretne poprawki — TWOIM ZADANIEM jest podnieść jakość, nie tylko mechanicznie wprowadzić zmianę.\n\nPoprzednia wersja (do oceny i poprawy):\n${JSON.stringify(currentWeek || {}, null, 2)}\n\nInstrukcje użytkownika: "${additionalInstructions}"\n\nZASADY POPRAWKI:\n1. Realizuj prośbę użytkownika DOSŁOWNIE.\n2. Jednocześnie podnieś ogólną jakość: hooki muszą być sensoryczne i konkretne (nie "odkryj nasze herbaty"), promo musi mieć przemyślaną mechanikę, briefy wizualne muszą być realnie wykonalne dla designera.\n3. ZACHOWAJ wszystko co już było dobre w poprzedniej wersji — nie wymyślaj na nowo bez powodu.\n4. Jeśli użytkownik prosi o zmianę kanału lub produktu, sprawdź czy ma to sens biznesowy w kontekście Woo/Meta sygnałów.\n5. Nie powielaj pomysłów z poprzedniej wersji jeśli były słabe — popraw je.\n=============================================`
       : '';
 
     const userPrompt = `Wygeneruj plan marketingowy DLA POJEDYNCZEGO TYGODNIA ISO ${isoWeek} (${weekStartIso} → ${weekEndIso}) miesiąca ${month}.${refineBlock}
@@ -379,16 +388,19 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
         }, 3000);
 
         try {
+          // Refine path uses Sonnet for higher quality. Initial generation stays
+          // on Haiku to keep first-pass latency low; the user can then iterate.
+          const model = isRefine ? 'claude-sonnet-4-5' : 'claude-haiku-4-5-20251001';
           const llmRes = await client.messages.create({
-            model: 'claude-haiku-4-5-20251001',
-            max_tokens: 4000,
-            system: compactSystem,
+            model,
+            max_tokens: isRefine ? 6000 : 4000,
+            system: fullSystem,
             tools: [weekPlanTool as any],
             tool_choice: { type: 'tool', name: 'emit_week_plan' } as any,
             messages: [{ role: 'user', content: userPrompt }],
           });
           console.log(
-            `[week-plan] iso=${isoWeek} llm took ${Date.now() - t0}ms, in=${llmRes.usage?.input_tokens} out=${llmRes.usage?.output_tokens}`
+            `[week-plan] iso=${isoWeek} model=${model} refine=${isRefine} took ${Date.now() - t0}ms, in=${llmRes.usage?.input_tokens} out=${llmRes.usage?.output_tokens}`
           );
 
           // Find the tool_use block — guaranteed valid JSON via API
