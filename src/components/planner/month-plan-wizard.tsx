@@ -34,6 +34,18 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const [weekCurrent, setWeekCurrent] = useState<number | null>(null);
   const [weekErrors, setWeekErrors] = useState<Record<number, string>>({});
   const [sharedContext, setSharedContext] = useState<any>(null);
+  // which weeks are checked for save → calendar/tasks (default: all)
+  const [selectedWeeks, setSelectedWeeks] = useState<Record<number, boolean>>({});
+
+  function toggleWeek(isoWeek: number) {
+    setSelectedWeeks((prev) => ({ ...prev, [isoWeek]: !(prev[isoWeek] ?? true) }));
+  }
+  function setAllWeeks(value: boolean) {
+    if (!plan?.weeks) return;
+    const next: Record<number, boolean> = {};
+    for (const w of plan.weeks) next[w.isoWeek] = value;
+    setSelectedWeeks(next);
+  }
 
   // Parse a streamed response: heartbeat spaces followed by '\n' + final JSON.
   // Falls back to plain JSON if no newline found (backwards compat).
@@ -161,6 +173,7 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
     setWeekDoneCount(0);
     setPlan(null);
     setDebug(null);
+    setSelectedWeeks({});
 
     const weeks = futureIsoWeeksOfMonth(month);
     if (weeks.length === 0) {
@@ -237,6 +250,8 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
             totalBudget: runningTotal,
             weeks: [...(prev?.weeks || []), wk],
           }));
+          // default: new week is selected for save
+          setSelectedWeeks((prev) => ({ ...prev, [wk?.isoWeek ?? w]: true }));
         }
       } catch (e: any) {
         setWeekErrors((prev) => ({ ...prev, [w]: e.message }));
@@ -289,6 +304,7 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
               (a: any, b: any) => (a.isoWeek || 0) - (b.isoWeek || 0)
             ),
           }));
+          setSelectedWeeks((prev) => ({ ...prev, [wk?.isoWeek ?? w]: true }));
         }
       } catch (e: any) {
         setWeekErrors((prev) => ({ ...prev, [w]: e.message }));
@@ -300,10 +316,20 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   async function save() {
     setStep('saving');
     try {
+      // only persist weeks the user has checked
+      const filteredWeeks = (plan?.weeks || []).filter(
+        (w: any) => selectedWeeks[w.isoWeek] !== false
+      );
+      if (filteredWeeks.length === 0) {
+        setError('Nie zaznaczono żadnego tygodnia do zapisu.');
+        setStep('error');
+        return;
+      }
+      const planToSave = { ...plan, weeks: filteredWeeks };
       const r = await fetch('/api/planner/month-plan/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, month }),
+        body: JSON.stringify({ plan: planToSave, month }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || 'save failed');
@@ -435,19 +461,61 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                 </div>
               )}
 
+              {plan.weeks?.length > 0 && (
+                <div className="flex items-center justify-between text-xs text-slate-600 -mt-2">
+                  <div>
+                    Zaznaczone do importu:{' '}
+                    <strong className="text-slate-900">
+                      {plan.weeks.filter((w: any) => selectedWeeks[w.isoWeek] !== false).length}
+                    </strong>{' '}
+                    / {plan.weeks.length}
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setAllWeeks(true)}
+                      className="text-amber-700 hover:text-amber-900 underline"
+                    >
+                      Zaznacz wszystkie
+                    </button>
+                    <button
+                      onClick={() => setAllWeeks(false)}
+                      className="text-slate-500 hover:text-slate-800 underline"
+                    >
+                      Odznacz wszystkie
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-4">
-                {plan.weeks?.map((w: any, wi: number) => (
-                  <div key={wi} className="border border-slate-200 rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <div className="font-semibold text-slate-900">
-                          {w.label || `Tydzień ${w.isoWeek}`}
+                {plan.weeks?.map((w: any, wi: number) => {
+                  const isSelected = selectedWeeks[w.isoWeek] !== false;
+                  return (
+                  <div
+                    key={wi}
+                    className={`border rounded-lg p-4 transition-colors ${
+                      isSelected ? 'border-amber-300 bg-amber-50/30' : 'border-slate-200 bg-white opacity-70'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between mb-2 gap-3">
+                      <label className="flex items-start gap-2 cursor-pointer flex-1 min-w-0">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleWeek(w.isoWeek)}
+                          className="mt-1 w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 focus:ring-2 cursor-pointer flex-shrink-0"
+                          title="Zaznacz aby zaimportować ten tydzień jako kampanie / zadania"
+                        />
+                        <div className="min-w-0">
+                          <div className="font-semibold text-slate-900">
+                            {w.label || `Tydzień ${w.isoWeek}`}
+                          </div>
+                          <div className="text-xs text-slate-500">
+                            {w.dateRange} • {w.theme}
+                          </div>
                         </div>
-                        <div className="text-xs text-slate-500">
-                          {w.dateRange} • {w.theme}
-                        </div>
-                      </div>
-                      <div className="text-right">
+                      </label>
+                      <div className="text-right flex-shrink-0">
                         <div className="text-sm font-semibold text-slate-900">
                           {w.weekly_budget_pln?.toLocaleString()} PLN
                         </div>
@@ -593,7 +661,8 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                       </div>
                     )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
 
               {plan.next_actions?.length > 0 && (
@@ -614,13 +683,26 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                 >
                   Wstecz
                 </button>
-                <button
-                  onClick={save}
-                  disabled={weekCurrent !== null || !(plan?.weeks?.length > 0)}
-                  className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white rounded-lg px-4 py-2 text-sm font-medium"
-                >
-                  {weekCurrent !== null ? 'Czekaj na zakończenie generacji…' : 'Zapisz jako kampanie draft'}
-                </button>
+                {(() => {
+                  const selectedCount = (plan?.weeks || []).filter(
+                    (w: any) => selectedWeeks[w.isoWeek] !== false
+                  ).length;
+                  return (
+                    <button
+                      onClick={save}
+                      disabled={
+                        weekCurrent !== null || !(plan?.weeks?.length > 0) || selectedCount === 0
+                      }
+                      className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white rounded-lg px-4 py-2 text-sm font-medium"
+                    >
+                      {weekCurrent !== null
+                        ? 'Czekaj na zakończenie generacji…'
+                        : selectedCount === 0
+                          ? 'Zaznacz tygodnie do zapisu'
+                          : `Zapisz ${selectedCount} ${selectedCount === 1 ? 'tydzień' : 'tygodni'} jako kampanie draft`}
+                    </button>
+                  );
+                })()}
               </div>
             </div>
           )}

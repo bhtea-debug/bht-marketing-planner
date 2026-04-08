@@ -272,11 +272,20 @@ export default function CampaignTimeline({ campaigns }: CampaignTimelineProps) {
                     {/* Hover tooltip */}
                     {isHovered && (
                       <div
-                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 text-white rounded-lg p-3 shadow-xl z-50 pointer-events-none"
-                        style={{ minWidth: '220px' }}
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 text-white rounded-lg p-3 shadow-xl z-50 pointer-events-none break-words whitespace-normal"
+                        style={{ width: '280px', maxWidth: '90vw' }}
                       >
-                        <div className="text-[13px] font-semibold mb-1.5">{campaign.name}</div>
-                        <div className="text-[11px] text-slate-400 mb-2">{campaign.description}</div>
+                        <div className="text-[13px] font-semibold mb-1.5 break-words">{campaign.name}</div>
+                        <div
+                          className="text-[11px] text-slate-400 mb-2 break-words whitespace-pre-line overflow-hidden"
+                          style={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 4,
+                            WebkitBoxOrient: 'vertical',
+                          }}
+                        >
+                          {campaign.description}
+                        </div>
 
                         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[11px]">
                           <div className="text-slate-500">Kanał</div>
