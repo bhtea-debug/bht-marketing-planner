@@ -1098,6 +1098,41 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                       </div>
                     )}
 
+                    {/* Store tasks — banners, landing pages, product highlights */}
+                    {w.store_tasks?.length > 0 && (
+                      <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-1.5 text-xs font-medium text-blue-900">
+                          🛒 Zadania na stronie sklepu ({w.store_tasks.length})
+                        </div>
+                        {w.store_tasks.map((st: any, sti: number) => (
+                          <div key={sti} className="bg-white border border-blue-100 rounded p-2 text-xs">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800">
+                                {(st.type || '').replace(/_/g, ' ')}
+                              </span>
+                              <span className="font-medium text-slate-900">{st.title}</span>
+                              {st.deadline && (
+                                <span className="text-[10px] text-slate-500 ml-auto">
+                                  deadline: {st.deadline}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-slate-700">{st.description}</div>
+                            {st.placement && (
+                              <div className="text-[10px] text-slate-500 mt-0.5">
+                                Umiejscowienie: {st.placement}
+                              </div>
+                            )}
+                            {st.visual_note && (
+                              <div className="text-[10px] text-blue-700 mt-0.5">
+                                Wskazówka wizualna: {st.visual_note}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     {/* Per-week action toolbar */}
                     {!deployed?.ok && (
                       <div className="mt-3 pt-3 border-t border-slate-200/70 space-y-2">

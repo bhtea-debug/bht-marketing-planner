@@ -266,7 +266,26 @@ KLUCZOWE REGUŁY:
 - Nie wymyślaj progów darmowej wysyłki "od 150 PLN" — to POGARSZA istniejącą ofertę klienta (129 PLN).
 - Jeśli chcesz zaproponować promo darmowej wysyłki, jedyna sensowna mechanika to OBNIŻENIE progu (np. "darmowa wysyłka od 79 PLN" lub "darmowa wysyłka na wszystko bez minimum").
 
-## 8. Różnorodność katalogu — nie kręć się wokół 1 produktu
+## 8. Zadania na stronie sklepu (store_tasks) — WYMAGANE W KAŻDYM TYGODNIU
+
+Każdy tydzień MUSI mieć co najmniej 1 pozycję w \`store_tasks\`. Sklep internetowy to NIE pasywne tło — to aktywny kanał sprzedaży, który powinien odzwierciedlać to co się dzieje w kampaniach.
+
+REGUŁY:
+- Jeśli tydzień ma temat sezonowy (Dzień Ziemi, Wielkanoc, Black Friday) → OBOWIĄZKOWO baner na hero section z tematem + ewentualnie dedykowany landing page.
+- Jeśli tydzień ma promo → popup lub footer bar z kodem rabatowym / komunikatem o promo.
+- Jeśli są hero products → product_highlight lub collection_page grupująca te produkty.
+- store_tasks.deadline MUSI być PRZED startem kampanii paid — baner musi wisieć zanim leci ruch z reklam.
+- visual_note powinno nawiązywać do briefu wizualnego kanałów (spójność!).
+
+TYPY:
+- homepage_banner: główny baner na stronie głównej (hero section lub pod hero)
+- landing_page: dedykowana strona pod kampanię (np. /dzien-ziemi, /matcha-set)
+- product_highlight: wyróżnienie produktu na stronie (badge, sticker "NOWOŚĆ", "BESTSELLER")
+- collection_page: kolekcja/kategoria tematyczna (np. "Herbaty na wiosnę")
+- popup: exit-intent lub timed popup z promo/newsletterem
+- menu_update: zmiana w nawigacji (np. dodanie "Dzień Ziemi" do menu)
+
+## 9. Różnorodność katalogu — nie kręć się wokół 1 produktu
 
 W \`commerce.fullCatalog\` masz PEŁNĄ listę produktów z WooCommerce — herbaty, akcesoria, zestawy, etc.
 NIE skupiaj się na jednej kategorii (np. tylko matcha, tylko akcesoria).
@@ -282,7 +301,13 @@ REGUŁY:
 
     const fullSystem = `${MARKETING_SKILL}${QUALITY_DIRECTIVES}
 
-INSTRUKCJA WYKONAWCZA: Wywołaj narzędzie emit_week_plan dokładnie raz z kompletnym obiektem tygodnia. Pisz po polsku. Stosuj się ŚCIŚLE do playbooka i dyrektyw jakości powyżej. Zanim wywołasz narzędzie, w głowie sprawdź każdy kanał: czy hook ma 2 zakotwiczenia sensoryczne? czy briefy się od siebie różnią w 3+ wymiarach? czy headline/body są wypełnione? Jeśli nie — przepisz, dopiero potem wywołaj narzędzie.`;
+INSTRUKCJA WYKONAWCZA: Wywołaj narzędzie emit_week_plan dokładnie raz z kompletnym obiektem tygodnia. Pisz po polsku. Stosuj się ŚCIŚLE do playbooka i dyrektyw jakości powyżej. Zanim wywołasz narzędzie, w głowie sprawdź:
+1. Czy hook ma 2 zakotwiczenia sensoryczne?
+2. Czy briefy wizualne się od siebie różnią w 3+ wymiarach?
+3. Czy headline/body są wypełnione?
+4. Czy store_tasks ma min. 1 pozycję (baner/landing/highlight/popup)?
+5. Czy store_tasks.deadline jest PRZED startem kampanii?
+Jeśli cokolwiek brakuje — przepisz, dopiero potem wywołaj narzędzie.`;
 
     // If we're refining an existing week, show the previous version + the user's instructions
     const isRefine = !!additionalInstructions;
@@ -334,6 +359,7 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
           'weekly_budget_pln',
           'designer_summary',
           'channels',
+          'store_tasks',
         ],
         properties: {
           isoWeek: { type: 'integer' },
@@ -385,7 +411,7 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
           },
           channels: {
             type: 'array',
-            maxItems: 4,
+            maxItems: 5,
             items: {
               type: 'object',
               required: [
@@ -410,6 +436,7 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
                     'email',
                     'tiktok',
                     'content_blog',
+                    'ecommerce_site',
                   ],
                 },
                 format: {
@@ -421,6 +448,11 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
                     'story',
                     'newsletter',
                     'post',
+                    'homepage_banner',
+                    'landing_page',
+                    'product_highlight',
+                    'collection_page',
+                    'popup',
                   ],
                 },
                 objective: { type: 'string' },
@@ -454,6 +486,26 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
           linked_calendar_tasks: {
             type: 'array',
             items: { type: 'string' },
+            description: 'Zadania organic do kalendarza (np. "Reels: parzenie hero produktu")',
+          },
+          store_tasks: {
+            type: 'array',
+            description: 'Zadania na stronie sklepu — banery, landing page, wyróżnienia produktów, kolekcje, popupy.',
+            items: {
+              type: 'object',
+              required: ['type', 'title', 'description', 'placement'],
+              properties: {
+                type: {
+                  type: 'string',
+                  enum: ['homepage_banner', 'landing_page', 'product_highlight', 'collection_page', 'popup', 'menu_update', 'other'],
+                },
+                title: { type: 'string', description: 'Krótki tytuł zadania, np. "Baner Dzień Ziemi — hero section"' },
+                description: { type: 'string', description: '2-3 zdania: co zrobić, jaka treść, jaki CTA, co podlinkować' },
+                placement: { type: 'string', description: 'Gdzie na stronie: hero section, pod hero, sidebar, footer bar, popup na exit, etc.' },
+                visual_note: { type: 'string', description: 'Krótka wskazówka wizualna (nawiązanie do briefu kanału jeśli ten sam temat)' },
+                deadline: { type: 'string', description: 'Kiedy musi być gotowe (data ISO lub "przed startem kampanii")' },
+              },
+            },
           },
         },
       },
