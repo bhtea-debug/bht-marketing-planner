@@ -161,6 +161,8 @@ export default function LaunchesPage() {
   const [hasSavedReview, setHasSavedReview] = useState(false);
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
   const [addingSuggestions, setAddingSuggestions] = useState(false);
+  const [applyingDate, setApplyingDate] = useState<Record<number, 'applying' | 'refreshing' | 'done' | null>>({});
+  const [applyingAll, setApplyingAll] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -329,6 +331,64 @@ export default function LaunchesPage() {
     } finally {
       setAddingSuggestions(false);
     }
+  }
+
+  async function applyDate(launchId: number, newDate: string) {
+    setApplyingDate(prev => ({ ...prev, [launchId]: 'applying' }));
+    try {
+      await fetch(`/api/launches/${launchId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planned_launch_date: newDate, ai_suggested_date: newDate }),
+      });
+      setApplyingDate(prev => ({ ...prev, [launchId]: 'done' }));
+      load();
+    } catch {
+      setApplyingDate(prev => ({ ...prev, [launchId]: null }));
+    }
+  }
+
+  async function applyDateAndRefresh(launchId: number, newDate: string) {
+    // Step 1: apply date
+    setApplyingDate(prev => ({ ...prev, [launchId]: 'applying' }));
+    try {
+      await fetch(`/api/launches/${launchId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planned_launch_date: newDate, ai_suggested_date: newDate }),
+      });
+    } catch {
+      setApplyingDate(prev => ({ ...prev, [launchId]: null }));
+      return;
+    }
+    // Step 2: refresh marketing plan with new date
+    setApplyingDate(prev => ({ ...prev, [launchId]: 'refreshing' }));
+    try {
+      await fetch(`/api/launches/${launchId}/resuggest`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_notes: `Data launchu zmieniona na ${newDate} na podstawie analizy portfolio. Dostosuj plan marketingowy do nowej daty.`,
+          persist: true,
+        }),
+      });
+      setApplyingDate(prev => ({ ...prev, [launchId]: 'done' }));
+      load();
+    } catch {
+      setApplyingDate(prev => ({ ...prev, [launchId]: 'done' })); // date applied but refresh failed
+      load();
+    }
+  }
+
+  async function applyAllDates() {
+    if (!portfolioReview?.proposed_timeline?.length) return;
+    const changed = portfolioReview.proposed_timeline.filter((item: any) => item.change !== 'keep' && item.launch_id);
+    if (!changed.length) return;
+    setApplyingAll(true);
+    for (const item of changed) {
+      await applyDateAndRefresh(item.launch_id, item.proposed_date);
+    }
+    setApplyingAll(false);
   }
 
   // Check for saved review on mount
@@ -521,14 +581,33 @@ export default function LaunchesPage() {
               {/* Proposed timeline */}
               {Array.isArray(portfolioReview?.proposed_timeline) && portfolioReview.proposed_timeline.length > 0 && (
                 <div>
-                  <div className="text-sm font-semibold text-gray-900 mb-3">🗓️ Proponowana oś czasu</div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="text-sm font-semibold text-gray-900">🗓️ Proponowana oś czasu</div>
+                    {portfolioReview.proposed_timeline.some((t: any) => t.change !== 'keep') && (
+                      <button
+                        onClick={applyAllDates}
+                        disabled={applyingAll}
+                        className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5"
+                      >
+                        {applyingAll ? (
+                          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Stosuję zmiany...</>
+                        ) : (
+                          <><Sparkles className="w-3.5 h-3.5" /> Zastosuj wszystkie zmiany + odśwież plany</>
+                        )}
+                      </button>
+                    )}
+                  </div>
                   <div className="space-y-3">
                     {portfolioReview.proposed_timeline
                       .sort((a: any, b: any) => (a.order_in_sequence || 0) - (b.order_in_sequence || 0))
                       .map((item: any, i: number) => {
                         const changed = item.change !== 'keep';
+                        const itemState = item.launch_id ? applyingDate[item.launch_id] : null;
                         return (
-                          <div key={i} className={`rounded-lg p-4 border ${changed ? 'bg-amber-50 border-amber-300' : 'bg-green-50 border-green-200'}`}>
+                          <div key={i} className={`rounded-lg p-4 border ${
+                            itemState === 'done' ? 'bg-emerald-50 border-emerald-300' :
+                            changed ? 'bg-amber-50 border-amber-300' : 'bg-green-50 border-green-200'
+                          }`}>
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-3">
                                 <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
@@ -560,6 +639,51 @@ export default function LaunchesPage() {
                             <p className="text-sm text-gray-600">{item.rationale}</p>
                             {item.synergies && (
                               <p className="text-xs text-indigo-600 mt-1">🔗 {item.synergies}</p>
+                            )}
+                            {/* Action buttons per launch */}
+                            {item.launch_id && (
+                              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                                {itemState === 'done' ? (
+                                  <span className="text-xs text-emerald-700 font-medium flex items-center gap-1">
+                                    ✓ Zastosowano i odświeżono plan
+                                  </span>
+                                ) : itemState === 'applying' ? (
+                                  <span className="text-xs text-amber-700 flex items-center gap-1">
+                                    <Loader2 className="w-3 h-3 animate-spin" /> Zmieniam datę...
+                                  </span>
+                                ) : itemState === 'refreshing' ? (
+                                  <span className="text-xs text-indigo-700 flex items-center gap-1">
+                                    <Loader2 className="w-3 h-3 animate-spin" /> Odświeżam plan marketingowy...
+                                  </span>
+                                ) : (
+                                  <>
+                                    {changed && (
+                                      <>
+                                        <button
+                                          onClick={() => applyDateAndRefresh(item.launch_id, item.proposed_date)}
+                                          className="text-xs bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2.5 py-1 rounded-md font-medium flex items-center gap-1"
+                                        >
+                                          <Sparkles className="w-3 h-3" /> Zastosuj datę + odśwież plan
+                                        </button>
+                                        <button
+                                          onClick={() => applyDate(item.launch_id, item.proposed_date)}
+                                          className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 px-2.5 py-1 rounded-md font-medium"
+                                        >
+                                          Tylko zmień datę
+                                        </button>
+                                      </>
+                                    )}
+                                    {!changed && (
+                                      <button
+                                        onClick={() => applyDateAndRefresh(item.launch_id, item.proposed_date)}
+                                        className="text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-2.5 py-1 rounded-md font-medium flex items-center gap-1"
+                                      >
+                                        <RefreshCw className="w-3 h-3" /> Odśwież plan marketingowy
+                                      </button>
+                                    )}
+                                  </>
+                                )}
+                              </div>
                             )}
                           </div>
                         );
