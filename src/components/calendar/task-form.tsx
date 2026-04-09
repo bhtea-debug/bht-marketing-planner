@@ -92,6 +92,12 @@ const TaskForm: React.FC<TaskFormProps> = ({
         ...prev,
         scheduled_date: format(selectedDate, 'yyyy-MM-dd'),
       }));
+    } else {
+      // Default to today when creating a new task without a selected date
+      setFormData((prev) => ({
+        ...prev,
+        scheduled_date: prev.scheduled_date || format(new Date(), 'yyyy-MM-dd'),
+      }));
     }
   }, [task, selectedDate]);
 

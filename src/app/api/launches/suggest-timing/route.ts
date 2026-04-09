@@ -133,7 +133,25 @@ export async function POST(req: NextRequest) {
 
 Dostajesz opis nowego produktu (lub CAŁEJ LINII produktowej) i kontekst rynku/kalendarza. Twoja rola:
 0. Rozpoznaj typ launchu: "single" = jeden SKU, "product_line" = cała nowa linia/kolekcja (np. 4-5 smaków, nowa seria sezonowa). Dla product_line: plan jest szerszy, z większym tease/reveal, hero-product strategy, możliwy staggered reveal. Dla single: szybciej, ostrzej, jeden hero hook.
-1. Zaproponuj OPTYMALNĄ datę launchu (YYYY-MM-DD) — uwzględnij sezonowość kategorii (cold brew → maj-czerwiec, gorące napary → październik-luty), święta z 'holidaysAhead' (synergia lub świadome unikanie), wolne sloty w kalendarzu (nie kanibalizuj innych launchy), lead time produkcyjny (min 2-3 tygodnie od dziś, chyba że user_notes mówią inaczej).
+1. Zaproponuj OPTYMALNĄ datę launchu (YYYY-MM-DD) — uwzględnij sezonowość kategorii (cold brew → maj-czerwiec, gorące napary → październik-luty), święta z 'holidaysAhead' (synergia lub świadome unikanie), wolne sloty w kalendarzu, lead time produkcyjny (min 2-3 tygodnie od dziś, chyba że user_notes mówią inaczej).
+
+⚠️ TWARDE REGUŁY SPACING'U LAUNCHY (OBOWIĄZKOWE):
+- MAKSYMALNIE 2 launche w jednym miesiącu kalendarzowym. Jeśli dany miesiąc ma już 2+ launche w otherPlannedLaunches → PRZESUŃ na następny wolny miesiąc.
+- MINIMUM 3 tygodnie (21 dni) odstępu między datą tego launchu a najbliższym innym launchem (zarówno przed jak i po).
+- Jeśli sezonowość sugeruje dany miesiąc ale jest już pełny → wybierz najbliższy wolny slot PRZED lub PO, preferując wcześniejszy termin.
+- W warnings[] ZAWSZE wymień konflikty kalendarzowe i wyjaśnij dlaczego wybrałeś tę datę zamiast "oczywistej" sezonowej.
+- Policz launche per miesiąc z otherPlannedLaunches i napisz to w rationale (np. "Maj ma już 2 launche: X i Y, przesuwam na czerwiec").
+
+📊 ANALIZA STRATEGICZNA ISTNIEJĄCYCH LAUNCHY (OBOWIĄZKOWA):
+Zanim zaproponujesz datę, PRZEANALIZUJ otherPlannedLaunches i wyciągnij wnioski:
+- Jakie KATEGORIE produktów już są zaplanowane? (matcha, herbata owocowa, akcesoria, cold brew, etc.)
+- Czy nowy produkt jest z tej samej kategorii co istniejące launche? → Jeśli TAK, MUSI być w innym miesiącu (kanibalizacja kategorii).
+- Czy audience się pokrywa? Dwa produkty skierowane do tej samej persony potrzebują min 4 tygodnie odstępu.
+- Jak wygląda rozkład launchy w czasie? Czy jest "dziura" w kalendarzu którą warto wypełnić?
+- Jakie kampanie (upcomingCampaigns) już zajmują uwagę marketingu w danym okresie?
+- W rationale ZAWSZE opisz: ile launchy jest w każdym miesiącu, jakie kategorie, dlaczego wybrany slot jest optymalny strategicznie (nie tylko sezonowo).
+- W warnings[] dodaj ostrzeżenia typu: "Maj przeładowany — 2 launche matchy, banofi jako deser konkuruje o tę samą uwagę" lub "Brak launchy w czerwcu — optymalny slot".
+
 2. Doprecyzuj target audience na bazie opisu/składu/ceny — kim są ci ludzie, co lubią, gdzie ich szukać.
 3. Sanity-check ceny — czy spójna z premium brandem, czy nie odstaje od kategorii. Jeśli brak ceny, zasugeruj widełki.
 4. Zaproponuj plan launchu: tydzień -2 (tease), tydzień -1 (pre-order/reveal), tydzień launch (push), tydzień +1 (UGC + retargeting). Dla każdego tygodnia: kanały, format, hook.
@@ -145,6 +163,7 @@ Schema:
   "suggested_date": "YYYY-MM-DD",
   "confidence": "high|medium|low",
   "rationale": "<2-3 zdania, dlaczego ta data>",
+  "calendar_analysis": "<analiza istniejących launchy: ile per miesiąc, jakie kategorie, gdzie jest wolny slot, dlaczego ten a nie inny>",
   "target_audience_refined": "<konkretny opis persony, max 2 zdania>",
   "pricing_check": {
     "verdict": "ok|too_low|too_high|missing",
