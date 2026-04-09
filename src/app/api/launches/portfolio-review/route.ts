@@ -216,6 +216,23 @@ KROK 5: REKOMENDACJE GLOBALNE
 - Ryzyka: co może pójść nie tak z tym układem?
 
 ═══════════════════════════════════════════
+KROK 6: PRODUKTY UZUPEŁNIAJĄCE (SUGESTIE)
+═══════════════════════════════════════════
+Na bazie CAŁEJ analizy zaproponuj 2-5 NOWYCH produktów/linii, które:
+- Wypełniają LUKI w portfolio (brakująca kategoria, sezon bez launchu)
+- Wzmacniają istniejące launche (akcesoria, complementary products)
+- Wykorzystują wolne sloty w kalendarzu
+- Pasują do narracji marki i brand profile
+- Są realistyczne dla premium e-commerce z herbatą
+
+Dla każdej sugestii podaj:
+- Konkretną nazwę produktu/linii (kreatywną, w stylu marki)
+- Kategorię i krótki pitch
+- Sugerowany miesiąc launchu (i dlaczego właśnie wtedy)
+- Jak wpisuje się w portfolio (jaką lukę wypełnia, co wzmacnia)
+- Priorytet: "must_have" (pilna luka), "nice_to_have" (wzmocnienie), "future" (długoterminowo)
+
+═══════════════════════════════════════════
 OUTPUT — WYŁĄCZNIE VALID JSON
 ═══════════════════════════════════════════
 Bez markdown, bez code fences.
@@ -240,7 +257,19 @@ Bez markdown, bez code fences.
   "global_recommendations": ["<strategiczne rekomendacje dla całego roku>"],
   "team_load_analysis": "<analiza obciążenia zespołu — kiedy peak, kiedy luz>",
   "risks": ["<ryzyka i jak je mitygować>"],
-  "calendar_gaps": ["<miesiące bez launchy — czy warto je wypełnić>"]
+  "calendar_gaps": ["<miesiące bez launchy — czy warto je wypełnić>"],
+  "suggested_products": [
+    {
+      "name": "<kreatywna nazwa produktu/linii>",
+      "category": "<kategoria: matcha|herbata_owocowa|herbata_czarna|herbata_zielona|cold_brew|akcesoria|herbata_deserowa|herbata_funkcjonalna|zestaw|limitowana_edycja>",
+      "short_pitch": "<1-2 zdania: co to, dla kogo, czym się wyróżnia>",
+      "suggested_month": "<YYYY-MM>",
+      "month_rationale": "<dlaczego ten miesiąc — sezon, luka, synergia>",
+      "portfolio_fit": "<jaką lukę wypełnia, co wzmacnia w istniejącym portfolio>",
+      "priority": "must_have|nice_to_have|future",
+      "estimated_price_range_pln": [null, null]
+    }
+  ]
 }`;
 
     let userPrompt = `DZIŚ JEST ${todayIso}.

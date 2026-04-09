@@ -159,6 +159,8 @@ export default function LaunchesPage() {
   const [portfolioUpdatedAt, setPortfolioUpdatedAt] = useState("");
   const [loadingPortfolio, setLoadingPortfolio] = useState(false);
   const [hasSavedReview, setHasSavedReview] = useState(false);
+  const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
+  const [addingSuggestions, setAddingSuggestions] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -290,6 +292,42 @@ export default function LaunchesPage() {
       }
     } finally {
       setReviewingPortfolio(false);
+    }
+  }
+
+  function toggleSuggestion(idx: number) {
+    setSelectedSuggestions(prev => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx); else next.add(idx);
+      return next;
+    });
+  }
+
+  async function addSelectedSuggestions() {
+    if (!portfolioReview?.suggested_products?.length || selectedSuggestions.size === 0) return;
+    setAddingSuggestions(true);
+    try {
+      for (const idx of selectedSuggestions) {
+        const sp = portfolioReview.suggested_products[idx];
+        if (!sp) continue;
+        await fetch("/api/launches", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: sp.name,
+            short_pitch: sp.short_pitch,
+            category: sp.category,
+            status: "idea",
+            launch_type: "single",
+            ai_suggestion_notes: `Portfolio AI: ${sp.portfolio_fit}. Sugerowany miesiąc: ${sp.suggested_month} — ${sp.month_rationale}`,
+            notes: `Priorytet: ${sp.priority}. ${sp.portfolio_fit}`,
+          }),
+        });
+      }
+      setSelectedSuggestions(new Set());
+      load(); // refresh launches list
+    } finally {
+      setAddingSuggestions(false);
     }
   }
 
@@ -564,6 +602,103 @@ export default function LaunchesPage() {
                       <li key={i} className="text-sm text-gray-600">• {gap}</li>
                     ))}
                   </ul>
+                </div>
+              )}
+
+              {/* Suggested products */}
+              {Array.isArray(portfolioReview?.suggested_products) && portfolioReview.suggested_products.length > 0 && (
+                <div className="bg-gradient-to-br from-violet-50 to-fuchsia-50 border border-violet-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-semibold text-violet-900">🧩 Proponowane produkty uzupełniające</div>
+                      <p className="text-xs text-violet-600 mt-0.5">AI sugeruje produkty wypełniające luki w portfolio. Zaznacz te, które chcesz dodać.</p>
+                    </div>
+                    {selectedSuggestions.size > 0 && (
+                      <button
+                        onClick={addSelectedSuggestions}
+                        disabled={addingSuggestions}
+                        className="bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1"
+                      >
+                        {addingSuggestions ? (
+                          <><Loader2 className="w-3 h-3 animate-spin" /> Dodaję...</>
+                        ) : (
+                          <><Plus className="w-3 h-3" /> Dodaj {selectedSuggestions.size} do launchy</>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    {portfolioReview.suggested_products.map((sp: any, i: number) => {
+                      const isSelected = selectedSuggestions.has(i);
+                      const priorityStyle = sp.priority === 'must_have'
+                        ? 'border-red-300 bg-red-50'
+                        : sp.priority === 'nice_to_have'
+                        ? 'border-amber-300 bg-amber-50'
+                        : 'border-gray-300 bg-gray-50';
+                      const priorityLabel = sp.priority === 'must_have'
+                        ? '🔴 Kluczowy'
+                        : sp.priority === 'nice_to_have'
+                        ? '🟡 Warto rozważyć'
+                        : '🔵 Na przyszłość';
+                      return (
+                        <div
+                          key={i}
+                          onClick={() => toggleSuggestion(i)}
+                          className={`rounded-lg p-3 border-2 cursor-pointer transition-all ${
+                            isSelected
+                              ? 'border-violet-500 bg-violet-50 ring-2 ring-violet-200'
+                              : 'border-gray-200 bg-white hover:border-violet-300'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className={`w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                              isSelected ? 'bg-violet-600 border-violet-600' : 'border-gray-300'
+                            }`}>
+                              {isSelected && <span className="text-white text-xs font-bold">✓</span>}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className="font-semibold text-sm text-gray-900">{sp.name}</span>
+                                <span className="text-xs px-1.5 py-0.5 rounded bg-violet-100 text-violet-700">{sp.category}</span>
+                                <span className={`text-xs px-1.5 py-0.5 rounded ${priorityStyle}`}>{priorityLabel}</span>
+                                {sp.suggested_month && (
+                                  <span className="text-xs text-gray-500">📅 {sp.suggested_month}</span>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-600">{sp.short_pitch}</p>
+                              <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
+                                {sp.portfolio_fit && (
+                                  <span className="text-xs text-violet-600">🧩 {sp.portfolio_fit}</span>
+                                )}
+                                {sp.month_rationale && (
+                                  <span className="text-xs text-gray-500">🗓️ {sp.month_rationale}</span>
+                                )}
+                                {sp.estimated_price_range_pln?.[0] && (
+                                  <span className="text-xs text-gray-500">💰 {sp.estimated_price_range_pln[0]}–{sp.estimated_price_range_pln[1]} PLN</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {selectedSuggestions.size > 0 && (
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="text-xs text-violet-600">{selectedSuggestions.size} zaznaczonych</span>
+                      <button
+                        onClick={addSelectedSuggestions}
+                        disabled={addingSuggestions}
+                        className="bg-violet-600 hover:bg-violet-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+                      >
+                        {addingSuggestions ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Dodaję...</>
+                        ) : (
+                          <><Plus className="w-4 h-4" /> Dodaj zaznaczone jako nowe launche</>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
