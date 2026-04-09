@@ -109,6 +109,15 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
     }
   }
 
+  // ----- AUTO-SAVE & CLOSE -----
+  // Save draft silently before closing whenever there's a plan in memory.
+  async function autoSaveAndClose() {
+    if (plan && plan.weeks?.length > 0) {
+      await saveDraft({ silent: true, nameOverride: undefined });
+    }
+    onClose();
+  }
+
   // ----- DRAFT PERSISTENCE HELPERS -----
   // Snapshot of everything we need to restore the wizard later.
   function buildDraftPayload() {
@@ -606,7 +615,7 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
               Kreator planu miesięcznego
             </h2>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-900">
+          <button onClick={autoSaveAndClose} className="text-slate-500 hover:text-slate-900" title="Zamknij (auto-zapis draftu)">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -1226,7 +1235,13 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
 
               <div className="flex gap-2 sticky bottom-0 bg-white pt-2">
                 <button
-                  onClick={() => setStep('config')}
+                  onClick={async () => {
+                    // Auto-save before going back so the plan survives
+                    if (plan && plan.weeks?.length > 0) {
+                      await saveDraft({ silent: true });
+                    }
+                    setStep('config');
+                  }}
                   className="flex-1 border border-slate-300 text-slate-700 rounded-lg px-4 py-2 text-sm font-medium"
                 >
                   Wstecz
