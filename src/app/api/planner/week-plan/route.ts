@@ -153,6 +153,16 @@ export async function POST(req: NextRequest) {
     // Store policies so the AI doesn't propose promos that conflict with reality.
     const storePolicies = context?.storePolicies || null;
 
+    // Accumulated knowledge from user interactions — persistent lessons.
+    const knowledgeEntries: any[] = Array.isArray(context?.knowledgeEntries)
+      ? context.knowledgeEntries
+      : [];
+
+    // Existing tasks in this month — for context awareness & dedup.
+    const existingTasks: any[] = Array.isArray(context?.existingTasks)
+      ? context.existingTasks
+      : [];
+
     const userPayload = {
       month,
       today: todayIso,
@@ -338,7 +348,19 @@ ${storePolicies ? JSON.stringify(storePolicies, null, 2) : '  (brak danych — N
 
 ALLOWED PRODUCT NAMES (lista ${allowedProductNames.length} pozycji z WooCommerce — wybieraj WYŁĄCZNIE z tej listy, MIX kategorii):
 ${allowedProductNames.length > 0 ? allowedProductNames.map((n) => `  - ${n}`).join('\n') : '  (pusta — Woo niedostępne, użyj "(brak danych Woo)" jako name i dodaj warning w designer_summary)'}
+${knowledgeEntries.length > 0 ? `
+BAZA WIEDZY — lekcje i preferencje właściciela sklepu (BEZWZGLĘDNIE przestrzegaj, to nadrzędne nad ogólnymi regułami):
+${knowledgeEntries.map((k: any) => `  [${k.category}] ${k.content}`).join('\n')}
+` : ''}
+${existingTasks.length > 0 ? `
+ISTNIEJĄCE ZADANIA W KALENDARZU na ten okres (weź pod uwagę — nie duplikuj, uzupełniaj luki, wskaż priorytety):
+${existingTasks.map((t: any) => `  [${t.status}/${t.priority}] ${t.scheduled_date || '?'}: ${t.title} (kampania: ${t.campaign})`).join('\n')}
 
+Na podstawie istniejących zadań:
+- NIE duplikuj zadań które już istnieją
+- Jeśli widzisz luki (np. brak banneru na stronę, brak maila) — dodaj do store_tasks/linked_calendar_tasks
+- Sugeruj priorytety: zadania blokujące (baner przed kampanią, landing page) = deadline wcześniejszy
+` : ''}
 Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${JSON.stringify(userPayload, null, 2)}`;
 
     const weekPlanTool = {

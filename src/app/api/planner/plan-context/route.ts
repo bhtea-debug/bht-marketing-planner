@@ -12,6 +12,8 @@ import {
   purchaseValue,
 } from '@/lib/meta-api';
 import { buildWooSalesContext } from '@/lib/woo-api';
+import { planning_knowledge } from '@/db/schema';
+import { ensurePlanningKnowledge } from '@/lib/ensure-tables';
 
 // POST /api/planner/plan-context
 // Body: { month: 'YYYY-MM', accountId?: 'act_xxx' }
@@ -205,6 +207,51 @@ export async function POST(req: NextRequest) {
       }
     } catch {}
 
+    // ----- Planning knowledge (accumulated AI learnings) -----
+    let knowledgeEntries: any[] = [];
+    try {
+      await ensurePlanningKnowledge();
+      const rows = await db
+        .select()
+        .from(planning_knowledge)
+        .where(eq(planning_knowledge.active, 1));
+      knowledgeEntries = rows.map((r: any) => ({
+        category: r.category,
+        content: r.content,
+      }));
+    } catch (e) {
+      console.warn('[plan-context] knowledge fetch failed', e);
+    }
+
+    // ----- Existing tasks & campaigns for analysis -----
+    let existingTasks: any[] = [];
+    try {
+      const { tasks: tasksTable, campaigns: campaignsTable } = await import('@/db/schema');
+      const allTasks = await db.select().from(tasksTable);
+      const allCampaigns = await db.select().from(campaignsTable);
+      const campMap: Record<number, any> = {};
+      for (const c of allCampaigns) campMap[c.id] = c;
+      existingTasks = allTasks
+        .filter((t: any) => {
+          const camp = campMap[t.campaign_id];
+          if (!camp) return false;
+          // Only include tasks for the target month +/- 1 month
+          const sd = camp.start_date || '';
+          return sd.startsWith(month) || sd.startsWith(month.replace(/-\d+$/, ''));
+        })
+        .map((t: any) => ({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          priority: t.priority,
+          scheduled_date: t.scheduled_date,
+          campaign: campMap[t.campaign_id]?.name || '?',
+        }))
+        .slice(0, 50); // cap for token budget
+    } catch (e) {
+      console.warn('[plan-context] tasks fetch failed', e);
+    }
+
     return NextResponse.json({
       data: {
         meta: metaContext,
@@ -213,6 +260,8 @@ export async function POST(req: NextRequest) {
         brandProfile: brandForPrompt,
         configuredAOV: Number(process.env.META_AVG_ORDER_VALUE || 120),
         storePolicies,
+        knowledgeEntries,
+        existingTasks,
       },
     });
   } catch (e: any) {

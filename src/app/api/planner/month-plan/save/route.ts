@@ -139,6 +139,8 @@ export async function POST(req: NextRequest) {
         // Create linked calendar tasks for this week (only once per week — link to first campaign)
         if (campaignId && w.linked_calendar_tasks?.length) {
           for (const taskTitle of w.linked_calendar_tasks) {
+            // Smart priority: tasks with "baner" or "landing" keywords get high priority
+            const isBlocking = /baner|landing|strona|page|popup/i.test(taskTitle);
             try {
               await db.insert(tasks).values({
                 campaign_id: campaignId,
@@ -146,11 +148,44 @@ export async function POST(req: NextRequest) {
                 title: taskTitle,
                 description: `Auto-generated z planu ${month}`,
                 status: 'todo',
-                priority: 'medium',
+                priority: isBlocking ? 'high' : 'medium',
                 scheduled_date: startDate,
               });
             } catch (e) {
               console.warn('[save] task insert failed', e);
+            }
+          }
+        }
+
+        // Create store_tasks as high-priority tasks (banners, landing pages, etc.)
+        // These get linked to the FIRST campaign in the week and use a dedicated
+        // "ecommerce site" channel. We only create them once (avoid duplication on
+        // re-deploy of the same week).
+        if (campaignId && w.store_tasks?.length && ch === (w.channels || [])[0]) {
+          const siteChannelId = await ensureChannel('ecommerce site');
+          for (const st of w.store_tasks) {
+            // Store tasks are blocking — deadline is before campaign start
+            const taskDeadline = st.deadline && /^\d{4}-\d{2}-\d{2}/.test(st.deadline)
+              ? st.deadline.slice(0, 10)
+              : startDate; // fallback: campaign start
+            const taskDesc = [
+              st.description || '',
+              st.placement ? `Umiejscowienie: ${st.placement}` : '',
+              st.visual_note ? `Wizualnie: ${st.visual_note}` : '',
+              `Typ: ${(st.type || '').replace(/_/g, ' ')}`,
+            ].filter(Boolean).join('\n');
+            try {
+              await db.insert(tasks).values({
+                campaign_id: campaignId,
+                channel_id: siteChannelId,
+                title: `🛒 ${st.title || (st.type || '').replace(/_/g, ' ')}`,
+                description: taskDesc,
+                status: 'todo',
+                priority: 'high', // store tasks always high — they block paid campaigns
+                scheduled_date: taskDeadline,
+              });
+            } catch (e) {
+              console.warn('[save] store_task insert failed', e);
             }
           }
         }

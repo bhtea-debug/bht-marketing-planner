@@ -255,3 +255,19 @@ export const month_plan_drafts = sqliteTable('month_plan_drafts', {
 });
 
 export type MonthPlanDraft = typeof month_plan_drafts.$inferSelect;
+
+// Persistent AI knowledge base — facts, rules, and preferences the AI learned
+// from user interactions (refine prompts, brand profile answers, manual entries).
+// Fed into every week-plan generation so the AI doesn't repeat mistakes.
+export const planning_knowledge = sqliteTable('planning_knowledge', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  category: text('category', {
+    enum: ['product', 'policy', 'preference', 'lesson', 'audience', 'channel', 'visual'],
+  }).notNull(),
+  content: text('content').notNull(),            // The actual insight/rule
+  source: text('source').notNull().default('manual'), // 'manual' | 'refine' | 'brand_profile' | 'auto'
+  active: integer('active').notNull().default(1), // 1 = active, 0 = disabled
+  created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export type PlanningKnowledge = typeof planning_knowledge.$inferSelect;

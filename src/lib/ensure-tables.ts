@@ -59,3 +59,14 @@ export async function ensurePlanDrafts() {
   )`);
   await db.run(sql`CREATE INDEX IF NOT EXISTS idx_month_plan_drafts_month ON month_plan_drafts(month)`);
 }
+
+export async function ensurePlanningKnowledge() {
+  await db.run(sql`CREATE TABLE IF NOT EXISTS planning_knowledge (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category TEXT NOT NULL,
+    content TEXT NOT NULL,
+    source TEXT NOT NULL DEFAULT 'manual',
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`);
+}

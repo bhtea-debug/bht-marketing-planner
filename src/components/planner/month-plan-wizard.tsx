@@ -269,6 +269,19 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
       }));
       setRefinePrompt('');
       setRefineOpenFor(null);
+      // Auto-save the user's refinement feedback as a learning
+      // for future generations (fire-and-forget).
+      try {
+        fetch('/api/planner/knowledge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            category: 'lesson',
+            content: `[Feedback do T${isoWeek}] ${instructions}`,
+            source: 'refine',
+          }),
+        });
+      } catch {} // silent — non-critical
     } catch (e: any) {
       alert('Nie udało się poprawić tygodnia: ' + e.message);
     } finally {
