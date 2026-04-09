@@ -70,3 +70,15 @@ export async function ensurePlanningKnowledge() {
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`);
 }
+
+export async function ensurePortfolioReviews() {
+  await db.run(sql`CREATE TABLE IF NOT EXISTS portfolio_reviews (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    review_json TEXT NOT NULL,
+    user_comments TEXT,
+    launch_count INTEGER DEFAULT 0,
+    version INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`);
+}

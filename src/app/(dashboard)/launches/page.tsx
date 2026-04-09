@@ -154,6 +154,11 @@ export default function LaunchesPage() {
   const [portfolioReview, setPortfolioReview] = useState<any>(null);
   const [reviewingPortfolio, setReviewingPortfolio] = useState(false);
   const [showPortfolioReview, setShowPortfolioReview] = useState(false);
+  const [portfolioComments, setPortfolioComments] = useState("");
+  const [portfolioVersion, setPortfolioVersion] = useState(0);
+  const [portfolioUpdatedAt, setPortfolioUpdatedAt] = useState("");
+  const [loadingPortfolio, setLoadingPortfolio] = useState(false);
+  const [hasSavedReview, setHasSavedReview] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -239,19 +244,47 @@ export default function LaunchesPage() {
     }
   }
 
-  async function runPortfolioReview() {
+  async function loadSavedReview() {
+    setLoadingPortfolio(true);
+    try {
+      const res = await fetch("/api/launches/portfolio-review");
+      const json = await res.json();
+      if (json.data?.review) {
+        setPortfolioReview(json.data.review);
+        setPortfolioComments(json.data.user_comments || "");
+        setPortfolioVersion(json.data.version || 1);
+        setPortfolioUpdatedAt(json.data.updated_at || "");
+        setHasSavedReview(true);
+        return true;
+      }
+      return false;
+    } catch { return false; }
+    finally { setLoadingPortfolio(false); }
+  }
+
+  async function openPortfolioReview() {
+    setShowPortfolioReview(true);
+    if (!portfolioReview) {
+      await loadSavedReview();
+    }
+  }
+
+  async function runPortfolioReview(withComments?: boolean) {
     setReviewingPortfolio(true);
-    setPortfolioReview(null);
     try {
       const res = await fetch("/api/launches/portfolio-review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({
+          user_comments: withComments ? portfolioComments : '',
+        }),
       });
       const json = await res.json();
       if (json.data?.review) {
         setPortfolioReview(json.data.review);
-        setShowPortfolioReview(true);
+        setPortfolioVersion(json.data.version || 1);
+        setPortfolioUpdatedAt(new Date().toISOString());
+        setHasSavedReview(true);
       } else {
         alert(json.error || "Nie udało się przeanalizować portfolio");
       }
@@ -259,6 +292,13 @@ export default function LaunchesPage() {
       setReviewingPortfolio(false);
     }
   }
+
+  // Check for saved review on mount
+  useEffect(() => {
+    fetch("/api/launches/portfolio-review").then(r => r.json()).then(json => {
+      if (json.data?.review) setHasSavedReview(true);
+    }).catch(() => {});
+  }, []);
 
   async function resuggest() {
     if (!openLaunch) return;
@@ -297,14 +337,14 @@ export default function LaunchesPage() {
         <div className="flex gap-2">
           {launches.filter(l => !['launched','cancelled'].includes(l.status)).length >= 2 && (
             <button
-              onClick={runPortfolioReview}
-              disabled={reviewingPortfolio}
+              onClick={openPortfolioReview}
+              disabled={reviewingPortfolio || loadingPortfolio}
               className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
             >
-              {reviewingPortfolio ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Analizuję...</>
+              {(reviewingPortfolio || loadingPortfolio) ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> {loadingPortfolio ? 'Ładuję...' : 'Analizuję...'}</>
               ) : (
-                <><BarChart3 className="w-4 h-4" /> Przeanalizuj strategię</>
+                <><BarChart3 className="w-4 h-4" /> {hasSavedReview ? 'Strategia launchy' : 'Przeanalizuj strategię'}</>
               )}
             </button>
           )}
@@ -377,7 +417,7 @@ export default function LaunchesPage() {
       )}
 
       {/* Portfolio review modal */}
-      {showPortfolioReview && portfolioReview && (
+      {showPortfolioReview && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50">
@@ -393,8 +433,27 @@ export default function LaunchesPage() {
               </button>
             </div>
             <div className="p-6 space-y-5">
+              {/* Empty state — no review yet */}
+              {!portfolioReview && !reviewingPortfolio && !loadingPortfolio && (
+                <div className="text-center py-8">
+                  <BarChart3 className="w-10 h-10 text-indigo-300 mx-auto mb-3" />
+                  <p className="text-gray-500 mb-4">Brak zapisanej analizy. Uruchom pierwszą analizę portfolio.</p>
+                  <button
+                    onClick={() => runPortfolioReview(false)}
+                    className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white px-6 py-3 rounded-lg text-sm font-medium inline-flex items-center gap-2"
+                  >
+                    <Sparkles className="w-4 h-4" /> Uruchom analizę AI
+                  </button>
+                </div>
+              )}
+              {(reviewingPortfolio || loadingPortfolio) && !portfolioReview && (
+                <div className="text-center py-12">
+                  <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mx-auto mb-3" />
+                  <p className="text-gray-500">{loadingPortfolio ? 'Ładuję zapisaną analizę...' : 'AI analizuje portfolio launchy...'}</p>
+                </div>
+              )}
               {/* Summary */}
-              {portfolioReview.portfolio_summary && (
+              {portfolioReview?.portfolio_summary && (
                 <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
                   <div className="text-sm font-medium text-indigo-800 mb-1">📋 Podsumowanie portfolio</div>
                   <p className="text-sm text-gray-700">{portfolioReview.portfolio_summary}</p>
@@ -402,7 +461,7 @@ export default function LaunchesPage() {
               )}
 
               {/* Year narrative */}
-              {portfolioReview.year_narrative && (
+              {portfolioReview?.year_narrative && (
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                   <div className="text-sm font-medium text-purple-800 mb-1">📖 Narracja roczna</div>
                   <p className="text-sm text-gray-700">{portfolioReview.year_narrative}</p>
@@ -410,7 +469,7 @@ export default function LaunchesPage() {
               )}
 
               {/* Current issues */}
-              {Array.isArray(portfolioReview.current_issues) && portfolioReview.current_issues.length > 0 && (
+              {Array.isArray(portfolioReview?.current_issues) && portfolioReview.current_issues.length > 0 && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <div className="text-sm font-medium text-red-800 mb-2">⚠️ Problemy z obecnym układem</div>
                   <ul className="space-y-1">
@@ -422,7 +481,7 @@ export default function LaunchesPage() {
               )}
 
               {/* Proposed timeline */}
-              {Array.isArray(portfolioReview.proposed_timeline) && portfolioReview.proposed_timeline.length > 0 && (
+              {Array.isArray(portfolioReview?.proposed_timeline) && portfolioReview.proposed_timeline.length > 0 && (
                 <div>
                   <div className="text-sm font-semibold text-gray-900 mb-3">🗓️ Proponowana oś czasu</div>
                   <div className="space-y-3">
@@ -468,7 +527,7 @@ export default function LaunchesPage() {
                         );
                       })}
                   </div>
-                  {portfolioReview.launch_sequence_rationale && (
+                  {portfolioReview?.launch_sequence_rationale && (
                     <div className="mt-3 bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
                       <b className="text-gray-800">Dlaczego taka kolejność:</b> {portfolioReview.launch_sequence_rationale}
                     </div>
@@ -477,7 +536,7 @@ export default function LaunchesPage() {
               )}
 
               {/* Team load */}
-              {portfolioReview.team_load_analysis && (
+              {portfolioReview?.team_load_analysis && (
                 <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
                   <div className="text-sm font-medium text-sky-800 mb-1">👥 Obciążenie zespołu</div>
                   <p className="text-sm text-gray-700">{portfolioReview.team_load_analysis}</p>
@@ -485,7 +544,7 @@ export default function LaunchesPage() {
               )}
 
               {/* Global recommendations */}
-              {Array.isArray(portfolioReview.global_recommendations) && portfolioReview.global_recommendations.length > 0 && (
+              {Array.isArray(portfolioReview?.global_recommendations) && portfolioReview.global_recommendations.length > 0 && (
                 <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
                   <div className="text-sm font-medium text-emerald-800 mb-2">💡 Rekomendacje strategiczne</div>
                   <ul className="space-y-1">
@@ -497,7 +556,7 @@ export default function LaunchesPage() {
               )}
 
               {/* Calendar gaps */}
-              {Array.isArray(portfolioReview.calendar_gaps) && portfolioReview.calendar_gaps.length > 0 && (
+              {Array.isArray(portfolioReview?.calendar_gaps) && portfolioReview.calendar_gaps.length > 0 && (
                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
                   <div className="text-sm font-medium text-gray-800 mb-2">📅 Luki w kalendarzu</div>
                   <ul className="space-y-1">
@@ -509,7 +568,7 @@ export default function LaunchesPage() {
               )}
 
               {/* Risks */}
-              {Array.isArray(portfolioReview.risks) && portfolioReview.risks.length > 0 && (
+              {Array.isArray(portfolioReview?.risks) && portfolioReview.risks.length > 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                   <div className="text-sm font-medium text-amber-800 mb-2">⚡ Ryzyka</div>
                   <ul className="space-y-1">
@@ -519,16 +578,51 @@ export default function LaunchesPage() {
                   </ul>
                 </div>
               )}
+
+              {/* User comments for re-analysis */}
+              {portfolioReview && <div className="border-t pt-5">
+                <label className="block text-sm font-medium text-gray-800 mb-2">
+                  💬 Twoje komentarze do re-analizy
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Napisz co chcesz zmienić, z czym się nie zgadzasz, jakie masz ograniczenia — AI weźmie to pod uwagę w nowej analizie.
+                </p>
+                <textarea
+                  value={portfolioComments}
+                  onChange={(e) => setPortfolioComments(e.target.value)}
+                  rows={4}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                  placeholder="np. Matcha Shake musi być w maju bo mamy już zamówione surowce. Banofi chcę przesunąć na lato. Zespół graficzny w lipcu ma urlopy..."
+                />
+                <button
+                  onClick={() => runPortfolioReview(true)}
+                  disabled={reviewingPortfolio || !portfolioComments.trim()}
+                  className="mt-3 w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 text-white px-4 py-3 rounded-lg flex items-center justify-center gap-2 text-sm font-medium"
+                >
+                  {reviewingPortfolio ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> AI przelicza z uwagami...</>
+                  ) : (
+                    <><RefreshCw className="w-4 h-4" /> Re-analiza z moimi uwagami</>
+                  )}
+                </button>
+              </div>}
             </div>
             <div className="p-6 border-t flex items-center justify-between">
-              <button
-                onClick={runPortfolioReview}
-                disabled={reviewingPortfolio}
-                className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-1"
-              >
-                <RefreshCw className={`w-4 h-4 ${reviewingPortfolio ? 'animate-spin' : ''}`} />
-                Przelicz ponownie
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => runPortfolioReview(false)}
+                  disabled={reviewingPortfolio}
+                  className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-1"
+                >
+                  <RefreshCw className={`w-4 h-4 ${reviewingPortfolio ? 'animate-spin' : ''}`} />
+                  Od nowa (bez uwag)
+                </button>
+                {portfolioVersion > 0 && (
+                  <span className="text-xs text-gray-400">
+                    v{portfolioVersion} · {portfolioUpdatedAt ? new Date(portfolioUpdatedAt).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''}
+                  </span>
+                )}
+              </div>
               <button
                 onClick={() => setShowPortfolioReview(false)}
                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"

@@ -2,28 +2,57 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
-import { product_launches, campaigns, brand_profile, planning_knowledge } from '@/db/schema';
-import { gte, eq } from 'drizzle-orm';
+import { product_launches, campaigns, brand_profile, planning_knowledge, portfolio_reviews } from '@/db/schema';
+import { gte, eq, desc } from 'drizzle-orm';
 import { buildWooSalesContext } from '@/lib/woo-api';
 import { getWooProducts } from '@/lib/woo-api';
+import { ensurePortfolioReviews } from '@/lib/ensure-tables';
+
+// GET /api/launches/portfolio-review — load latest saved review
+export async function GET() {
+  try {
+    await ensurePortfolioReviews();
+    const rows = await db.select().from(portfolio_reviews).orderBy(desc(portfolio_reviews.updated_at)).limit(1);
+    if (!rows.length) return NextResponse.json({ data: null });
+    const row = rows[0];
+    let review = null;
+    try { review = JSON.parse(row.review_json); } catch {}
+    return NextResponse.json({
+      data: {
+        id: row.id,
+        review,
+        user_comments: row.user_comments || '',
+        launch_count: row.launch_count,
+        version: row.version,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      },
+    });
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 });
+  }
+}
 
 // POST /api/launches/portfolio-review
-// Analyzes ALL planned launches together and suggests optimal timing reshuffles
+// Body: { user_comments?: string }
+// Analyzes ALL planned launches together, saves result, returns review
 export async function POST(req: NextRequest) {
   try {
+    await ensurePortfolioReviews();
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 });
     }
+
+    const body = await req.json().catch(() => ({}));
+    const userComments: string = body.user_comments || '';
 
     const today = new Date();
     const todayIso = today.toISOString().slice(0, 10);
 
     // Fetch all launches
     let allLaunches: any[] = [];
-    try {
-      allLaunches = await db.select().from(product_launches);
-    } catch {}
+    try { allLaunches = await db.select().from(product_launches); } catch {}
 
     const activeLaunches = allLaunches.filter(l => !['launched', 'cancelled'].includes(l.status));
     if (activeLaunches.length < 2) {
@@ -32,9 +61,7 @@ export async function POST(req: NextRequest) {
 
     // Existing campaigns
     let upcomingCampaigns: any[] = [];
-    try {
-      upcomingCampaigns = await db.select().from(campaigns).where(gte(campaigns.start_date, todayIso));
-    } catch {}
+    try { upcomingCampaigns = await db.select().from(campaigns).where(gte(campaigns.start_date, todayIso)); } catch {}
 
     // Commerce data
     const commerce = await buildWooSalesContext(30).catch(() => null);
@@ -48,14 +75,19 @@ export async function POST(req: NextRequest) {
 
     // Planning knowledge
     let knowledgeEntries: any[] = [];
-    try {
-      knowledgeEntries = await db.select().from(planning_knowledge).where(eq(planning_knowledge.active, 1));
-    } catch {}
+    try { knowledgeEntries = await db.select().from(planning_knowledge).where(eq(planning_knowledge.active, 1)); } catch {}
 
     // Full product catalog
     let fullCatalog: any[] = [];
+    try { fullCatalog = await getWooProducts().catch(() => []); } catch {}
+
+    // Previous review for context
+    let previousReview: any = null;
     try {
-      fullCatalog = await getWooProducts().catch(() => []);
+      const prevRows = await db.select().from(portfolio_reviews).orderBy(desc(portfolio_reviews.updated_at)).limit(1);
+      if (prevRows.length) {
+        try { previousReview = JSON.parse(prevRows[0].review_json); } catch {}
+      }
     } catch {}
 
     // Polish holidays
@@ -211,7 +243,7 @@ Bez markdown, bez code fences.
   "calendar_gaps": ["<miesiące bez launchy — czy warto je wypełnić>"]
 }`;
 
-    const userPrompt = `DZIŚ JEST ${todayIso}.
+    let userPrompt = `DZIŚ JEST ${todayIso}.
 
 Przeanalizuj całe portfolio launchy Brown House & Tea i zaproponuj optymalny układ w czasie.
 
@@ -222,6 +254,23 @@ PEŁNY KONTEKST:
 ${JSON.stringify(context, null, 2)}
 
 Patrz na CAŁOŚĆ — nie na każdy launch osobno. Zaproponuj reshuffl jeśli trzeba. Zwróć JSON.`;
+
+    // Inject user comments and previous review for re-analysis
+    if (userComments.trim()) {
+      userPrompt += `\n\n═══════════════════════════════════════════
+UWAGI WŁAŚCICIELA (PRIORYTET NAJWYŻSZY):
+═══════════════════════════════════════════
+${userComments}
+
+Właściciel dał Ci feedback do poprzedniej analizy. UWZGLĘDNIJ te uwagi w nowej propozycji. Wyjaśnij w rationale co zmieniłeś i dlaczego na podstawie tych uwag.`;
+    }
+
+    if (previousReview && userComments.trim()) {
+      userPrompt += `\n\nPOPRZEDNIA ANALIZA (do porównania):
+${JSON.stringify(previousReview, null, 2)}
+
+Porównaj swoją nową propozycję z poprzednią i wyraźnie opisz CO SIĘ ZMIENIŁO i DLACZEGO.`;
+    }
 
     const client = new Anthropic({ apiKey });
 
@@ -260,7 +309,43 @@ Patrz na CAŁOŚĆ — nie na każdy launch osobno. Zaproponuj reshuffl jeśli t
       }
     }
 
-    return NextResponse.json({ data: { review: parsed, launchCount: activeLaunches.length } });
+    // Save to DB — find existing or create new
+    const now = new Date().toISOString();
+    let savedId: number;
+    let version = 1;
+
+    const existing = await db.select().from(portfolio_reviews).orderBy(desc(portfolio_reviews.updated_at)).limit(1);
+    if (existing.length) {
+      version = (existing[0].version || 0) + 1;
+      await db.update(portfolio_reviews).set({
+        review_json: JSON.stringify(parsed),
+        user_comments: userComments || existing[0].user_comments || null,
+        launch_count: activeLaunches.length,
+        version,
+        updated_at: now,
+      }).where(eq(portfolio_reviews.id, existing[0].id));
+      savedId = existing[0].id;
+    } else {
+      const ins = await db.insert(portfolio_reviews).values({
+        review_json: JSON.stringify(parsed),
+        user_comments: userComments || null,
+        launch_count: activeLaunches.length,
+        version: 1,
+        created_at: now,
+        updated_at: now,
+      });
+      savedId = Number(ins.lastInsertRowid);
+    }
+
+    return NextResponse.json({
+      data: {
+        id: savedId,
+        review: parsed,
+        launchCount: activeLaunches.length,
+        version,
+        user_comments: userComments,
+      },
+    });
   } catch (e: any) {
     console.error('[portfolio-review]', e);
     return NextResponse.json({ error: e.message }, { status: 500 });
