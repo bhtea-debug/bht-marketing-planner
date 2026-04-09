@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, Plus, Trash2, Loader2, Rocket, RefreshCw, X } from "lucide-react";
+import { Sparkles, Plus, Trash2, Loader2, Rocket, RefreshCw, X, BarChart3 } from "lucide-react";
 
 type Launch = {
   id: number;
@@ -151,6 +151,9 @@ export default function LaunchesPage() {
   const [openSuggestion, setOpenSuggestion] = useState<any>(null);
   const [openNotes, setOpenNotes] = useState("");
   const [resuggesting, setResuggesting] = useState(false);
+  const [portfolioReview, setPortfolioReview] = useState<any>(null);
+  const [reviewingPortfolio, setReviewingPortfolio] = useState(false);
+  const [showPortfolioReview, setShowPortfolioReview] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -236,6 +239,27 @@ export default function LaunchesPage() {
     }
   }
 
+  async function runPortfolioReview() {
+    setReviewingPortfolio(true);
+    setPortfolioReview(null);
+    try {
+      const res = await fetch("/api/launches/portfolio-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const json = await res.json();
+      if (json.data?.review) {
+        setPortfolioReview(json.data.review);
+        setShowPortfolioReview(true);
+      } else {
+        alert(json.error || "Nie udało się przeanalizować portfolio");
+      }
+    } finally {
+      setReviewingPortfolio(false);
+    }
+  }
+
   async function resuggest() {
     if (!openLaunch) return;
     setResuggesting(true);
@@ -270,17 +294,32 @@ export default function LaunchesPage() {
             Planuj nowe produkty i całe linie z wyprzedzeniem. AI sugeruje datę, grupę, cenę i plan promocji — możesz wrócić do analizy i poprosić o re-analizę z dodatkowymi uwagami.
           </p>
         </div>
-        <button
-          onClick={() => {
-            setShowCreate(true);
-            setDraft({ status: "idea", launch_type: "single" });
-            setSuggestion(null);
-          }}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Nowy launch
-        </button>
+        <div className="flex gap-2">
+          {launches.filter(l => !['launched','cancelled'].includes(l.status)).length >= 2 && (
+            <button
+              onClick={runPortfolioReview}
+              disabled={reviewingPortfolio}
+              className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
+            >
+              {reviewingPortfolio ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Analizuję...</>
+              ) : (
+                <><BarChart3 className="w-4 h-4" /> Przeanalizuj strategię</>
+              )}
+            </button>
+          )}
+          <button
+            onClick={() => {
+              setShowCreate(true);
+              setDraft({ status: "idea", launch_type: "single" });
+              setSuggestion(null);
+            }}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Nowy launch
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -334,6 +373,170 @@ export default function LaunchesPage() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Portfolio review modal */}
+      {showPortfolioReview && portfolioReview && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50">
+              <div>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-indigo-600" />
+                  Strategia portfolio launchy
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">AI przeanalizował wszystkie launche razem i proponuje optymalny układ</p>
+              </div>
+              <button onClick={() => setShowPortfolioReview(false)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              {/* Summary */}
+              {portfolioReview.portfolio_summary && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                  <div className="text-sm font-medium text-indigo-800 mb-1">📋 Podsumowanie portfolio</div>
+                  <p className="text-sm text-gray-700">{portfolioReview.portfolio_summary}</p>
+                </div>
+              )}
+
+              {/* Year narrative */}
+              {portfolioReview.year_narrative && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="text-sm font-medium text-purple-800 mb-1">📖 Narracja roczna</div>
+                  <p className="text-sm text-gray-700">{portfolioReview.year_narrative}</p>
+                </div>
+              )}
+
+              {/* Current issues */}
+              {Array.isArray(portfolioReview.current_issues) && portfolioReview.current_issues.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="text-sm font-medium text-red-800 mb-2">⚠️ Problemy z obecnym układem</div>
+                  <ul className="space-y-1">
+                    {portfolioReview.current_issues.map((issue: string, i: number) => (
+                      <li key={i} className="text-sm text-red-700">• {issue}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Proposed timeline */}
+              {Array.isArray(portfolioReview.proposed_timeline) && portfolioReview.proposed_timeline.length > 0 && (
+                <div>
+                  <div className="text-sm font-semibold text-gray-900 mb-3">🗓️ Proponowana oś czasu</div>
+                  <div className="space-y-3">
+                    {portfolioReview.proposed_timeline
+                      .sort((a: any, b: any) => (a.order_in_sequence || 0) - (b.order_in_sequence || 0))
+                      .map((item: any, i: number) => {
+                        const changed = item.change !== 'keep';
+                        return (
+                          <div key={i} className={`rounded-lg p-4 border ${changed ? 'bg-amber-50 border-amber-300' : 'bg-green-50 border-green-200'}`}>
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-3">
+                                <span className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
+                                  {item.order_in_sequence || i + 1}
+                                </span>
+                                <span className="font-semibold text-gray-900">{item.launch_name}</span>
+                              </div>
+                              <div className="text-right">
+                                {changed ? (
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <span className="line-through text-gray-400">{item.current_date || '—'}</span>
+                                    <span className="text-amber-700 font-bold">→ {item.proposed_date}</span>
+                                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                                      item.change === 'move_earlier' ? 'bg-green-100 text-green-700' :
+                                      item.change === 'move_later' ? 'bg-amber-100 text-amber-700' :
+                                      'bg-blue-100 text-blue-700'
+                                    }`}>
+                                      {item.change === 'move_earlier' ? '← wcześniej' :
+                                       item.change === 'move_later' ? 'później →' : 'nowa data'}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-green-700 font-medium">
+                                    ✓ {item.proposed_date} (bez zmian)
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600">{item.rationale}</p>
+                            {item.synergies && (
+                              <p className="text-xs text-indigo-600 mt-1">🔗 {item.synergies}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                  {portfolioReview.launch_sequence_rationale && (
+                    <div className="mt-3 bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
+                      <b className="text-gray-800">Dlaczego taka kolejność:</b> {portfolioReview.launch_sequence_rationale}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Team load */}
+              {portfolioReview.team_load_analysis && (
+                <div className="bg-sky-50 border border-sky-200 rounded-lg p-4">
+                  <div className="text-sm font-medium text-sky-800 mb-1">👥 Obciążenie zespołu</div>
+                  <p className="text-sm text-gray-700">{portfolioReview.team_load_analysis}</p>
+                </div>
+              )}
+
+              {/* Global recommendations */}
+              {Array.isArray(portfolioReview.global_recommendations) && portfolioReview.global_recommendations.length > 0 && (
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                  <div className="text-sm font-medium text-emerald-800 mb-2">💡 Rekomendacje strategiczne</div>
+                  <ul className="space-y-1">
+                    {portfolioReview.global_recommendations.map((rec: string, i: number) => (
+                      <li key={i} className="text-sm text-emerald-700">• {rec}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Calendar gaps */}
+              {Array.isArray(portfolioReview.calendar_gaps) && portfolioReview.calendar_gaps.length > 0 && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="text-sm font-medium text-gray-800 mb-2">📅 Luki w kalendarzu</div>
+                  <ul className="space-y-1">
+                    {portfolioReview.calendar_gaps.map((gap: string, i: number) => (
+                      <li key={i} className="text-sm text-gray-600">• {gap}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {/* Risks */}
+              {Array.isArray(portfolioReview.risks) && portfolioReview.risks.length > 0 && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="text-sm font-medium text-amber-800 mb-2">⚡ Ryzyka</div>
+                  <ul className="space-y-1">
+                    {portfolioReview.risks.map((risk: string, i: number) => (
+                      <li key={i} className="text-sm text-amber-700">• {risk}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t flex items-center justify-between">
+              <button
+                onClick={runPortfolioReview}
+                disabled={reviewingPortfolio}
+                className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-1"
+              >
+                <RefreshCw className={`w-4 h-4 ${reviewingPortfolio ? 'animate-spin' : ''}`} />
+                Przelicz ponownie
+              </button>
+              <button
+                onClick={() => setShowPortfolioReview(false)}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
+              >
+                Zamknij
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
