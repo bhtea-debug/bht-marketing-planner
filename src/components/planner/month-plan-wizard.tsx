@@ -1180,198 +1180,271 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                       className="w-full text-xs text-slate-600 mb-3 bg-transparent border border-transparent hover:border-slate-200 focus:border-amber-400 rounded px-2 py-1 resize-y focus:outline-none disabled:opacity-60"
                     />
 
-                    {w.hero_products?.length > 0 && (
-                      <div className="mb-3">
-                        <div className="text-xs font-medium text-slate-700 mb-1">Hero produkty</div>
-                        <div className="flex flex-wrap gap-1">
-                          {w.hero_products.map((p: any, pi: number) => (
-                            <span
-                              key={pi}
-                              className="text-xs bg-slate-100 text-slate-700 rounded px-2 py-0.5"
-                            >
-                              {p.name}
-                            </span>
-                          ))}
+                    {/* ===== ROLE-BASED SECTIONS ===== */}
+                    {(() => {
+                      // Split channels into role categories
+                      const channels = w.channels || [];
+                      const paidChannels = channels.filter((_c: any, ci: number) =>
+                        /meta_ads|prospecting|retargeting/i.test(_c.channel || '')
+                      ).map((c: any) => ({ ...c, _ci: channels.indexOf(c) }));
+                      const organicChannels = channels.filter((c: any) =>
+                        /instagram_organic|facebook_organic|tiktok|content_blog/i.test(c.channel || '')
+                      ).map((c: any) => ({ ...c, _ci: channels.indexOf(c) }));
+                      const emailChannels = channels.filter((c: any) =>
+                        /email/i.test(c.channel || '')
+                      ).map((c: any) => ({ ...c, _ci: channels.indexOf(c) }));
+                      const siteChannels = channels.filter((c: any) =>
+                        /ecommerce/i.test(c.channel || '')
+                      ).map((c: any) => ({ ...c, _ci: channels.indexOf(c) }));
+
+                      // Visual brief renderer (reused across roles)
+                      const renderVB = (vb: any) => vb ? (
+                        <div className="mt-1.5 pl-2 border-l-2 border-orange-200 space-y-0.5 text-[11px]">
+                          {vb.scene && <div><b>Scena:</b> {vb.scene}</div>}
+                          {vb.composition && <div><b>Kompozycja:</b> {vb.composition}</div>}
+                          {vb.lighting && <div><b>Światło:</b> {vb.lighting}</div>}
+                          {vb.props?.length > 0 && <div><b>Rekwizyty:</b> {vb.props.join(', ')}</div>}
+                          {vb.palette?.length > 0 && (
+                            <div className="flex items-center gap-1">
+                              <b>Paleta:</b>
+                              {vb.palette.map((c: string, pi: number) => (
+                                <span key={pi} title={c} className="inline-block w-3 h-3 rounded-full border border-slate-300" style={{ background: c }} />
+                              ))}
+                            </div>
+                          )}
+                          {vb.mood_keywords?.length > 0 && <div><b>Mood:</b> {vb.mood_keywords.join(' · ')}</div>}
+                          {vb.do && <div className="text-emerald-700"><b>Do:</b> {vb.do}</div>}
+                          {vb.dont && <div className="text-red-700"><b>Don't:</b> {vb.dont}</div>}
+                          {vb.reference_note && <div className="text-slate-500"><b>Ref:</b> {vb.reference_note}</div>}
                         </div>
-                      </div>
-                    )}
+                      ) : null;
 
-                    {w.promo?.type && w.promo.type !== 'none' && (
-                      <div className="text-xs text-slate-700 mb-2">
-                        <strong>Promo:</strong> {w.promo.type} {w.promo.value} —{' '}
-                        {w.promo.mechanics}
-                      </div>
-                    )}
-
-                    {w.designer_summary && (
-                      <div className="mb-3 bg-amber-50 border border-amber-200 rounded p-2 text-xs">
-                        <div className="font-semibold text-amber-900 flex items-center gap-1">
-                          <Palette className="w-3 h-3" /> Brief wizualny tygodnia
-                        </div>
-                        <div className="text-amber-900 mt-0.5">{w.designer_summary}</div>
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      {w.channels?.map((ch: any, ci: number) => {
+                      // Channel card renderer for paid/organic/email
+                      const renderChannel = (ch: any, ci: number) => {
                         const k = pushKey(wi, ci);
                         const result = pushResults[k];
-                        const isPushable =
-                          /meta/i.test(ch.channel || '') || /email/i.test(ch.channel || '');
-                        const vb = ch.visual_brief;
+                        const isPushable = /meta/i.test(ch.channel || '') || /email/i.test(ch.channel || '');
                         return (
-                          <div key={ci} className="bg-slate-50 rounded p-2 text-xs">
-                            <div className="flex items-start justify-between gap-3">
+                          <div key={ci} className="bg-white border border-slate-100 rounded p-2.5 text-xs">
+                            <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium text-slate-900">
-                                  {ch.channel} · {ch.format}
-                                  {ch.objective ? ` · ${ch.objective}` : ''}
-                                </div>
-                                <input
-                                  type="text"
-                                  value={ch.creative_hook || ''}
-                                  onChange={(e) =>
-                                    updateChannel(w.isoWeek, ci, { creative_hook: e.target.value })
-                                  }
-                                  disabled={!!deployed?.ok}
-                                  placeholder="Hook kreatywny"
-                                  className="w-full mt-0.5 text-slate-700 italic bg-transparent border border-transparent hover:border-slate-300 focus:border-amber-400 rounded px-1 py-0.5 focus:outline-none disabled:opacity-60"
-                                />
-                                <div className="text-slate-500 mt-0.5">
-                                  CTA: {ch.cta} • Audience: {ch.audience} • KPI: {ch.expected_kpi}
-                                </div>
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700">
+                                  {(ch.channel || '').replace(/_/g, ' ')} · {ch.format}
+                                </span>
                               </div>
-                              <div className="flex flex-col items-end gap-1 whitespace-nowrap">
-                                <div className="flex items-center gap-1 text-slate-900 font-medium">
-                                  <input
-                                    type="number"
-                                    value={ch.budget_pln ?? 0}
-                                    onChange={(e) =>
-                                      updateChannel(w.isoWeek, ci, {
-                                        budget_pln: Number(e.target.value) || 0,
-                                      })
-                                    }
-                                    disabled={!!deployed?.ok}
-                                    className="w-20 text-right bg-transparent border-b border-transparent hover:border-slate-300 focus:border-amber-500 focus:outline-none disabled:opacity-60"
-                                  />
-                                  <span className="text-[10px] text-slate-500">PLN</span>
-                                </div>
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                <input type="number" value={ch.budget_pln ?? 0}
+                                  onChange={(e) => updateChannel(w.isoWeek, ci, { budget_pln: Number(e.target.value) || 0 })}
+                                  disabled={!!deployed?.ok}
+                                  className="w-16 text-right text-xs bg-transparent border-b border-transparent hover:border-slate-300 focus:border-amber-500 focus:outline-none disabled:opacity-60"
+                                />
+                                <span className="text-[10px] text-slate-400">PLN</span>
                                 {isPushable && (
-                                  <button
-                                    onClick={() => pushChannel(w, ch, wi, ci)}
+                                  <button onClick={() => pushChannel(w, ch, wi, ci)}
                                     disabled={pushing === k || result?.campaign_id || result?.newsletter_id}
-                                    className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-[11px] px-2 py-1 rounded flex items-center gap-1"
-                                  >
-                                    {pushing === k ? (
-                                      <Loader2 className="w-3 h-3 animate-spin" />
-                                    ) : (
-                                      <Send className="w-3 h-3" />
-                                    )}
-                                    {result?.campaign_id || result?.newsletter_id ? 'Wysłano' : 'Push'}
+                                    className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white text-[10px] px-1.5 py-0.5 rounded flex items-center gap-0.5 ml-1">
+                                    {pushing === k ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Send className="w-2.5 h-2.5" />}
+                                    {result?.campaign_id || result?.newsletter_id ? '✓' : 'Push'}
                                   </button>
                                 )}
                               </div>
                             </div>
-                            {vb && (
-                              <details className="mt-2">
-                                <summary className="cursor-pointer text-orange-700 font-medium text-[11px]">
-                                  Brief graficzny
-                                </summary>
-                                <div className="mt-1 pl-2 border-l-2 border-orange-200 space-y-0.5 text-[11px]">
-                                  {vb.scene && <div><b>Scena:</b> {vb.scene}</div>}
-                                  {vb.props?.length && <div><b>Rekwizyty:</b> {vb.props.join(', ')}</div>}
-                                  {vb.lighting && <div><b>Światło:</b> {vb.lighting}</div>}
-                                  {vb.composition && <div><b>Kompozycja:</b> {vb.composition}</div>}
-                                  {vb.palette?.length && (
-                                    <div className="flex items-center gap-1">
-                                      <b>Paleta:</b>
-                                      {vb.palette.map((c: string, pi: number) => (
-                                        <span
-                                          key={pi}
-                                          title={c}
-                                          className="inline-block w-3 h-3 rounded-full border border-slate-300"
-                                          style={{ background: c }}
-                                        />
-                                      ))}
-                                    </div>
-                                  )}
-                                  {vb.mood_keywords?.length && (
-                                    <div><b>Mood:</b> {vb.mood_keywords.join(' · ')}</div>
-                                  )}
-                                  {vb.do && <div className="text-emerald-700"><b>Do:</b> {vb.do}</div>}
-                                  {vb.dont && <div className="text-red-700"><b>Don't:</b> {vb.dont}</div>}
-                                  {vb.reference_note && (
-                                    <div className="text-slate-500"><b>Ref:</b> {vb.reference_note}</div>
-                                  )}
-                                </div>
-                              </details>
-                            )}
                             {result && (
-                              <div className="mt-2 text-[11px]">
-                                {result.error ? (
-                                  <div className="text-red-600">⚠ {result.error}</div>
-                                ) : (
-                                  <div className="text-emerald-700">
-                                    ✓ {result.campaign_id ? 'Kampania PAUSED w Meta' : 'Draft w GR'}{' '}
-                                    {result.manage_url && (
-                                      <a
-                                        href={result.manage_url}
-                                        target="_blank"
-                                        rel="noopener"
-                                        className="underline ml-1"
-                                      >
-                                        Otwórz
-                                      </a>
-                                    )}
-                                  </div>
-                                )}
+                              <div className="mt-1 text-[10px]">
+                                {result.error
+                                  ? <span className="text-red-600">⚠ {result.error}</span>
+                                  : <span className="text-emerald-700">✓ {result.campaign_id ? 'Kampania w Meta' : 'Draft w GR'}{result.manage_url ? <a href={result.manage_url} target="_blank" rel="noopener" className="underline ml-1">Otwórz</a> : ''}</span>
+                                }
                               </div>
                             )}
                           </div>
                         );
-                      })}
-                    </div>
+                      };
 
-                    {w.linked_calendar_tasks?.length > 0 && (
-                      <div className="mt-2 text-xs text-slate-500">
-                        Kalendarz: {w.linked_calendar_tasks.join(' · ')}
-                      </div>
-                    )}
+                      return (
+                        <div className="space-y-3 mt-2">
 
-                    {/* Store tasks — banners, landing pages, product highlights */}
-                    {w.store_tasks?.length > 0 && (
-                      <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
-                        <div className="flex items-center gap-1.5 text-xs font-medium text-blue-900">
-                          🛒 Zadania na stronie sklepu ({w.store_tasks.length})
-                        </div>
-                        {w.store_tasks.map((st: any, sti: number) => (
-                          <div key={sti} className="bg-white border border-blue-100 rounded p-2 text-xs">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800">
-                                {(st.type || '').replace(/_/g, ' ')}
-                              </span>
-                              <span className="font-medium text-slate-900">{st.title}</span>
-                              {st.deadline && (
-                                <span className="text-[10px] text-slate-500 ml-auto">
-                                  deadline: {st.deadline}
-                                </span>
-                              )}
+                          {/* ── 📋 STRATEGIA ── */}
+                          <div className="border border-slate-200 rounded-lg overflow-hidden">
+                            <div className="bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                              📋 Strategia tygodnia
                             </div>
-                            <div className="text-slate-700">{st.description}</div>
-                            {st.placement && (
-                              <div className="text-[10px] text-slate-500 mt-0.5">
-                                Umiejscowienie: {st.placement}
-                              </div>
-                            )}
-                            {st.visual_note && (
-                              <div className="text-[10px] text-blue-700 mt-0.5">
-                                Wskazówka wizualna: {st.visual_note}
-                              </div>
-                            )}
+                            <div className="p-3 space-y-2 text-xs">
+                              {w.hero_products?.length > 0 && (
+                                <div>
+                                  <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1">Hero produkty</div>
+                                  <div className="flex flex-wrap gap-1">
+                                    {w.hero_products.map((p: any, pi: number) => (
+                                      <span key={pi} className="bg-amber-100 text-amber-800 rounded px-2 py-0.5 text-[11px]" title={p.why}>
+                                        {p.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                              {w.promo?.type && w.promo.type !== 'none' && (
+                                <div>
+                                  <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-0.5">Promocja</div>
+                                  <div className="text-slate-800"><b>{w.promo.type} {w.promo.value}</b> — {w.promo.mechanics}</div>
+                                </div>
+                              )}
+                              <textarea value={w.rationale || ''} onChange={(e) => updateWeek(w.isoWeek, { rationale: e.target.value })}
+                                rows={2} disabled={!!deployed?.ok} placeholder="Uzasadnienie strategii"
+                                className="w-full text-xs text-slate-600 bg-transparent border border-slate-200 hover:border-slate-300 focus:border-amber-400 rounded px-2 py-1 resize-y focus:outline-none disabled:opacity-60" />
+                            </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
+
+                          {/* ── 🎨 GRAFIK ── */}
+                          <div className="border border-orange-200 rounded-lg overflow-hidden">
+                            <div className="bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-900 flex items-center gap-1.5">
+                              <Palette className="w-3.5 h-3.5" /> Grafik — briefy wizualne
+                            </div>
+                            <div className="p-3 space-y-3 text-xs">
+                              {w.designer_summary && (
+                                <div className="bg-orange-50/50 border border-orange-100 rounded p-2">
+                                  <div className="text-[10px] uppercase tracking-wider text-orange-700 mb-0.5">Synteza wizualna tygodnia</div>
+                                  <div className="text-orange-900">{w.designer_summary}</div>
+                                </div>
+                              )}
+                              {channels.map((ch: any, ci: number) => ch.visual_brief ? (
+                                <div key={ci} className="border border-orange-100 rounded p-2">
+                                  <div className="font-medium text-slate-800 mb-1">
+                                    {(ch.channel || '').replace(/_/g, ' ')} · {ch.format}
+                                  </div>
+                                  {renderVB(ch.visual_brief)}
+                                </div>
+                              ) : null)}
+                            </div>
+                          </div>
+
+                          {/* ── 📝 COPYWRITER ── */}
+                          <div className="border border-violet-200 rounded-lg overflow-hidden">
+                            <div className="bg-violet-50 px-3 py-1.5 text-xs font-semibold text-violet-900 flex items-center gap-1.5">
+                              📝 Copywriter — teksty i hooki
+                            </div>
+                            <div className="p-3 space-y-2">
+                              {channels.map((ch: any, ci: number) => (
+                                <div key={ci} className="bg-white border border-violet-100 rounded p-2 text-xs">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-violet-100 text-violet-700">
+                                      {(ch.channel || '').replace(/_/g, ' ')} · {ch.format}
+                                    </span>
+                                  </div>
+                                  <div className="space-y-1">
+                                    <div>
+                                      <span className="text-[10px] text-slate-500">Hook: </span>
+                                      <input type="text" value={ch.creative_hook || ''}
+                                        onChange={(e) => updateChannel(w.isoWeek, ci, { creative_hook: e.target.value })}
+                                        disabled={!!deployed?.ok} placeholder="Hook kreatywny"
+                                        className="w-full mt-0.5 text-slate-800 italic font-medium bg-transparent border border-transparent hover:border-violet-200 focus:border-violet-400 rounded px-1 py-0.5 focus:outline-none disabled:opacity-60" />
+                                    </div>
+                                    {ch.headline && (
+                                      <div><span className="text-[10px] text-slate-500">Headline: </span><span className="font-medium text-slate-800">{ch.headline}</span></div>
+                                    )}
+                                    {ch.body && (
+                                      <div><span className="text-[10px] text-slate-500">Body: </span><span className="text-slate-700">{ch.body}</span></div>
+                                    )}
+                                    <div className="text-[10px] text-slate-500">CTA: {ch.cta || '—'}</div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* ── 📣 REKLAMA (Paid) ── */}
+                          {paidChannels.length > 0 && (
+                            <div className="border border-rose-200 rounded-lg overflow-hidden">
+                              <div className="bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-900 flex items-center gap-1.5">
+                                📣 Reklama Paid — kampanie Meta
+                              </div>
+                              <div className="p-3 space-y-2">
+                                {paidChannels.map((ch: any) => (
+                                  <div key={ch._ci}>
+                                    {renderChannel(ch, ch._ci)}
+                                    <div className="mt-1 px-2 text-[11px] text-slate-600">
+                                      <b>Cel:</b> {ch.objective || '—'} · <b>Audience:</b> {ch.audience || '—'} · <b>KPI:</b> {ch.expected_kpi || '—'}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* ── 📱 ORGANIC ── */}
+                          {organicChannels.length > 0 && (
+                            <div className="border border-green-200 rounded-lg overflow-hidden">
+                              <div className="bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-900 flex items-center gap-1.5">
+                                📱 Organic — social media + content
+                              </div>
+                              <div className="p-3 space-y-2">
+                                {organicChannels.map((ch: any) => (
+                                  <div key={ch._ci}>
+                                    {renderChannel(ch, ch._ci)}
+                                    <div className="mt-1 px-2 text-[11px] text-slate-600">
+                                      <b>Audience:</b> {ch.audience || '—'} · <b>KPI:</b> {ch.expected_kpi || '—'}
+                                    </div>
+                                  </div>
+                                ))}
+                                {w.linked_calendar_tasks?.length > 0 && (
+                                  <div className="bg-green-50/50 border border-green-100 rounded p-2 text-[11px] text-green-800">
+                                    <b>Zadania do kalendarza:</b> {w.linked_calendar_tasks.join(' · ')}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* ── 📧 EMAIL ── */}
+                          {emailChannels.length > 0 && (
+                            <div className="border border-sky-200 rounded-lg overflow-hidden">
+                              <div className="bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-900 flex items-center gap-1.5">
+                                📧 Email — newsletter
+                              </div>
+                              <div className="p-3 space-y-2">
+                                {emailChannels.map((ch: any) => (
+                                  <div key={ch._ci}>
+                                    {renderChannel(ch, ch._ci)}
+                                    <div className="mt-1 px-2 text-[11px] text-slate-600">
+                                      <b>Audience:</b> {ch.audience || '—'} · <b>KPI:</b> {ch.expected_kpi || '—'}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* ── 🛒 SKLEP ── */}
+                          {(w.store_tasks?.length > 0 || siteChannels.length > 0) && (
+                            <div className="border border-blue-200 rounded-lg overflow-hidden">
+                              <div className="bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-900 flex items-center gap-1.5">
+                                🛒 Sklep — strona internetowa
+                              </div>
+                              <div className="p-3 space-y-2">
+                                {(w.store_tasks || []).map((st: any, sti: number) => (
+                                  <div key={sti} className="bg-white border border-blue-100 rounded p-2.5 text-xs">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-800">
+                                        {(st.type || '').replace(/_/g, ' ')}
+                                      </span>
+                                      <span className="font-medium text-slate-900">{st.title}</span>
+                                      {st.deadline && (
+                                        <span className="text-[10px] text-rose-600 font-medium ml-auto">
+                                          deadline: {st.deadline}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-slate-700 mt-1">{st.description}</div>
+                                    {st.placement && <div className="text-[10px] text-slate-500 mt-0.5">Umiejscowienie: {st.placement}</div>}
+                                    {st.visual_note && <div className="text-[10px] text-blue-700 mt-0.5">Wizualnie: {st.visual_note}</div>}
+                                  </div>
+                                ))}
+                                {siteChannels.map((ch: any) => renderChannel(ch, ch._ci))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     {/* Per-week action toolbar */}
                     {!deployed?.ok && (
