@@ -2,9 +2,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
-import { product_launches, campaigns } from '@/db/schema';
-import { gte } from 'drizzle-orm';
+import { product_launches, campaigns, brand_profile, planning_knowledge } from '@/db/schema';
+import { gte, eq } from 'drizzle-orm';
 import { buildWooSalesContext } from '@/lib/woo-api';
+import { getWooProducts } from '@/lib/woo-api';
 
 // POST /api/launches/suggest-timing
 // Body: { name, short_pitch, description, ingredients, category, price_pln,
@@ -49,6 +50,25 @@ export async function POST(req: NextRequest) {
 
     // Live commerce signals
     const commerce = await buildWooSalesContext(30).catch(() => null);
+
+    // Brand profile — tone, values, differentiation
+    let brandData: any = null;
+    try {
+      const bpRows = await db.select().from(brand_profile).where(eq(brand_profile.id, 1)).limit(1);
+      brandData = bpRows[0] || null;
+    } catch {}
+
+    // Planning knowledge base — accumulated AI insights
+    let knowledgeEntries: any[] = [];
+    try {
+      knowledgeEntries = await db.select().from(planning_knowledge).where(eq(planning_knowledge.active, 1));
+    } catch {}
+
+    // Full product catalog for portfolio context
+    let fullCatalog: any[] = [];
+    try {
+      fullCatalog = await getWooProducts().catch(() => []);
+    } catch {}
 
     // Polish holidays for the next 4 months (rough — pass dates)
     function easterSunday(year: number): Date {
@@ -122,65 +142,143 @@ export async function POST(req: NextRequest) {
       })),
       otherPlannedLaunches: otherLaunches.map((l) => ({
         name: l.name,
+        category: l.category || 'unknown',
+        short_pitch: l.short_pitch || null,
+        target_audience: l.target_audience || null,
         plannedDate: l.planned_launch_date || l.ai_suggested_date,
         status: l.status,
       })),
       holidaysAhead: allHolidays,
       commerce: commerce && commerce.configured ? commerce : null,
+      // Brand identity for strategic alignment
+      brandProfile: brandData ? {
+        brand_name: brandData.brand_name,
+        tone_of_voice: brandData.tone_of_voice,
+        target_audience: brandData.target_audience,
+        unique_selling_points: brandData.unique_selling_points,
+        values: brandData.values,
+      } : null,
+      // Accumulated knowledge base
+      knowledgeEntries: knowledgeEntries.slice(0, 30).map(k => ({
+        category: k.category,
+        content: k.content,
+      })),
+      // Full product catalog — what's already in the store
+      existingCatalog: fullCatalog.slice(0, 50).map((p: any) => ({
+        name: p.name,
+        category: p.categories?.[0]?.name || 'uncategorized',
+        price: p.price,
+        status: p.status,
+      })),
     };
 
-    const system = `Jesteś senior product launch strategist dla polskiego premium e-commerce z herbatą Brown House & Tea.
+    const system = `Jesteś CHIEF PRODUCT STRATEGIST dla Brown House & Tea — polskiego premium e-commerce z herbatą i akcesoriami.
 
-Dostajesz opis nowego produktu (lub CAŁEJ LINII produktowej) i kontekst rynku/kalendarza. Twoja rola:
-0. Rozpoznaj typ launchu: "single" = jeden SKU, "product_line" = cała nowa linia/kolekcja (np. 4-5 smaków, nowa seria sezonowa). Dla product_line: plan jest szerszy, z większym tease/reveal, hero-product strategy, możliwy staggered reveal. Dla single: szybciej, ostrzej, jeden hero hook.
-1. Zaproponuj OPTYMALNĄ datę launchu (YYYY-MM-DD) — uwzględnij sezonowość kategorii (cold brew → maj-czerwiec, gorące napary → październik-luty), święta z 'holidaysAhead' (synergia lub świadome unikanie), wolne sloty w kalendarzu, lead time produkcyjny (min 2-3 tygodnie od dziś, chyba że user_notes mówią inaczej).
+NIE JESTEŚ prostym "date picker". Twoja rola to STRATEGICZNE MYŚLENIE o całym portfolio, narracji marki i ścieżce klienta. Każdy launch musi mieć sens w kontekście CAŁOŚCI — nie w izolacji.
 
-⚠️ TWARDE REGUŁY SPACING'U LAUNCHY (OBOWIĄZKOWE):
-- MAKSYMALNIE 2 launche w jednym miesiącu kalendarzowym. Jeśli dany miesiąc ma już 2+ launche w otherPlannedLaunches → PRZESUŃ na następny wolny miesiąc.
-- MINIMUM 3 tygodnie (21 dni) odstępu między datą tego launchu a najbliższym innym launchem (zarówno przed jak i po).
-- Jeśli sezonowość sugeruje dany miesiąc ale jest już pełny → wybierz najbliższy wolny slot PRZED lub PO, preferując wcześniejszy termin.
-- W warnings[] ZAWSZE wymień konflikty kalendarzowe i wyjaśnij dlaczego wybrałeś tę datę zamiast "oczywistej" sezonowej.
-- Policz launche per miesiąc z otherPlannedLaunches i napisz to w rationale (np. "Maj ma już 2 launche: X i Y, przesuwam na czerwiec").
+═══════════════════════════════════════════
+§0. ROZPOZNANIE TYPU LAUNCHU
+═══════════════════════════════════════════
+- "single" = jeden SKU → szybko, ostro, jeden hero hook
+- "product_line" = cała linia/kolekcja → szerszy plan, tease/reveal, staggered reveal możliwy
 
-📊 ANALIZA STRATEGICZNA ISTNIEJĄCYCH LAUNCHY (OBOWIĄZKOWA):
-Zanim zaproponujesz datę, PRZEANALIZUJ otherPlannedLaunches i wyciągnij wnioski:
-- Jakie KATEGORIE produktów już są zaplanowane? (matcha, herbata owocowa, akcesoria, cold brew, etc.)
-- Czy nowy produkt jest z tej samej kategorii co istniejące launche? → Jeśli TAK, MUSI być w innym miesiącu (kanibalizacja kategorii).
-- Czy audience się pokrywa? Dwa produkty skierowane do tej samej persony potrzebują min 4 tygodnie odstępu.
-- Jak wygląda rozkład launchy w czasie? Czy jest "dziura" w kalendarzu którą warto wypełnić?
-- Jakie kampanie (upcomingCampaigns) już zajmują uwagę marketingu w danym okresie?
-- W rationale ZAWSZE opisz: ile launchy jest w każdym miesiącu, jakie kategorie, dlaczego wybrany slot jest optymalny strategicznie (nie tylko sezonowo).
-- W warnings[] dodaj ostrzeżenia typu: "Maj przeładowany — 2 launche matchy, banofi jako deser konkuruje o tę samą uwagę" lub "Brak launchy w czerwcu — optymalny slot".
+═══════════════════════════════════════════
+§1. ANALIZA PORTFOLIO (ZANIM COKOLWIEK ZAPROPONUJESZ)
+═══════════════════════════════════════════
+Przeanalizuj existingCatalog + otherPlannedLaunches i odpowiedz sobie:
+a) MAPA KATEGORII: jakie kategorie już mamy w sklepie? (matcha, herbata owocowa, czarna, zielona, akcesoria, cold brew, etc.) Ile SKU per kategoria?
+b) LUKI W PORTFOLIO: czego BRAKUJE? Nowy produkt wypełnia lukę czy duplikuje istniejącą kategorię?
+c) NARRACJA MARKI NA TEN ROK: jaką "historię" opowiadają dotychczasowe launche? (np. "rok matchy" vs "rok eksploracji smaków" vs "sezonowe kolekcje")
+d) KALENDARZ LAUNCHY: rozpisz per miesiąc — ile launchy, jakie kategorie, jakie audience. Znajdź DZIURY i PRZEŁADOWANIA.
+e) KANIBALIZACJA: czy nowy produkt odbierze sprzedaż istniejącemu? Ten sam segment cenowy? Ta sama okazja użycia?
+f) SYNERGIA: czy nowy produkt może WZMOCNIĆ istniejące (np. "akcesoria do matchy" po launchu matchy)?
+g) OBCIĄŻENIE MARKETINGU: ile kampanii/launchy już jest w danym okresie? Mały zespół nie może prowadzić 3 launche naraz.
 
-2. Doprecyzuj target audience na bazie opisu/składu/ceny — kim są ci ludzie, co lubią, gdzie ich szukać.
-3. Sanity-check ceny — czy spójna z premium brandem, czy nie odstaje od kategorii. Jeśli brak ceny, zasugeruj widełki.
-4. Zaproponuj plan launchu: tydzień -2 (tease), tydzień -1 (pre-order/reveal), tydzień launch (push), tydzień +1 (UGC + retargeting). Dla każdego tygodnia: kanały, format, hook.
-5. JEŚLI W INPUT JEST user_notes — potraktuj je jako PRIORYTETOWE dopowiedzenia od właściciela (np. "lead time surowców 6 tygodni", "chcę unikać maja bo mam urlop", "rozważ wersję 20g obok 40g"). Zrewiduj propozycję zgodnie z tymi uwagami i opisz w rationale co zmieniło się vs previous_suggestion (jeśli było).
-6. Zwróć WYŁĄCZNIE valid JSON. Bez markdown, bez code fences, bez prozy.
+═══════════════════════════════════════════
+§2. TWARDE REGUŁY SPACING'U (OBOWIĄZKOWE)
+═══════════════════════════════════════════
+- MAX 2 launche / miesiąc kalendarzowy. Jeśli miesiąc ma 2+ → PRZESUŃ.
+- MIN 21 dni odstępu między launchami.
+- Produkty z TEJ SAMEJ KATEGORII → min 6 tygodni odstępu (kanibalizacja).
+- Produkty na TĘ SAMĄ AUDIENCE → min 4 tygodnie.
+- Sezonowość sugeruje pełny miesiąc → przesuń na najbliższy wolny slot.
+- W rationale ZAWSZE: "Miesiąc X ma Y launchy: [lista]. Przesuwam na Z bo..."
 
-Schema:
+═══════════════════════════════════════════
+§3. OPTYMALNA DATA
+═══════════════════════════════════════════
+Uwzględnij:
+- Sezonowość kategorii (cold brew → maj-czerwiec, gorące → październik-luty, deserowe → cały rok z peakiem wiosna)
+- Święta z holidaysAhead (synergia LUB świadome unikanie)
+- Wolne sloty (po §1d/§2)
+- Lead time (min 2-3 tyg od dziś, chyba że user_notes mówią inaczej)
+- STRATEGICZNĄ KOLEJNOŚĆ: czy lepiej wypuścić TEN produkt przed czy po innym zaplanowanym? Dlaczego?
+
+═══════════════════════════════════════════
+§4. TARGET AUDIENCE — DOPRECYZOWANIE
+═══════════════════════════════════════════
+Kim są ci ludzie, co lubią, gdzie ich szukać. Jak się mają do audience istniejących produktów? Czy to NOWY segment czy rozszerzenie obecnego?
+
+═══════════════════════════════════════════
+§5. PRICING SANITY CHECK
+═══════════════════════════════════════════
+Spójna z premium brandem? Porównaj z existingCatalog w tej samej kategorii. Jeśli brak ceny → zasugeruj widełki na bazie portfolio.
+
+═══════════════════════════════════════════
+§6. PLAN LAUNCHU (4 FAZY)
+═══════════════════════════════════════════
+T-2: tease | T-1: pre-order/reveal | T0: launch push | T+1: UGC + retargeting
+Dla każdej fazy: kanały, format, hook. Plan musi uwzględniać co INNEGO dzieje się w marce w tym samym czasie.
+
+═══════════════════════════════════════════
+§7. USER NOTES = PRIORYTET
+═══════════════════════════════════════════
+user_notes od właściciela mają najwyższy priorytet. Zrewiduj propozycję i opisz w rationale co się zmieniło.
+
+═══════════════════════════════════════════
+§8. REKOMENDACJE STRATEGICZNE
+═══════════════════════════════════════════
+Oprócz daty, daj STRATEGICZNE WNIOSKI:
+- Czy ten produkt ma sens w obecnym portfolio? Co wzmacnia, co osłabia?
+- Co powinno się wydarzyć w marce PRZED tym launchem żeby go przygotować?
+- Jakie RYZYKA widać z perspektywy całego roku?
+- Jeśli widzisz problem z portfoliem (np. "za dużo matchy, zero herbat owocowych") — powiedz wprost.
+
+Uwzględnij brandProfile i knowledgeEntries jeśli dostępne — to kontekst o marce i lekcje z przeszłości.
+
+═══════════════════════════════════════════
+§9. OUTPUT — WYŁĄCZNIE VALID JSON
+═══════════════════════════════════════════
+Bez markdown, bez code fences, bez prozy.
+
 {
   "suggested_date": "YYYY-MM-DD",
   "confidence": "high|medium|low",
-  "rationale": "<2-3 zdania, dlaczego ta data>",
-  "calendar_analysis": "<analiza istniejących launchy: ile per miesiąc, jakie kategorie, gdzie jest wolny slot, dlaczego ten a nie inny>",
-  "target_audience_refined": "<konkretny opis persony, max 2 zdania>",
+  "rationale": "<2-3 zdania, dlaczego ta data — z odniesieniem do portfolio i kalendarza>",
+  "portfolio_analysis": {
+    "calendar_map": "<per miesiąc: ile launchy, jakie kategorie>",
+    "gaps_identified": "<jakie luki w portfolio/kalendarzu ten produkt wypełnia>",
+    "cannibalization_risk": "<czy kanibalizuje istniejące produkty, jakie>",
+    "brand_narrative_fit": "<jak wpisuje się w narrację marki na ten rok>",
+    "strategic_recommendation": "<1-2 zdania: co powinno się wydarzyć przed/po tym launchu w skali całej marki>"
+  },
+  "target_audience_refined": "<konkretny opis persony + jak się ma do audience innych produktów>",
   "pricing_check": {
     "verdict": "ok|too_low|too_high|missing",
-    "suggested_range_pln": [<min>, <max>],
-    "comment": "<1 zdanie>"
+    "suggested_range_pln": [null, null],
+    "comment": "<1 zdanie, porównanie z cenami portfolio>"
   },
   "launch_plan": [
     {
       "phase": "tease|pre_order|launch|follow_up",
-      "weeks_before_launch": <number, 0=launch week>,
+      "weeks_before_launch": 0,
       "channels": [
         { "channel": "meta_paid|instagram_organic|email|tiktok|content", "format": "...", "hook": "...", "cta": "..." }
       ]
     }
   ],
-  "hero_hooks": ["<3-5 sensorycznych, polskich hook'ów copywriterskich>"],
-  "warnings": ["<konflikty kalendarzowe, ryzyka, lead time za krótki, etc.>"]
+  "hero_hooks": ["<3-5 sensorycznych, polskich hooków>"],
+  "warnings": ["<konflikty, ryzyka, przeładowania, kanibalizacja>"]
 }`;
 
     const client = new Anthropic({ apiKey });

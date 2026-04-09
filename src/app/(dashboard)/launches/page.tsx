@@ -60,6 +60,30 @@ function SuggestionView({ s }: { s: any }) {
         )}
       </div>
       {s.rationale && <p className="text-sm text-gray-700">{s.rationale}</p>}
+      {s.portfolio_analysis && (
+        <details className="text-sm border border-indigo-200 rounded-lg p-3 bg-indigo-50" open>
+          <summary className="cursor-pointer font-medium text-indigo-800">📊 Analiza strategiczna portfolio</summary>
+          <div className="mt-2 space-y-2 text-gray-700">
+            {s.portfolio_analysis.calendar_map && (
+              <div><b className="text-indigo-700">Kalendarz launchy:</b> {s.portfolio_analysis.calendar_map}</div>
+            )}
+            {s.portfolio_analysis.gaps_identified && (
+              <div><b className="text-indigo-700">Luki w portfolio:</b> {s.portfolio_analysis.gaps_identified}</div>
+            )}
+            {s.portfolio_analysis.cannibalization_risk && (
+              <div><b className="text-indigo-700">Ryzyko kanibalizacji:</b> {s.portfolio_analysis.cannibalization_risk}</div>
+            )}
+            {s.portfolio_analysis.brand_narrative_fit && (
+              <div><b className="text-indigo-700">Fit z narracją marki:</b> {s.portfolio_analysis.brand_narrative_fit}</div>
+            )}
+            {s.portfolio_analysis.strategic_recommendation && (
+              <div className="bg-white rounded p-2 border border-indigo-200">
+                <b className="text-indigo-800">💡 Rekomendacja strategiczna:</b> {s.portfolio_analysis.strategic_recommendation}
+              </div>
+            )}
+          </div>
+        </details>
+      )}
       {s.target_audience_refined && (
         <div className="text-sm">
           <b>Doprecyzowana grupa:</b> {s.target_audience_refined}
