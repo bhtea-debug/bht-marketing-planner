@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Sparkles, Plus, Trash2, Loader2, Rocket, RefreshCw, X, BarChart3 } from "lucide-react";
+import { Sparkles, Plus, Trash2, Loader2, Rocket, RefreshCw, X, BarChart3, ArrowUpDown } from "lucide-react";
 
 type Launch = {
   id: number;
@@ -159,6 +159,7 @@ export default function LaunchesPage() {
   const [portfolioUpdatedAt, setPortfolioUpdatedAt] = useState("");
   const [loadingPortfolio, setLoadingPortfolio] = useState(false);
   const [hasSavedReview, setHasSavedReview] = useState(false);
+  const [sortBy, setSortBy] = useState<'date' | 'name' | 'status'>('date');
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
   const [addingSuggestions, setAddingSuggestions] = useState(false);
   const [applyingDate, setApplyingDate] = useState<Record<number, 'applying' | 'refreshing' | 'done' | null>>({});
@@ -474,8 +475,34 @@ export default function LaunchesPage() {
           </button>
         </div>
       ) : (
+        <>
+        <div className="flex items-center gap-2 mb-3">
+          <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />
+          <span className="text-xs text-gray-500">Sortuj:</span>
+          {([['date', 'Data'], ['name', 'Nazwa'], ['status', 'Status']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setSortBy(key)}
+              className={`text-xs px-2 py-1 rounded ${sortBy === key ? 'bg-orange-100 text-orange-700 font-medium' : 'text-gray-500 hover:bg-gray-100'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="grid gap-3">
-          {launches.map((l) => (
+          {[...launches].sort((a, b) => {
+            if (sortBy === 'date') {
+              const da = a.planned_launch_date || a.ai_suggested_date || '9999';
+              const db2 = b.planned_launch_date || b.ai_suggested_date || '9999';
+              return da.localeCompare(db2);
+            }
+            if (sortBy === 'name') return a.name.localeCompare(b.name, 'pl');
+            if (sortBy === 'status') {
+              const order: Record<string, number> = { idea: 0, in_development: 1, ready: 2, launched: 3, cancelled: 4 };
+              return (order[a.status] ?? 5) - (order[b.status] ?? 5);
+            }
+            return 0;
+          }).map((l) => (
             <div
               key={l.id}
               onClick={() => openDetail(l)}
@@ -512,6 +539,7 @@ export default function LaunchesPage() {
             </div>
           ))}
         </div>
+        </>
       )}
 
       {/* Portfolio review modal */}
