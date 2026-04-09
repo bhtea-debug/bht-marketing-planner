@@ -132,6 +132,8 @@ export async function POST(req: NextRequest) {
 
     // ----- Build whitelist of REAL product names from Woo + launches -----
     // The AI is HARD-LOCKED to these names — no inventing.
+    // Primary source: fullCatalog (every published product in the store).
+    // Fallbacks: analytics slices (topProducts, slowProducts, etc.).
     const commerceObj = context?.commerce || null;
     const collectNames = (arr: any): string[] =>
       Array.isArray(arr)
@@ -139,16 +141,17 @@ export async function POST(req: NextRequest) {
         : [];
     const allowedProductNames: string[] = Array.from(
       new Set([
-        ...collectNames(commerceObj?.topSellers),
+        ...collectNames(commerceObj?.fullCatalog),
         ...collectNames(commerceObj?.topProducts),
-        ...collectNames(commerceObj?.bestSellers),
         ...collectNames(commerceObj?.slowProducts),
         ...collectNames(commerceObj?.lowStock),
-        ...collectNames(commerceObj?.newProducts),
         ...collectNames(commerceObj?.onSale),
         ...collectNames(launchesInWeek),
       ])
     );
+
+    // Store policies so the AI doesn't propose promos that conflict with reality.
+    const storePolicies = context?.storePolicies || null;
 
     const userPayload = {
       month,
@@ -165,6 +168,7 @@ export async function POST(req: NextRequest) {
       launchesInWeek,
       brandProfile: compactBrand,
       configuredAOV: Number(context?.configuredAOV || 120),
+      storePolicies,
       allowedProductNames,
     };
 
@@ -252,6 +256,27 @@ Jeśli zauważysz że twój pierwszy pomysł na hero product nie pasuje do \`all
 
 Jeśli kanał ma format reklamy (single_image, carousel, reels) WYPEŁNIJ headline (max 8 słów) i body (2-3 zdania). Nie zostawiaj pustego. Body musi prowadzić od sensorycznego obrazu do CTA, bez sprzedażowego krzyku.
 
+## 7. Polityki sklepowe — BEZWZGLĘDNIE PRZESTRZEGAJ
+
+Dane w \`storePolicies\` to FAKTY o sklepie. Nie ignoruj ich, nie wymyślaj alternatyw.
+
+KLUCZOWE REGUŁY:
+- Darmowa wysyłka od 129 PLN to STANDARD — to nie jest promocja. NIGDY nie komunikuj tego jako "darmowa dostawa". Klient i tak ją dostaje.
+- Jeśli promo.type = free_shipping, MUSISZ ustawić próg NIŻSZY niż 129 PLN (np. 0 PLN = "darmowa wysyłka bez minimalnego zamówienia") — bo wyższy próg jest gorszy od standardowej oferty.
+- Nie wymyślaj progów darmowej wysyłki "od 150 PLN" — to POGARSZA istniejącą ofertę klienta (129 PLN).
+- Jeśli chcesz zaproponować promo darmowej wysyłki, jedyna sensowna mechanika to OBNIŻENIE progu (np. "darmowa wysyłka od 79 PLN" lub "darmowa wysyłka na wszystko bez minimum").
+
+## 8. Różnorodność katalogu — nie kręć się wokół 1 produktu
+
+W \`commerce.fullCatalog\` masz PEŁNĄ listę produktów z WooCommerce — herbaty, akcesoria, zestawy, etc.
+NIE skupiaj się na jednej kategorii (np. tylko matcha, tylko akcesoria).
+
+REGUŁY:
+- W \`hero_products\` tygodnia MUSZĄ być minimum 2 RÓŻNE kategorie produktowe (np. herbata + akcesorium, lub zielona + czarna).
+- Jeśli w topProducts dominuje 1 produkt — weź go PLUS coś z innej kategorii żeby było ciekawie.
+- Przeglądnij \`fullCatalog\` — szukaj produktów które pasują tematycznie do tygodnia (sezon, święto) a NIE tylko tych z najwyższą sprzedażą.
+- Akcesoria (czajniki, miski, kubki) mogą być hero produktem — ale wtedy sparuj je z herbatą.
+
 ---
 `;
 
@@ -283,7 +308,10 @@ Reguły:
 - Nie używaj cudzysłowów (") wewnątrz pól tekstowych — używaj ' lub « ».
 - TWARDA REGUŁA PRODUKTÓW: \`hero_products[].name\` MUSI być DOKŁADNIE jednym z ciągów w \`allowedProductNames\` poniżej. Tool API odrzuci output z wymyśloną nazwą — twój request padnie. Jeśli lista jest pusta, użyj dosłownie "(brak danych Woo)".
 
-ALLOWED PRODUCT NAMES (lista ${allowedProductNames.length} pozycji z WooCommerce — wybieraj WYŁĄCZNIE z tej listy):
+POLITYKI SKLEPU (NIE wymyślaj — przestrzegaj):
+${storePolicies ? JSON.stringify(storePolicies, null, 2) : '  (brak danych — NIE proponuj free_shipping jako promo)'}
+
+ALLOWED PRODUCT NAMES (lista ${allowedProductNames.length} pozycji z WooCommerce — wybieraj WYŁĄCZNIE z tej listy, MIX kategorii):
 ${allowedProductNames.length > 0 ? allowedProductNames.map((n) => `  - ${n}`).join('\n') : '  (pusta — Woo niedostępne, użyj "(brak danych Woo)" jako name i dodaj warning w designer_summary)'}
 
 Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${JSON.stringify(userPayload, null, 2)}`;

@@ -98,14 +98,56 @@ export async function POST(req: NextRequest) {
 
     // ----- Woo commerce -----
     const commerceRaw = await buildWooSalesContext(30).catch(() => null);
+    // Also get the FULL product catalog so the AI knows every product by name,
+    // price, category, and stock — not just the analytics slices.
+    let fullCatalog: any[] = [];
+    try {
+      const { getWooProducts } = await import('@/lib/woo-api');
+      const allProducts = await getWooProducts();
+      fullCatalog = allProducts.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        categories: p.categories,
+        stock: p.stock,
+        stockStatus: p.stockStatus,
+        onSale: p.onSale,
+      }));
+    } catch (e) {
+      console.warn('[plan-context] full catalog failed', e);
+    }
     const commerce =
       commerceRaw && commerceRaw.configured
         ? {
-            topSellers: (commerceRaw.topSellers || commerceRaw.bestSellers || []).slice(0, 5),
-            lowStock: (commerceRaw.lowStock || []).slice(0, 3),
-            newProducts: (commerceRaw.newProducts || []).slice(0, 3),
+            // FIX: key was topSellers but buildWooSalesContext returns topProducts
+            topProducts: (commerceRaw.topProducts || []).slice(0, 10),
+            slowProducts: (commerceRaw.slowProducts || []).slice(0, 10),
+            lowStock: (commerceRaw.lowStock || []).slice(0, 15),
+            onSale: (commerceRaw.onSale || []).slice(0, 20),
+            totalCatalogSize: commerceRaw.totalCatalogSize,
+            categoriesActive: commerceRaw.categoriesActive,
+            orderCount: commerceRaw.orderCount,
+            revenue: commerceRaw.revenue,
+            averageOrderValue: commerceRaw.averageOrderValue,
+            // FULL CATALOG — every published product in the store
+            fullCatalog,
           }
         : null;
+
+    // ----- Store policies (hardcoded for BHT) -----
+    const storePolicies = {
+      freeShippingThreshold: 129,
+      freeShippingNote: 'Darmowa wysyłka od 129 PLN — to STANDARD, nie promocja. Nie komunikuj tego jako promo.',
+      standardShippingCost: 14.99,
+      returnDays: 14,
+      paymentMethods: ['przelew', 'BLIK', 'karta', 'PayPo (odroczone)'],
+      currency: 'PLN',
+      notes: [
+        'Darmowa wysyłka od 129 PLN to stały warunek — NIGDY nie proponuj free_shipping jako promo poniżej tego progu.',
+        'Jeśli tworzysz promo free_shipping, próg musi być NIŻSZY niż 129 PLN — bo inaczej klient i tak ma darmową.',
+        'Nie proponuj progu darmowej wysyłki wyższego niż 129 PLN — to pogarsza istniejącą ofertę.',
+      ],
+    };
 
     // ----- Launches (this month window) -----
     let launches: any[] = [];
@@ -170,6 +212,7 @@ export async function POST(req: NextRequest) {
         launches,
         brandProfile: brandForPrompt,
         configuredAOV: Number(process.env.META_AVG_ORDER_VALUE || 120),
+        storePolicies,
       },
     });
   } catch (e: any) {
