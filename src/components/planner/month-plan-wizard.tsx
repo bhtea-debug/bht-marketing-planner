@@ -16,7 +16,7 @@ const MONTH_NAMES = [
 
 export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const todayMonth = new Date().toISOString().slice(0, 7);
-  const [step, setStep] = useState<'config' | 'generating' | 'review' | 'saving' | 'done' | 'error'>(
+  const [step, setStep] = useState<'config' | 'generating' | 'review' | 'saving' | 'done' | 'error' | 'interview'>(
     'config'
   );
   const [month, setMonth] = useState(initialMonth || todayMonth);
@@ -53,6 +53,89 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const [savingDraft, setSavingDraft] = useState<boolean>(false);
   const [draftMsg, setDraftMsg] = useState<string | null>(null);
   const [loadingDraftId, setLoadingDraftId] = useState<number | null>(null);
+  // ----- AI INTERVIEW -----
+  const [interviewQuestions, setInterviewQuestions] = useState<any[]>([]);
+  const [interviewAnswers, setInterviewAnswers] = useState<Record<string, string>>({});
+  const [interviewCustom, setInterviewCustom] = useState<Record<string, string>>({});
+  const [interviewLoading, setInterviewLoading] = useState<boolean>(false);
+  const [interviewRound, setInterviewRound] = useState<number>(0);
+  const [interviewDone, setInterviewDone] = useState<boolean>(false);
+  const [interviewSavedCount, setInterviewSavedCount] = useState<number>(0);
+
+  async function startInterview() {
+    setStep('interview');
+    setInterviewLoading(true);
+    setInterviewQuestions([]);
+    setInterviewAnswers({});
+    setInterviewCustom({});
+    setInterviewDone(false);
+    setInterviewRound(0);
+    setInterviewSavedCount(0);
+    try {
+      const r = await fetch('/api/planner/knowledge/interview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'ask' }),
+      });
+      const j = await r.json();
+      if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
+      setInterviewQuestions(j.data?.questions || []);
+      setInterviewRound(1);
+    } catch (e: any) {
+      alert('Nie udało się uruchomić wywiadu: ' + e.message);
+      setStep('config');
+    } finally {
+      setInterviewLoading(false);
+    }
+  }
+
+  async function submitInterviewAnswers() {
+    const answered: any[] = [];
+    for (const q of interviewQuestions) {
+      const selectedAnswer = interviewAnswers[q.id];
+      const customText = interviewCustom[q.id]?.trim();
+      const finalAnswer = selectedAnswer === '__custom__'
+        ? customText
+        : selectedAnswer || customText;
+      if (!finalAnswer) continue;
+      answered.push({
+        question: q.question,
+        answer: finalAnswer,
+        category: q.category,
+        content: `[Q: ${q.question}] ${finalAnswer}`,
+      });
+    }
+    if (answered.length === 0) {
+      alert('Odpowiedz na przynajmniej jedno pytanie.');
+      return;
+    }
+    setInterviewLoading(true);
+    try {
+      const r = await fetch('/api/planner/knowledge/interview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'answer', answers: answered }),
+      });
+      const j = await r.json();
+      if (!r.ok || j.error) throw new Error(j.error || `HTTP ${r.status}`);
+      setInterviewSavedCount((prev) => prev + (j.data?.saved || 0));
+      const followUp = j.data?.followUpQuestions || [];
+      if (followUp.length > 0 && interviewRound < 4) {
+        // Show follow-up questions
+        setInterviewQuestions(followUp);
+        setInterviewAnswers({});
+        setInterviewCustom({});
+        setInterviewRound((prev) => prev + 1);
+      } else {
+        // Done — no more follow-ups or max rounds reached
+        setInterviewDone(true);
+      }
+    } catch (e: any) {
+      alert('Błąd zapisu: ' + e.message);
+    } finally {
+      setInterviewLoading(false);
+    }
+  }
 
   function toggleWeek(isoWeek: number) {
     setSelectedWeeks((prev) => ({ ...prev, [isoWeek]: !(prev[isoWeek] ?? true) }));
@@ -667,14 +750,24 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                   ))}
                 </select>
               </div>
-              <button
-                onClick={generate}
-                disabled={!accountId}
-                className="w-full bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                Wygeneruj plan
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={generate}
+                  disabled={!accountId}
+                  className="flex-1 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-300 text-white rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Wygeneruj plan
+                </button>
+                <button
+                  onClick={startInterview}
+                  className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2"
+                  title="AI zada pytania o twój biznes, styl pracy i preferencje — potem wykorzysta je w planowaniu"
+                >
+                  <Wand2 className="w-4 h-4" />
+                  Naucz AI
+                </button>
+              </div>
 
               {/* DRAFTS for this month */}
               {drafts.length > 0 && (
@@ -764,6 +857,131 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
               <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
               <p className="text-sm text-slate-600">Pobieram historię Meta, sprzedaż Woo i profil marki…</p>
               <p className="text-xs text-slate-500">To zajmie 5–20 sekund. Potem polecą tygodnie.</p>
+            </div>
+          )}
+
+          {step === 'interview' && (
+            <div className="space-y-5">
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h3 className="font-semibold text-purple-900 mb-1 flex items-center gap-2">
+                  <Wand2 className="w-4 h-4" />
+                  Wywiad AI — uczę się twojego biznesu
+                </h3>
+                <p className="text-xs text-purple-800">
+                  {interviewDone
+                    ? `Zapisano ${interviewSavedCount} odpowiedzi. Twoja wiedza będzie użyta przy każdym generowaniu planu.`
+                    : interviewRound > 0
+                      ? `Runda ${interviewRound}/4 — odpowiedz na pytania poniżej. AI dopytuje na podstawie twoich odpowiedzi.`
+                      : 'Ładuję pytania…'}
+                </p>
+              </div>
+
+              {interviewLoading && (
+                <div className="flex items-center justify-center py-8 gap-2">
+                  <Loader2 className="w-5 h-5 text-purple-600 animate-spin" />
+                  <span className="text-sm text-slate-600">
+                    {interviewRound === 0 ? 'Generuję pytania…' : 'Zapisuję i generuję kolejne…'}
+                  </span>
+                </div>
+              )}
+
+              {!interviewLoading && !interviewDone && interviewQuestions.length > 0 && (
+                <div className="space-y-4">
+                  {interviewQuestions.map((q: any) => (
+                    <div key={q.id} className="border border-purple-200 rounded-lg p-4 bg-white">
+                      <div className="flex items-start gap-2 mb-2">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800 flex-shrink-0">
+                          {q.category}
+                        </span>
+                        <div>
+                          <div className="text-sm font-medium text-slate-900">{q.question}</div>
+                          {q.why && <div className="text-[10px] text-slate-500 mt-0.5">{q.why}</div>}
+                        </div>
+                      </div>
+                      <div className="space-y-1.5 mt-3">
+                        {(q.suggested_answers || []).map((sa: string, sai: number) => (
+                          <label key={sai} className="flex items-start gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`interview-${q.id}`}
+                              checked={interviewAnswers[q.id] === sa}
+                              onChange={() => {
+                                setInterviewAnswers((prev) => ({ ...prev, [q.id]: sa }));
+                                setInterviewCustom((prev) => ({ ...prev, [q.id]: '' }));
+                              }}
+                              className="mt-0.5 text-purple-600 focus:ring-purple-500"
+                            />
+                            <span className="text-xs text-slate-700">{sa}</span>
+                          </label>
+                        ))}
+                        <label className="flex items-start gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name={`interview-${q.id}`}
+                            checked={interviewAnswers[q.id] === '__custom__'}
+                            onChange={() => setInterviewAnswers((prev) => ({ ...prev, [q.id]: '__custom__' }))}
+                            className="mt-0.5 text-purple-600 focus:ring-purple-500"
+                          />
+                          <span className="text-xs text-slate-700">Inna odpowiedź:</span>
+                        </label>
+                        {interviewAnswers[q.id] === '__custom__' && (
+                          <textarea
+                            value={interviewCustom[q.id] || ''}
+                            onChange={(e) => setInterviewCustom((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                            rows={2}
+                            className="w-full border border-purple-200 rounded px-2 py-1 text-xs focus:ring-purple-500 focus:border-purple-500 ml-5"
+                            placeholder="Twoja odpowiedź…"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setStep('config')}
+                      className="flex-1 border border-slate-300 text-slate-700 rounded-lg px-4 py-2 text-sm font-medium"
+                    >
+                      Wstecz
+                    </button>
+                    <button
+                      onClick={submitInterviewAnswers}
+                      disabled={Object.keys(interviewAnswers).length === 0}
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-300 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center justify-center gap-2"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      Wyślij odpowiedzi
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {interviewDone && (
+                <div className="text-center space-y-3 py-6">
+                  <CheckCircle2 className="w-10 h-10 text-purple-600 mx-auto" />
+                  <div className="text-sm font-medium text-slate-900">
+                    Wywiad zakończony — zapisano {interviewSavedCount} lekcji
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    AI będzie teraz korzystać z tej wiedzy przy każdym generowaniu planu.
+                    Możesz wrócić i uruchomić wywiad ponownie żeby pogłębić wiedzę.
+                  </p>
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      onClick={() => setStep('config')}
+                      className="bg-purple-600 hover:bg-purple-700 text-white rounded-lg px-6 py-2 text-sm font-medium"
+                    >
+                      Wróć do planera
+                    </button>
+                    <button
+                      onClick={startInterview}
+                      className="border border-purple-300 text-purple-700 rounded-lg px-4 py-2 text-sm font-medium"
+                    >
+                      Kolejna runda
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
