@@ -72,13 +72,15 @@ export async function POST(req: NextRequest) {
       return dh >= weekMonday && dh <= weekSunday;
     });
 
-    // Launches in this week's window
+    // ALL launches — full portfolio for strategic context
     const allLaunches = Array.isArray(context?.launches) ? context.launches : [];
     const launchesInWeek = allLaunches.filter((l: any) => {
       const d = l.launchDate; if (!d) return false;
       const dd = new Date(d); const pre = new Date(dd); pre.setUTCDate(dd.getUTCDate() - 14);
       return pre <= weekSunday && dd >= weekMonday;
     }).slice(0, 3);
+    // Launches NOT in this week (rest of portfolio)
+    const launchesOutsideWeek = allLaunches.filter((l: any) => !launchesInWeek.includes(l));
 
     // Product whitelist
     const commerceObj = context?.commerce || null;
@@ -95,46 +97,78 @@ export async function POST(req: NextRequest) {
 
     const storePolicies = context?.storePolicies || null;
     const knowledgeEntries = Array.isArray(context?.knowledgeEntries) ? context.knowledgeEntries : [];
+    const brandProfile = context?.brandProfile || null;
 
-    const system = `Jesteś senior strategist dla Brown House & Tea (polska premium herbata, e-commerce).
+    const system = `Jesteś Chief Marketing Strategist dla Brown House & Tea (polska premium herbata, matcha, akcesoria — e-commerce).
 
-TWOJA ROLA: Zaproponuj STRATEGIĘ TYGODNIA — motyw przewodni, hero produkty, mechanikę promo i uzasadnienie.
+TWOJA ROLA: Zaproponuj GŁĘBOKĄ STRATEGIĘ TYGODNIA — motyw przewodni, hero produkty, mechanikę promo i uzasadnienie.
 NIE generujesz treści, kanałów, briefów wizualnych ani copy — to osobny krok. Tu TYLKO strategia.
 
-Musisz:
-1. Wybrać TEMAT tygodnia (max 6 słów, konkretny, nie kategoria)
-2. Wybrać 2-4 HERO PRODUKTY z allowedProductNames (MIX kategorii!) i uzasadnić każdy
-3. Zaproponować PROMO (lub brak) z konkretną mechaniką
-4. Napisać RATIONALE: jaki sygnał z danych to wywołał + dlaczego ten tydzień
-5. Dać krótki DESIGNER SUMMARY: 1-2 zdania o kierunku wizualnym
-6. Zasugerować budżet tygodniowy
+========== MYŚLENIE STRATEGICZNE ==========
+Przed wyborem strategii MUSISZ przeanalizować:
+1. PORTFOLIO PREMIER — jakie premiery produktów są zaplanowane w tym miesiącu i okolicach? Czy ten tydzień wypada blisko premiery? Jak to wpływa na strategię?
+2. SEZONOWOŚĆ — jaki jest kontekst sezonowy? Święta, pogoda, nawyki konsumentów w tym okresie?
+3. DANE SPRZEDAŻOWE — co się sprzedaje dobrze, co słabo? Co wymaga push'a, a co jedzie samo?
+4. KANIBALIZACJA — czy hero produkty nie kolidują z planowanymi premierami? Czy promo nie podważa full-price launchu w sąsiednim tygodniu?
+5. NARRACJA MIESIĘCZNA — jak ten tydzień wpisuje się w arc miesiąca? Nie może być oderwany — musi budować historię.
+6. BRAND VOICE — strategia musi oddawać ton marki: premium, ale przystępna. Edukacyjna, nie sprzedażowa.
 
-REGUŁY:
+========== WYMAGANIA ==========
+1. Wybrać TEMAT tygodnia (max 6 słów, konkretny narracyjnie — nie kategoria produktowa)
+2. Wybrać 2-4 HERO PRODUKTY z allowedProductNames (MIX kategorii!) i uzasadnić KAŻDY w kontekście danych + sezonu
+3. Zaproponować PROMO (lub brak) z konkretną mechaniką — uzasadnij DLACZEGO ta mechanika, nie inna
+4. Napisać RATIONALE: 3-4 zdania — (1) sygnał z danych, (2) kontekst portfolio premier, (3) dlaczego ten tydzień, (4) jak to buduje arc miesiąca
+5. Dać DESIGNER SUMMARY: 2-3 zdania o kierunku wizualnym, nastroju, kolorystyce
+6. Zasugerować budżet tygodniowy z uzasadnieniem (więcej = ważniejszy tydzień w arc)
+
+========== TWARDE REGUŁY ==========
 - hero_products[].name MUSI być dokładnie z allowedProductNames. ZERO wymyślania.
 - Darmowa wysyłka od 129 PLN to STANDARD — to nie jest promo.
 - Min 2 różne kategorie w hero_products.
-- theme = konkretny motyw, nie "Wiosenne herbaty" ale "Pierwsze ciepło na balkonie".
-- rationale = 2 zdania: (1) sygnał z danych, (2) dlaczego ten tydzień.
+- theme = konkretny motyw narracyjny, nie "Wiosenne herbaty" ale np. "Pierwsze ciepło na balkonie".
+- Jeśli w danym tygodniu lub ±7 dni jest PREMIERA — strategia MUSI ją uwzględniać (budować hype przed lub wspierać launch).
+- NIE promuj agresywnie produktów, które mają premierę za 2+ tygodnie — buduj anticipation, nie sprzedawaj.
+- Slow movers = szansa na kreatywne promo, ale nie na siłę. Tylko gdy pasują do narracji.
 
 Wywołaj narzędzie emit_week_strategy dokładnie raz.`;
+
+    // Format launch for prompt
+    const fmtLaunch = (l: any) => {
+      const parts = [l.name];
+      if (l.category) parts.push(`[${l.category}]`);
+      if (l.launchDate) parts.push(`data: ${l.launchDate}`);
+      if (l.short_pitch) parts.push(`— ${l.short_pitch}`);
+      if (l.target_audience) parts.push(`(${l.target_audience})`);
+      if (l.price_pln) parts.push(`${l.price_pln} PLN`);
+      return parts.join(' ');
+    };
 
     const userPrompt = `Tydzień ISO ${isoWeek} (${weekStartIso} → ${weekEndIso}) miesiąca ${month}.
 DZIŚ JEST ${todayIso}. Tydzień za ${daysUntilStart} dni.
 Święta w tym tygodniu: ${holidaysInWeek.length ? holidaysInWeek.map(h => `${h.name} ${h.date}`).join(', ') : 'brak'}.
 
-ALLOWED PRODUCT NAMES (${allowedProductNames.length}):
+========== PORTFOLIO PREMIER (KLUCZOWE!) ==========
+Premiery w oknie tego tygodnia (±14 dni):
+${launchesInWeek.length > 0 ? launchesInWeek.map(fmtLaunch).join('\n') : '  brak'}
+
+Pozostałe zaplanowane premiery (kontekst portfolio):
+${launchesOutsideWeek.length > 0 ? launchesOutsideWeek.map(fmtLaunch).join('\n') : '  brak'}
+
+→ Przeanalizuj jak TEN tydzień powinien się odnosić do powyższych premier. Czy budujemy hype? Wspieramy launch? Dajemy oddech między premierami?
+
+========== ALLOWED PRODUCT NAMES (${allowedProductNames.length}) ==========
 ${allowedProductNames.length > 0 ? allowedProductNames.map(n => `  - ${n}`).join('\n') : '  (pusta — użyj "(brak danych Woo)")'}
+${brandProfile ? `\n========== PROFIL MARKI ==========\n${typeof brandProfile === 'string' ? brandProfile : JSON.stringify(brandProfile, null, 2)}` : ''}
 ${storePolicies ? `\nPOLITYKI SKLEPU:\n${JSON.stringify(storePolicies, null, 2)}` : ''}
 ${knowledgeEntries.length > 0 ? `\nBAZA WIEDZY:\n${knowledgeEntries.map((k: any) => `  [${k.category}] ${k.content}`).join('\n')}` : ''}
 
-DANE HANDLOWE:
+========== DANE HANDLOWE ==========
 - Top produkty: ${collectNames(commerceObj?.topProducts).slice(0, 8).join(', ') || 'brak'}
 - Slow movers: ${collectNames(commerceObj?.slowProducts).slice(0, 5).join(', ') || 'brak'}
 - Niska dostępność: ${collectNames(commerceObj?.lowStock).slice(0, 5).join(', ') || 'brak'}
 - W promocji: ${collectNames(commerceObj?.onSale).slice(0, 5).join(', ') || 'brak'}
-- Launche w oknie: ${launchesInWeek.map((l: any) => l.name).join(', ') || 'brak'}
 
-Wywołaj emit_week_strategy.`;
+Przeanalizuj WSZYSTKO powyżej i wywołaj emit_week_strategy.`;
 
     const strategyTool = {
       name: 'emit_week_strategy',
@@ -148,8 +182,8 @@ Wywołaj emit_week_strategy.`;
           dateRange: { type: 'string' },
           start_date: { type: 'string' },
           end_date: { type: 'string' },
-          theme: { type: 'string', description: 'Krótki temat tygodnia, max 6 słów' },
-          rationale: { type: 'string', description: '2 zdania: sygnał + dlaczego ten tydzień' },
+          theme: { type: 'string', description: 'Krótki temat tygodnia, max 6 słów — konkretny narracyjnie' },
+          rationale: { type: 'string', description: '3-4 zdania: sygnał z danych + kontekst portfolio premier + dlaczego ten tydzień + jak buduje arc miesiąca' },
           hero_products: {
             type: 'array',
             items: {
@@ -173,7 +207,8 @@ Wywołaj emit_week_strategy.`;
             },
           },
           weekly_budget_pln: { type: 'number' },
-          designer_summary: { type: 'string', description: '1-2 zdania o kierunku wizualnym tygodnia' },
+          launch_context: { type: 'string', description: 'Jak strategia tego tygodnia odnosi się do portfolio premier — budowanie hype, wsparcie launchu, oddech między premierami, itp. 1-2 zdania.' },
+          designer_summary: { type: 'string', description: '2-3 zdania o kierunku wizualnym, nastroju, kolorystyce tygodnia' },
         },
       },
     };
@@ -192,8 +227,8 @@ Wywołaj emit_week_strategy.`;
 
         try {
           const llmRes = await client.messages.create({
-            model: 'claude-sonnet-4-5',
-            max_tokens: 2000,
+            model: 'claude-opus-4-5-20250514',
+            max_tokens: 4000,
             system,
             tools: [strategyTool as any],
             tool_choice: { type: 'tool', name: 'emit_week_strategy' } as any,

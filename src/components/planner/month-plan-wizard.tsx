@@ -1012,6 +1012,13 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                             </div>
                           )}
 
+                          {/* Launch context */}
+                          {s.launch_context && (
+                            <div className="mb-2 text-xs bg-violet-50 text-violet-700 rounded px-2 py-1 border border-violet-200">
+                              <span className="font-medium">Kontekst premier:</span> {s.launch_context}
+                            </div>
+                          )}
+
                           {/* Designer summary */}
                           {s.designer_summary && (
                             <div className="text-xs text-slate-500 italic">
