@@ -227,7 +227,7 @@ Przeanalizuj WSZYSTKO powyżej i wywołaj emit_week_strategy.`;
 
         try {
           const llmRes = await client.messages.create({
-            model: 'claude-opus-4-5-20250514',
+            model: 'claude-opus-4-5',
             max_tokens: 4000,
             system,
             tools: [strategyTool as any],
