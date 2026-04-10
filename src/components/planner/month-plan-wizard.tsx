@@ -203,7 +203,8 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   // ----- AUTO-SAVE & CLOSE -----
   // Save draft silently before closing whenever there's a plan in memory.
   async function autoSaveAndClose() {
-    if (plan && plan.weeks?.length > 0) {
+    const hasStrategies = Object.keys(strategies).length > 0;
+    if ((plan && plan.weeks?.length > 0) || hasStrategies) {
       await saveDraft({ silent: true, nameOverride: undefined });
     }
     onClose();
@@ -213,7 +214,7 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   // Snapshot of everything we need to restore the wizard later.
   function buildDraftPayload() {
     return {
-      version: 1,
+      version: 2,
       month,
       accountId,
       plan,
@@ -221,7 +222,13 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
       selectedWeeks,
       deployedWeeks,
       weekErrors,
-      // we intentionally do NOT persist transient UI state (refineOpenFor etc.)
+      // Phase 1 strategy data
+      strategies,
+      approvedWeeks,
+      weekFeedback,
+      weekQueue,
+      // which step we're on (so we can restore it)
+      savedStep: step,
     };
   }
 
@@ -238,21 +245,25 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   }
 
   async function saveDraft(opts?: { silent?: boolean; nameOverride?: string }) {
-    if (!plan) {
-      if (!opts?.silent) setDraftMsg('Brak planu do zapisania.');
+    const hasStrategies = Object.keys(strategies).length > 0;
+    if (!plan && !hasStrategies) {
+      if (!opts?.silent) setDraftMsg('Brak planu ani strategii do zapisania.');
       return;
     }
     setSavingDraft(true);
     setDraftMsg(null);
     try {
-      const weeksCount = (plan.weeks || []).length;
+      const weeksCount = plan ? (plan.weeks || []).length : Object.keys(strategies).length;
       const deployedCount = Object.values(deployedWeeks).filter((d: any) => d?.ok).length;
+      const isStrategyOnly = !plan || (plan.weeks || []).length === 0;
       const status =
-        deployedCount === 0
-          ? 'draft'
-          : deployedCount >= weeksCount && weeksCount > 0
-            ? 'deployed'
-            : 'partial';
+        isStrategyOnly
+          ? 'strategy'
+          : deployedCount === 0
+            ? 'draft'
+            : deployedCount >= weeksCount && weeksCount > 0
+              ? 'deployed'
+              : 'partial';
       const body = {
         id: currentDraftId || undefined,
         month,
@@ -300,8 +311,21 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
       if (p.selectedWeeks) setSelectedWeeks(p.selectedWeeks);
       if (p.deployedWeeks) setDeployedWeeks(p.deployedWeeks);
       if (p.weekErrors) setWeekErrors(p.weekErrors);
-      // jump straight to review
-      setStep('review');
+      // Restore Phase 1 strategy state
+      if (p.strategies) setStrategies(p.strategies);
+      if (p.approvedWeeks) setApprovedWeeks(p.approvedWeeks);
+      if (p.weekFeedback) setWeekFeedback(p.weekFeedback);
+      if (p.weekQueue) setWeekQueue(p.weekQueue);
+      // Jump to the right step: strategy view if only strategies, review if full plan
+      const hasFullPlan = p.plan && p.plan.weeks && p.plan.weeks.length > 0;
+      const hasStrategiesData = p.strategies && Object.keys(p.strategies).length > 0;
+      if (hasFullPlan) {
+        setStep('review');
+      } else if (hasStrategiesData) {
+        setStep('strategy');
+      } else {
+        setStep('config');
+      }
       setDraftMsg(`Wczytano draft #${d.id}`);
     } catch (e: any) {
       setDraftMsg('Błąd wczytywania: ' + e.message);
@@ -888,10 +912,12 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                                   ? 'text-emerald-700'
                                   : d.status === 'partial'
                                     ? 'text-amber-700'
-                                    : 'text-slate-600'
+                                    : d.status === 'strategy'
+                                      ? 'text-indigo-600'
+                                      : 'text-slate-600'
                               }
                             >
-                              {d.status}
+                              {d.status === 'strategy' ? 'strategia' : d.status}
                             </span>{' '}
                             • zapis: {d.updated_at?.slice(0, 16).replace('T', ' ')}
                           </div>
@@ -1147,12 +1173,23 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                   Zatwierdź i generuj treści ({Object.values(approvedWeeks).filter(Boolean).length} tyg.)
                 </button>
                 <button
+                  onClick={() => saveDraft()}
+                  disabled={savingDraft}
+                  className="px-4 py-3 rounded-xl text-sm text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-300 flex items-center gap-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  {savingDraft ? 'Zapisuję...' : 'Zapisz draft'}
+                </button>
+                <button
                   onClick={generate}
                   className="px-4 py-3 rounded-xl text-sm text-slate-600 hover:text-slate-800 border border-slate-200 hover:border-slate-300"
                 >
                   Od nowa
                 </button>
               </div>
+              {draftMsg && (
+                <p className="text-xs text-center text-slate-500 mt-1">{draftMsg}</p>
+              )}
             </div>
           )}
 
