@@ -10,7 +10,7 @@ import Anthropic from '@anthropic-ai/sdk';
 // Body: { month, isoWeek, context }
 export async function POST(req: NextRequest) {
   try {
-    const { month, isoWeek, context } = await req.json();
+    const { month, isoWeek, context, userFeedback, previousStrategy } = await req.json();
     if (!month || !/^\d{4}-\d{2}$/.test(month))
       return NextResponse.json({ error: 'month required as YYYY-MM' }, { status: 400 });
     if (!isoWeek || typeof isoWeek !== 'number')
@@ -168,7 +168,17 @@ ${knowledgeEntries.length > 0 ? `\nBAZA WIEDZY:\n${knowledgeEntries.map((k: any)
 - Niska dostępność: ${collectNames(commerceObj?.lowStock).slice(0, 5).join(', ') || 'brak'}
 - W promocji: ${collectNames(commerceObj?.onSale).slice(0, 5).join(', ') || 'brak'}
 
-Przeanalizuj WSZYSTKO powyżej i wywołaj emit_week_strategy.`;
+Przeanalizuj WSZYSTKO powyżej i wywołaj emit_week_strategy.${previousStrategy ? `
+
+========== POPRZEDNIA STRATEGIA (DO POPRAWY) ==========
+Użytkownik ODRZUCIŁ poniższą strategię i dał feedback. Musisz ją POPRAWIĆ zgodnie z uwagami.
+Poprzednia strategia:
+${JSON.stringify(previousStrategy, null, 2)}` : ''}${userFeedback ? `
+
+========== UWAGI UŻYTKOWNIKA ==========
+${userFeedback}
+
+WAŻNE: Uwzględnij powyższe uwagi. Zmień strategię zgodnie z oczekiwaniami użytkownika. Nie ignoruj żadnego punktu.` : ''}`;
 
     const strategyTool = {
       name: 'emit_week_strategy',

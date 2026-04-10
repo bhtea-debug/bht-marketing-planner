@@ -66,6 +66,9 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const [strategyDoneCount, setStrategyDoneCount] = useState(0);
   const [strategyErrors, setStrategyErrors] = useState<Record<number, string>>({});
   const [contentDoneCount, setContentDoneCount] = useState(0);
+  const [approvedWeeks, setApprovedWeeks] = useState<Record<number, boolean>>({}); // checkbox per week
+  const [weekFeedback, setWeekFeedback] = useState<Record<number, string>>({}); // per-week user notes for AI
+  const [regeneratingWeek, setRegeneratingWeek] = useState<number | null>(null); // currently re-generating
 
   async function startInterview() {
     setStep('interview');
@@ -597,12 +600,54 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
     }
 
     setWeekCurrent(null);
+    // Auto-select all successful strategies
+    const autoApproved: Record<number, boolean> = {};
+    for (const w of Object.keys(newStrategies).map(Number)) autoApproved[w] = true;
+    setApprovedWeeks(autoApproved);
+    setWeekFeedback({});
     setStep('strategy'); // Show strategy review
+  }
+
+  // ===== Re-generate single week strategy with user feedback =====
+  async function regenerateWeekStrategy(weekNum: number) {
+    if (!sharedContext) return;
+    const feedback = weekFeedback[weekNum]?.trim();
+    if (!feedback) return;
+    setRegeneratingWeek(weekNum);
+    try {
+      const r = await fetch('/api/planner/week-strategy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          month,
+          isoWeek: weekNum,
+          context: sharedContext,
+          userFeedback: feedback,
+          previousStrategy: strategies[weekNum],
+        }),
+      });
+      let j: any = null;
+      try { j = await parseStreamedJSON(r); } catch (parseErr: any) {
+        setStrategyErrors(prev => ({ ...prev, [weekNum]: `parse: ${parseErr.message}` }));
+        return;
+      }
+      if (!r.ok || j?.error || !j?.data?.strategy) {
+        setStrategyErrors(prev => ({ ...prev, [weekNum]: j?.error || `HTTP ${r.status}` }));
+      } else {
+        setStrategies(prev => ({ ...prev, [weekNum]: j.data.strategy }));
+        setStrategyErrors(prev => { const c = { ...prev }; delete c[weekNum]; return c; });
+        setApprovedWeeks(prev => ({ ...prev, [weekNum]: true }));
+      }
+    } catch (e: any) {
+      setStrategyErrors(prev => ({ ...prev, [weekNum]: e.message }));
+    } finally {
+      setRegeneratingWeek(null);
+    }
   }
 
   // ===== PHASE 2: Generate full content for approved strategies =====
   async function generateContent() {
-    const weeks = Object.keys(strategies).map(Number).sort();
+    const weeks = Object.keys(strategies).map(Number).filter(w => approvedWeeks[w]).sort();
     if (weeks.length === 0) return;
 
     setWeekErrors({});
@@ -963,13 +1008,33 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                 </div>
               )}
 
+              {/* Select all / deselect all */}
+              {Object.keys(strategies).length > 1 && (
+                <div className="flex items-center gap-3 text-xs">
+                  <button
+                    onClick={() => { const all: Record<number, boolean> = {}; Object.keys(strategies).forEach(k => all[Number(k)] = true); setApprovedWeeks(all); }}
+                    className="text-indigo-600 hover:text-indigo-800 font-medium"
+                  >Zaznacz wszystkie</button>
+                  <span className="text-slate-300">|</span>
+                  <button
+                    onClick={() => setApprovedWeeks({})}
+                    className="text-slate-500 hover:text-slate-700 font-medium"
+                  >Odznacz wszystkie</button>
+                  <span className="ml-auto text-slate-500">
+                    Zaznaczone: {Object.values(approvedWeeks).filter(Boolean).length} / {Object.keys(strategies).length}
+                  </span>
+                </div>
+              )}
+
               <div className="space-y-3">
                 {weekQueue.map((w) => {
                   const s = strategies[w];
                   const err = strategyErrors[w];
                   if (!s && !err) return null;
+                  const isSelected = !!approvedWeeks[w];
+                  const isRegenerating = regeneratingWeek === w;
                   return (
-                    <div key={w} className={`rounded-xl border p-4 ${err ? 'border-rose-300 bg-rose-50' : 'border-slate-200 bg-white'}`}>
+                    <div key={w} className={`rounded-xl border p-4 transition-all ${err ? 'border-rose-300 bg-rose-50' : isSelected ? 'border-indigo-300 bg-white ring-1 ring-indigo-100' : 'border-slate-200 bg-slate-50 opacity-75'}`}>
                       {err ? (
                         <div className="text-sm text-rose-700">
                           <AlertTriangle className="w-4 h-4 inline mr-1" />
@@ -977,14 +1042,23 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                         </div>
                       ) : s && (
                         <>
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <span className="text-xs text-slate-500">Tydzień {s.isoWeek || w}</span>
-                              <span className="text-xs text-slate-400 ml-2">{s.dateRange || `${s.start_date} – ${s.end_date}`}</span>
+                          <div className="flex items-center gap-3 mb-2">
+                            {/* Checkbox */}
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => setApprovedWeeks(prev => ({ ...prev, [w]: e.target.checked }))}
+                              className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                            />
+                            <div className="flex-1 flex items-center justify-between">
+                              <div>
+                                <span className="text-xs text-slate-500 font-medium">Tydzień {s.isoWeek || w}</span>
+                                <span className="text-xs text-slate-400 ml-2">{s.dateRange || `${s.start_date} – ${s.end_date}`}</span>
+                              </div>
+                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">
+                                {s.weekly_budget_pln ? `${s.weekly_budget_pln} PLN` : '—'}
+                              </span>
                             </div>
-                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">
-                              {s.weekly_budget_pln ? `${s.weekly_budget_pln} PLN` : '—'}
-                            </span>
                           </div>
                           <h4 className="font-semibold text-slate-900 mb-1">{s.theme}</h4>
                           <p className="text-sm text-slate-600 mb-2">{s.rationale}</p>
@@ -1021,10 +1095,41 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
 
                           {/* Designer summary */}
                           {s.designer_summary && (
-                            <div className="text-xs text-slate-500 italic">
+                            <div className="text-xs text-slate-500 italic mb-3">
                               🎨 {s.designer_summary}
                             </div>
                           )}
+
+                          {/* Per-week feedback + regenerate */}
+                          <div className="mt-3 pt-3 border-t border-slate-100">
+                            <div className="flex items-start gap-2">
+                              <textarea
+                                value={weekFeedback[w] || ''}
+                                onChange={(e) => setWeekFeedback(prev => ({ ...prev, [w]: e.target.value }))}
+                                placeholder="Dodaj uwagi do tej strategii i przelicz ponownie..."
+                                rows={2}
+                                className="flex-1 text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-300 resize-none"
+                                disabled={isRegenerating}
+                              />
+                              <button
+                                onClick={() => regenerateWeekStrategy(w)}
+                                disabled={isRegenerating || !weekFeedback[w]?.trim()}
+                                className="px-3 py-2 text-xs bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-100 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-1.5"
+                              >
+                                {isRegenerating ? (
+                                  <>
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                    Analizuję...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-3 h-3" />
+                                    Przelicz
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
                         </>
                       )}
                     </div>
@@ -1035,11 +1140,11 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
               <div className="flex items-center gap-3 pt-2">
                 <button
                   onClick={generateContent}
-                  disabled={Object.keys(strategies).length === 0}
+                  disabled={Object.values(approvedWeeks).filter(Boolean).length === 0 || regeneratingWeek !== null}
                   className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Zatwierdź i generuj treści ({Object.keys(strategies).length} tyg.)
+                  Zatwierdź i generuj treści ({Object.values(approvedWeeks).filter(Boolean).length} tyg.)
                 </button>
                 <button
                   onClick={generate}
