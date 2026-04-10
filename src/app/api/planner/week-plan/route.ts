@@ -14,7 +14,7 @@ import { MARKETING_SKILL } from '@/lib/marketing-skill-bundled';
 // haiku) and never hits the 60s function timeout.
 export async function POST(req: NextRequest) {
   try {
-    const { month, isoWeek, context, additionalInstructions, currentWeek } = await req.json();
+    const { month, isoWeek, context, additionalInstructions, currentWeek, approvedStrategy } = await req.json();
     if (!month || !/^\d{4}-\d{2}$/.test(month)) {
       return NextResponse.json({ error: 'month required as YYYY-MM' }, { status: 400 });
     }
@@ -319,13 +319,35 @@ INSTRUKCJA WYKONAWCZA: Wywołaj narzędzie emit_week_plan dokładnie raz z kompl
 5. Czy store_tasks.deadline jest PRZED startem kampanii?
 Jeśli cokolwiek brakuje — przepisz, dopiero potem wywołaj narzędzie.`;
 
+    // If approvedStrategy is provided, we're in PHASE 2 — user already approved the strategy,
+    // we just need to generate channels, content, briefs, store_tasks around it.
+    const strategyBlock = approvedStrategy
+      ? `\n\n========== ZATWIERDZONA STRATEGIA (FAZA 2) ==========
+Użytkownik ZATWIERDZIŁ poniższą strategię. MUSISZ ją użyć DOKŁADNIE — nie zmieniaj theme, hero_products, promo ani rationale. Twoje zadanie to TYLKO dodać:
+- channels (kanały z pełnymi briefami, hookami, copy, visual briefs)
+- store_tasks (zadania na stronie sklepu)
+- linked_calendar_tasks
+
+Zatwierdzona strategia:
+${JSON.stringify(approvedStrategy, null, 2)}
+
+TWARDE REGUŁY FAZY 2:
+- theme: użyj DOKŁADNIE "${approvedStrategy.theme}"
+- rationale: użyj DOKŁADNIE "${approvedStrategy.rationale}"
+- hero_products: użyj DOKŁADNIE tych samych produktów: ${(approvedStrategy.hero_products || []).map((p: any) => p.name).join(', ')}
+- promo: użyj DOKŁADNIE tego samego typu i mechaniki
+- designer_summary: użyj jako bazę dla visual_briefs — spójność wizualna
+- weekly_budget_pln: użyj ${approvedStrategy.weekly_budget_pln || 0}
+=============================================`
+      : '';
+
     // If we're refining an existing week, show the previous version + the user's instructions
     const isRefine = !!additionalInstructions;
     const refineBlock = isRefine
       ? `\n\n========== POPRAWKA OD UŻYTKOWNIKA ==========\nTo jest kolejna iteracja tego tygodnia. Użytkownik widział poprzednią wersję i prosi o konkretne poprawki — TWOIM ZADANIEM jest podnieść jakość, nie tylko mechanicznie wprowadzić zmianę.\n\nPoprzednia wersja (do oceny i poprawy):\n${JSON.stringify(currentWeek || {}, null, 2)}\n\nInstrukcje użytkownika: "${additionalInstructions}"\n\nZASADY POPRAWKI:\n1. Realizuj prośbę użytkownika DOSŁOWNIE.\n2. Jednocześnie podnieś ogólną jakość: hooki muszą być sensoryczne i konkretne (nie "odkryj nasze herbaty"), promo musi mieć przemyślaną mechanikę, briefy wizualne muszą być realnie wykonalne dla designera.\n3. ZACHOWAJ wszystko co już było dobre w poprzedniej wersji — nie wymyślaj na nowo bez powodu.\n4. Jeśli użytkownik prosi o zmianę kanału lub produktu, sprawdź czy ma to sens biznesowy w kontekście Woo/Meta sygnałów.\n5. Nie powielaj pomysłów z poprzedniej wersji jeśli były słabe — popraw je.\n=============================================`
       : '';
 
-    const userPrompt = `Wygeneruj plan marketingowy DLA POJEDYNCZEGO TYGODNIA ISO ${isoWeek} (${weekStartIso} → ${weekEndIso}) miesiąca ${month}.${refineBlock}
+    const userPrompt = `Wygeneruj plan marketingowy DLA POJEDYNCZEGO TYGODNIA ISO ${isoWeek} (${weekStartIso} → ${weekEndIso}) miesiąca ${month}.${strategyBlock}${refineBlock}
 
 DZIŚ JEST ${todayIso}. Tydzień startuje za ${daysUntilStart} dni.
 Święta w tym tygodniu: ${holidaysInWeek.length ? holidaysInWeek.map((h) => `${h.name} ${h.date}`).join(', ') : 'brak'}.

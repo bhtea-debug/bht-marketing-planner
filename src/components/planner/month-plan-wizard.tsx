@@ -16,7 +16,7 @@ const MONTH_NAMES = [
 
 export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const todayMonth = new Date().toISOString().slice(0, 7);
-  const [step, setStep] = useState<'config' | 'generating' | 'review' | 'saving' | 'done' | 'error' | 'interview'>(
+  const [step, setStep] = useState<'config' | 'generating' | 'strategy' | 'generating_content' | 'review' | 'saving' | 'done' | 'error' | 'interview'>(
     'config'
   );
   const [month, setMonth] = useState(initialMonth || todayMonth);
@@ -61,6 +61,11 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const [interviewRound, setInterviewRound] = useState<number>(0);
   const [interviewDone, setInterviewDone] = useState<boolean>(false);
   const [interviewSavedCount, setInterviewSavedCount] = useState<number>(0);
+  // ----- PHASE 1 STRATEGIES -----
+  const [strategies, setStrategies] = useState<Record<number, any>>({}); // isoWeek → strategy
+  const [strategyDoneCount, setStrategyDoneCount] = useState(0);
+  const [strategyErrors, setStrategyErrors] = useState<Record<number, string>>({});
+  const [contentDoneCount, setContentDoneCount] = useState(0);
 
   async function startInterview() {
     setStep('interview');
@@ -522,11 +527,16 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month]);
 
+  // ===== PHASE 1: Generate strategies only (fast) =====
   async function generate() {
     setError(null);
     setWeekErrors({});
+    setStrategyErrors({});
     setWeekDoneCount(0);
+    setStrategyDoneCount(0);
+    setContentDoneCount(0);
     setPlan(null);
+    setStrategies({});
     setDebug(null);
     setSelectedWeeks({});
 
@@ -540,8 +550,8 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
     setWeekQueue(weeks);
     setStep('generating');
 
-    // Step 1: fetch the heavy shared context ONCE (Meta + Woo + brand + launches)
-    let sharedContext: any = null;
+    // Fetch the heavy shared context ONCE
+    let ctx: any = null;
     try {
       const cr = await fetch('/api/planner/plan-context', {
         method: 'POST',
@@ -550,15 +560,56 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
       });
       const cj = await cr.json();
       if (!cr.ok) throw new Error(cj.error || 'plan-context failed');
-      sharedContext = cj.data;
-      setSharedContext(sharedContext);
+      ctx = cj.data;
+      setSharedContext(ctx);
     } catch (e: any) {
       setError('Nie udało się pobrać kontekstu (Meta/Woo/brand): ' + e.message);
       setStep('error');
       return;
     }
 
-    // Seed an empty plan that we'll fill week-by-week
+    // Phase 1: generate strategy for each week
+    const newStrategies: Record<number, any> = {};
+    for (const w of weeks) {
+      setWeekCurrent(w);
+      try {
+        const r = await fetch('/api/planner/week-strategy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ month, isoWeek: w, context: ctx }),
+        });
+        let j: any = null;
+        try { j = await parseStreamedJSON(r); } catch (parseErr: any) {
+          setStrategyErrors(prev => ({ ...prev, [w]: `parse: ${parseErr.message}` }));
+          continue;
+        }
+        if (!r.ok || j?.error || !j?.data?.strategy) {
+          setStrategyErrors(prev => ({ ...prev, [w]: j?.error || `HTTP ${r.status}` }));
+        } else {
+          newStrategies[w] = j.data.strategy;
+          setStrategies(prev => ({ ...prev, [w]: j.data.strategy }));
+        }
+      } catch (e: any) {
+        setStrategyErrors(prev => ({ ...prev, [w]: e.message }));
+      } finally {
+        setStrategyDoneCount(c => c + 1);
+      }
+    }
+
+    setWeekCurrent(null);
+    setStep('strategy'); // Show strategy review
+  }
+
+  // ===== PHASE 2: Generate full content for approved strategies =====
+  async function generateContent() {
+    const weeks = Object.keys(strategies).map(Number).sort();
+    if (weeks.length === 0) return;
+
+    setWeekErrors({});
+    setWeekDoneCount(0);
+    setContentDoneCount(0);
+    setStep('generating_content');
+
     const seed: any = {
       summary: `Plan tygodniowy dla ${month}`,
       totalBudget: 0,
@@ -567,8 +618,6 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
       next_actions: [],
     };
     setPlan(seed);
-    // Switch to review immediately so user sees progress + tiles as they arrive
-    setStep('review');
 
     let runningTotal = 0;
     for (const w of weeks) {
@@ -577,26 +626,21 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
         const r = await fetch('/api/planner/week-plan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ month, isoWeek: w, context: sharedContext }),
+          body: JSON.stringify({
+            month,
+            isoWeek: w,
+            context: sharedContext,
+            approvedStrategy: strategies[w],
+          }),
         });
         let j: any = null;
-        try {
-          j = await parseStreamedJSON(r);
-        } catch (parseErr: any) {
-          setWeekErrors((prev) => ({
-            ...prev,
-            [w]: `HTTP ${r.status} (parse): ${parseErr.message}`,
-          }));
+        try { j = await parseStreamedJSON(r); } catch (parseErr: any) {
+          setWeekErrors(prev => ({ ...prev, [w]: `parse: ${parseErr.message}` }));
           continue;
         }
-        // Streaming endpoint always returns 200; check the body for error.
         if (!r.ok || j?.error || !j?.data?.week) {
           const detail = j?.error || `HTTP ${r.status}`;
-          const extra = j?.parseError ? ` | parse: ${j.parseError}` : '';
-          const rawSnip = j?.raw
-            ? ` | raw: ${String(j.raw).slice(0, 300).replace(/\s+/g, ' ')}`
-            : '';
-          setWeekErrors((prev) => ({ ...prev, [w]: detail + extra + rawSnip }));
+          setWeekErrors(prev => ({ ...prev, [w]: detail }));
         } else {
           const wk = j.data.week;
           runningTotal += Number(wk?.weekly_budget_pln || 0);
@@ -605,17 +649,18 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
             totalBudget: runningTotal,
             weeks: [...(prev?.weeks || []), wk],
           }));
-          // default: new week is selected for save
-          setSelectedWeeks((prev) => ({ ...prev, [wk?.isoWeek ?? w]: true }));
+          setSelectedWeeks(prev => ({ ...prev, [wk?.isoWeek ?? w]: true }));
         }
       } catch (e: any) {
-        setWeekErrors((prev) => ({ ...prev, [w]: e.message }));
+        setWeekErrors(prev => ({ ...prev, [w]: e.message }));
       } finally {
-        setWeekDoneCount((c) => c + 1);
+        setContentDoneCount(c => c + 1);
+        setWeekDoneCount(c => c + 1);
       }
     }
 
     setWeekCurrent(null);
+    setStep('review');
   }
 
   async function retryFailedWeeks() {
@@ -855,8 +900,147 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
           {step === 'generating' && (
             <div className="flex flex-col items-center py-12 gap-3">
               <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
-              <p className="text-sm text-slate-600">Pobieram historię Meta, sprzedaż Woo i profil marki…</p>
-              <p className="text-xs text-slate-500">To zajmie 5–20 sekund. Potem polecą tygodnie.</p>
+              <p className="text-sm text-slate-600">
+                {strategyDoneCount === 0
+                  ? 'Pobieram historię Meta, sprzedaż Woo i profil marki…'
+                  : `Faza 1: Generuję strategię… ${strategyDoneCount}/${weekQueue.length}`
+                }
+              </p>
+              <p className="text-xs text-slate-500">
+                {strategyDoneCount === 0
+                  ? 'To zajmie kilka sekund.'
+                  : 'Strategia jest szybka — potem ją zatwierdzisz przed generowaniem szczegółów.'}
+              </p>
+              {weekQueue.length > 0 && (
+                <div className="w-64 bg-slate-200 rounded-full h-2 mt-2">
+                  <div
+                    className="bg-amber-500 h-2 rounded-full transition-all"
+                    style={{ width: `${(strategyDoneCount / weekQueue.length) * 100}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {step === 'generating_content' && (
+            <div className="flex flex-col items-center py-12 gap-3">
+              <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+              <p className="text-sm text-slate-600">
+                Faza 2: Generuję treści i kanały… {contentDoneCount}/{Object.keys(strategies).length}
+              </p>
+              <p className="text-xs text-slate-500">
+                Strategia zatwierdzona — teraz AI tworzy briefy, copy, visual briefs i zadania sklepu.
+              </p>
+              {Object.keys(strategies).length > 0 && (
+                <div className="w-64 bg-slate-200 rounded-full h-2 mt-2">
+                  <div
+                    className="bg-emerald-500 h-2 rounded-full transition-all"
+                    style={{ width: `${(contentDoneCount / Object.keys(strategies).length) * 100}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* STRATEGY REVIEW — Phase 1 approval */}
+          {step === 'strategy' && (
+            <div className="space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <h3 className="font-semibold text-amber-900 mb-1 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Faza 1: Strategia tygodni — zatwierdź przed generowaniem treści
+                </h3>
+                <p className="text-xs text-amber-800">
+                  AI zaproponował strategię (temat, hero produkty, promo) dla każdego tygodnia.
+                  Sprawdź, popraw co trzeba, a potem kliknij „Zatwierdź i generuj treści".
+                </p>
+              </div>
+
+              {Object.keys(strategyErrors).length > 0 && (
+                <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 text-sm text-rose-700">
+                  <AlertTriangle className="w-4 h-4 inline mr-1" />
+                  Błędy w {Object.keys(strategyErrors).length} tygodniach. Możesz kontynuować z resztą.
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {weekQueue.map((w) => {
+                  const s = strategies[w];
+                  const err = strategyErrors[w];
+                  if (!s && !err) return null;
+                  return (
+                    <div key={w} className={`rounded-xl border p-4 ${err ? 'border-rose-300 bg-rose-50' : 'border-slate-200 bg-white'}`}>
+                      {err ? (
+                        <div className="text-sm text-rose-700">
+                          <AlertTriangle className="w-4 h-4 inline mr-1" />
+                          Tydzień {w}: {err}
+                        </div>
+                      ) : s && (
+                        <>
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <span className="text-xs text-slate-500">Tydzień {s.isoWeek || w}</span>
+                              <span className="text-xs text-slate-400 ml-2">{s.dateRange || `${s.start_date} – ${s.end_date}`}</span>
+                            </div>
+                            <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">
+                              {s.weekly_budget_pln ? `${s.weekly_budget_pln} PLN` : '—'}
+                            </span>
+                          </div>
+                          <h4 className="font-semibold text-slate-900 mb-1">{s.theme}</h4>
+                          <p className="text-sm text-slate-600 mb-2">{s.rationale}</p>
+
+                          {/* Hero products */}
+                          {Array.isArray(s.hero_products) && s.hero_products.length > 0 && (
+                            <div className="mb-2">
+                              <span className="text-xs font-medium text-slate-700">Hero produkty:</span>
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {s.hero_products.map((p: any, pi: number) => (
+                                  <span key={pi} className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200" title={p.why}>
+                                    {p.name}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Promo */}
+                          {s.promo && s.promo.type !== 'none' && (
+                            <div className="mb-2 text-xs">
+                              <span className="font-medium text-slate-700">Promo:</span>{' '}
+                              <span className="text-emerald-700">{s.promo.type} {s.promo.value || ''}</span>
+                              {s.promo.mechanics && <span className="text-slate-500 ml-1">— {s.promo.mechanics}</span>}
+                            </div>
+                          )}
+
+                          {/* Designer summary */}
+                          {s.designer_summary && (
+                            <div className="text-xs text-slate-500 italic">
+                              🎨 {s.designer_summary}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  onClick={generateContent}
+                  disabled={Object.keys(strategies).length === 0}
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 text-white py-3 rounded-xl font-medium flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Zatwierdź i generuj treści ({Object.keys(strategies).length} tyg.)
+                </button>
+                <button
+                  onClick={generate}
+                  className="px-4 py-3 rounded-xl text-sm text-slate-600 hover:text-slate-800 border border-slate-200 hover:border-slate-300"
+                >
+                  Od nowa
+                </button>
+              </div>
             </div>
           )}
 
