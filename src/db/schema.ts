@@ -285,3 +285,24 @@ export const portfolio_reviews = sqliteTable('portfolio_reviews', {
 });
 
 export type PortfolioReview = typeof portfolio_reviews.$inferSelect;
+
+// B2B lead campaigns — AI-generated ad campaigns targeting HoReCa (cafes,
+// restaurants, shops) for wholesale/B2B lead generation via Meta Lead Ads.
+export const b2b_campaigns = sqliteTable('b2b_campaigns', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  segment: text('segment').notNull(),               // "kawiarnie", "restauracje", "sklepy", "hotele"
+  status: text('status', {
+    enum: ['draft', 'active', 'paused', 'completed'],
+  }).notNull().default('draft'),
+  objective: text('objective'),                       // user-defined goal
+  ai_campaign_json: text('ai_campaign_json'),         // full AI output: copy, targeting, creative, form, budget, follow-up
+  user_notes: text('user_notes'),                     // user feedback for re-generation
+  monthly_budget_pln: real('monthly_budget_pln'),
+  leads_count: integer('leads_count').default(0),
+  created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  updated_at: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export type B2bCampaign = typeof b2b_campaigns.$inferSelect;
+export type NewB2bCampaign = typeof b2b_campaigns.$inferInsert;

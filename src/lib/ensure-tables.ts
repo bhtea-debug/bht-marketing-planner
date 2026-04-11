@@ -82,3 +82,19 @@ export async function ensurePortfolioReviews() {
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`);
 }
+
+export async function ensureB2bCampaigns() {
+  await db.run(sql`CREATE TABLE IF NOT EXISTS b2b_campaigns (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    segment TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
+    objective TEXT,
+    ai_campaign_json TEXT,
+    user_notes TEXT,
+    monthly_budget_pln REAL,
+    leads_count INTEGER DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`);
+}

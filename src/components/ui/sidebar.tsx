@@ -19,12 +19,14 @@ import {
   Menu,
   X,
   ChevronRight,
+  Users,
 } from "lucide-react";
 
 const navItems = [
   { label: "Kalendarz", href: "/calendar", icon: Calendar },
   { label: "Kampanie", href: "/campaigns", icon: Megaphone },
   { label: "Reklamy (Ads)", href: "/ads", icon: Sparkles },
+  { label: "Leady B2B", href: "/b2b-leads", icon: Users },
   { label: "Launche", href: "/launches", icon: Rocket },
   { label: "Profil marki", href: "/brand", icon: Palette },
   { label: "Biblioteka", href: "/assets", icon: ImageIcon },
