@@ -16,11 +16,18 @@ export async function POST(req: NextRequest) {
     if (!apiKey) return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 500 });
 
     const segmentDescriptions: Record<string, string> = {
-      kawiarnie: 'Kawiarnie — niezależne, specialty, sieciowe. Szukają premium herbaty i matchy do menu napojów.',
-      restauracje: 'Restauracje — fine dining, bistro, casual dining. Potrzebują eleganckiej oferty herbacianej do menu.',
-      sklepy: 'Sklepy specjalistyczne — herbaciarnie, delikatesy, sklepy ze zdrową żywnością, eko-sklepy. Szukają unikalnych produktów na półkę.',
-      hotele: 'Hotele i SPA — potrzebują premium herbaty do pokoi, restauracji hotelowej i strefy wellness.',
-      biura: 'Biura i coworkingi — firmy szukające herbaty premium do kuchni pracowniczej lub strefy relaksu.',
+      kawiarnia: 'Kawiarnia — niezależne, specialty, sieciowe. Bawimy się herbatą, może pobawiecie się z nami? Linia LATTEA i HoReCa stworzona pod kawiarniane menu. Ponad 60 autorskich blendów od matcha po owocowe.',
+      kawiarnia_weganska: 'Kawiarnia wegańska — herbata może być kraftowa i w pełni roślinna. 100% roślinne składniki, żadnych kompromisów. Herbaty BIO, mieszanki ziołowe, owocowe — idealne do wegańskiego menu.',
+      bistro_brunch: 'Bistro / brunch — do brunchu pasuje coś więcej niż kawa. Herbaty deserowe i owocowe — pięknie prezentują się na stole. Linia LATTEA i HoReCa — matchowe latte, chai, herbaty na zimno.',
+      piekarnia: 'Piekarnia — znacie to uczucie, kiedy herbata pachnie jak szarlotka? Herbaty z duszą — Apple Pie, mieszanki z korzennymi nutami. Linia LATTEA pod gastronomię — gotowa do podania.',
+      palarnia_kawy: 'Palarnia kawy — herbata z manufaktury, tak jak kawa ze specialty. Matcha, hojicha, herbaty jednorodne — japońska precyzja. Gotowe opakowania detaliczne — od razu na półkę obok kawy.',
+      delikatesy: 'Delikatesy — każda nasza herbata ma swoją historię. Opakowania, które przyciągają wzrok — zaprojektowane z myślą o półce. Ponad 60 blendów — mieszanki BIO, owocowe, zielone, czarne.',
+      sklep_online: 'Sklep online — gotowe do sprzedaży, od blendu po zdjęcie. Gotowe packshoty i opisy — od razu na stronę. Ponad 60 blendów + edycje limitowane — ciągłe nowości.',
+      concept_store: 'Concept store — tworzymy herbaty, za którymi stoi opowieść. Opakowania z charakterem — zaprojektowane by wyglądać. Autorskie blendy, LIMITED EDITION, zestawy prezentowe.',
+      firma_prezentowa: 'Firma prezentowa — dobry prezent jest taki, który pachnie i opowiada historię. Gotowe zestawy prezentowe i torby upominkowe. Personalizacja etykiet — Wasze logo, dedykacja, branding.',
+      hotel_boutique: 'Hotel boutique — wiecie, jaki moment goście zapamiętują? Ten z dobrą herbatą. Linia LATTEA i HoReCa — matcha, hojicha na menu. Herbaty liściaste i mieszanki — ładnie podane w pokoju.',
+      sklep_eko: 'Sklep eko — krótki skład i nic do ukrycia, tak robimy herbaty. Herbaty BIO, mieszanki ziołowe i owocowe. Bez sztucznych aromatów i barwników — naturalnie smaczne.',
+      sklep_naturalny: 'Sklep naturalny — herbata, którą można polecić z czystym sumieniem. Ponad 60 pozycji — herbaty BIO, ziołowe, owocowe, matcha. Przejrzysty skład — łatwo rekomendować klientom.',
     };
 
     const segmentInfo = segmentDescriptions[segment] || `Segment B2B: ${segment}`;
@@ -28,26 +35,39 @@ export async function POST(req: NextRequest) {
     const system = `Jesteś ekspertem od B2B lead generation dla Brown House & Tea — polskiej marki premium herbaty, matchy i akcesoriów.
 
 TWOJA ROLA: Zaprojektuj KOMPLETNĄ kampanię Meta Lead Ads (Facebook + Instagram) targetującą segment B2B.
+CEL KAMPANII: Pozyskanie klientów hurtowych do REJESTRACJI w panelu B2B na b2b.brownhouseandtea.pl
 
 ========== O MARCE ==========
 Brown House & Tea to polska marka premium herbaty i matchy. Oferujemy:
-- Herbaty sypane premium (zielone, czarne, oolong, białe, rooibos)
-- Matcha ceremonialna i kulinarna (w tym latte-grade)
+- Herbaty sypane premium (zielone, czarne, oolong, białe, rooibos) — ponad 60 autorskich blendów
+- Matcha ceremonialna i kulinarna (w tym latte-grade do LATTEA)
+- Linia HoReCa i LATTEA — gotowe rozwiązania gastronomiczne
 - Akcesoria do parzenia (czajniki, czarki, chasen)
-- Zestawy degustacyjne i pakiety startowe dla biznesu
-Mamy hurtowe ceny dla B2B, darmowe próbki do testów, szkolenia baristyczne z matchy.
-Wyróżniki: polska marka, bezpośredni import, kontrola jakości, certyfikaty organiczne na wybrane pozycje.
+- Zestawy degustacyjne, pakiety startowe i zestawy prezentowe
+- Gotowe packshoty, opisy i materiały marketingowe dla partnerów
+- Personalizacja etykiet i opakowań (logo klienta, dedykacje)
+
+Korzyści dla partnerów B2B:
+- Panel hurtowy b2b.brownhouseandtea.pl z cenami hurtowymi i prośbą o próbki
+- Darmowe próbki do testów przed zamówieniem
+- Szkolenia baristyczne z matchy i herbaty
+- Progi rabatowe — im więcej zamawiasz, tym taniej
+- Gotowe materiały marketingowe (packshoty, opisy, banery)
+- Dedykowany opiekun klienta
+- Szybka realizacja zamówień hurtowych
+
+Wyróżniki: polska marka, bezpośredni import, kontrola jakości, certyfikaty BIO na wybrane pozycje, autorskie blendy których nie ma u konkurencji.
 
 ========== SEGMENT DOCELOWY ==========
 ${segmentInfo}
 
 ========== WYMAGANIA KAMPANII ==========
-Musisz zaprojektować PEŁNĄ kampanię end-to-end:
+Musisz zaprojektować PEŁNĄ kampanię end-to-end. WAŻNE: Głównym celem jest zachęcenie do REJESTRACJI na b2b.brownhouseandtea.pl — to hurtowy panel z cenami, próbkami i zamówieniami.
 
 1. STRATEGIA KAMPANII
-   - Cel kampanii i KPI
-   - Unique selling proposition dla tego segmentu
-   - Ton komunikacji (B2B ale nie korporacyjny — premium, partnerski)
+   - Cel kampanii: rejestracja w panelu B2B i KPI
+   - Unique selling proposition dopasowane do konkretnego segmentu
+   - Ton komunikacji: partnerski, luźny ale profesjonalny, jak rozmowa z dobrym dostawcą
 
 2. COPY REKLAMOWE (3 warianty)
    Każdy wariant:
@@ -55,34 +75,34 @@ Musisz zaprojektować PEŁNĄ kampanię end-to-end:
    - Primary text (max 125 znaków)
    - Description (max 30 znaków)
    - CTA button text
-   Warianty powinny testować różne kąty: (A) jakość/premium, (B) marża/zysk, (C) trend/matcha
+   Warianty powinny testować różne kąty dopasowane do segmentu. Język naturalny, nie korporacyjny.
 
 3. KIERUNEK KREACJI WIZUALNEJ
    - 3 koncepcje graficzne z opisem
-   - Styl zdjęć, kolorystyka, mood
-   - Co powinno być na grafice (produkt w kontekście biznesowym)
+   - Styl zdjęć, kolorystyka, mood — ciepłe brązy, krem, naturalne
+   - Co powinno być na grafice (produkt w kontekście biznesowym tego segmentu)
 
 4. TARGETING META
-   - Grupy zainteresowań
+   - Grupy zainteresowań specyficzne dla segmentu
    - Lookalike audiences (jeśli dostępne)
-   - Geo-targeting (Polska, miasta?)
+   - Geo-targeting (Polska — uwzględnij czy segment jest bardziej miejski czy ogólnopolski)
    - Wykluczenia
 
 5. FORMULARZ LEADOWY
-   - Intro screen (nagłówek + opis)
-   - Pytania do formularza (5-8 pytań, mix otwartych i zamkniętych)
-   - Thank you screen z next steps
+   - Intro screen z jasnym komunikatem o rejestracji w panelu B2B
+   - Pytania (5-8): dane firmy, typ działalności, zainteresowanie produktami, wielkość zamówień
+   - Thank you screen z linkiem do b2b.brownhouseandtea.pl i next steps
    - Privacy policy note
 
 6. BUDŻET I HARMONOGRAM
    - Podział budżetu (jeśli podany)
    - Fazy kampanii (test → scale)
-   - Estymowane CPA i liczba leadów
+   - Estymowane CPA i liczba rejestracji
 
 7. FOLLOW-UP SEQUENCE
-   - Email 1: natychmiastowy (po wypełnieniu formularza)
-   - Email 2: follow-up po 2 dniach
-   - Email 3: last chance po 5 dniach
+   - Email 1: natychmiastowy — powitanie + link do panelu B2B + kod rabatowy na pierwsze zamówienie
+   - Email 2: po 2 dniach — prezentacja oferty dopasowanej do segmentu + próbki
+   - Email 3: po 5 dniach — last chance z dodatkową zachętą
    - Każdy email: subject, preview text, body (kluczowe punkty)
 
 Wywołaj narzędzie emit_b2b_campaign dokładnie raz.`;

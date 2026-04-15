@@ -291,9 +291,9 @@ export type PortfolioReview = typeof portfolio_reviews.$inferSelect;
 export const b2b_campaigns = sqliteTable('b2b_campaigns', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
-  segment: text('segment').notNull(),               // "kawiarnie", "restauracje", "sklepy", "hotele"
+  segment: text('segment').notNull(),               // segment biznesowy z panelu B2B
   status: text('status', {
-    enum: ['draft', 'active', 'paused', 'completed'],
+    enum: ['draft', 'pending_review', 'approved', 'active', 'paused', 'completed'],
   }).notNull().default('draft'),
   objective: text('objective'),                       // user-defined goal
   ai_campaign_json: text('ai_campaign_json'),         // full AI output: copy, targeting, creative, form, budget, follow-up

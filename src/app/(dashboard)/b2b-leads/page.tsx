@@ -19,6 +19,11 @@ import {
   MessageSquare,
   Copy,
   Check,
+  CheckCircle2,
+  Play,
+  Pause,
+  Zap,
+  RotateCcw,
 } from "lucide-react";
 
 type B2bCampaign = {
@@ -36,15 +41,24 @@ type B2bCampaign = {
 };
 
 const SEGMENTS = [
-  { value: "kawiarnie", label: "Kawiarnie", emoji: "☕" },
-  { value: "restauracje", label: "Restauracje", emoji: "🍽️" },
-  { value: "sklepy", label: "Sklepy specjalistyczne", emoji: "🛒" },
-  { value: "hotele", label: "Hotele & SPA", emoji: "🏨" },
-  { value: "biura", label: "Biura & Coworkingi", emoji: "🏢" },
+  { value: "kawiarnia", label: "Kawiarnia", emoji: "☕" },
+  { value: "kawiarnia_weganska", label: "Kawiarnia wegańska", emoji: "🌿" },
+  { value: "bistro_brunch", label: "Bistro / brunch", emoji: "🍳" },
+  { value: "piekarnia", label: "Piekarnia", emoji: "🥐" },
+  { value: "palarnia_kawy", label: "Palarnia kawy", emoji: "🔥" },
+  { value: "delikatesy", label: "Delikatesy", emoji: "🧀" },
+  { value: "sklep_online", label: "Sklep online", emoji: "🛒" },
+  { value: "concept_store", label: "Concept store", emoji: "🏬" },
+  { value: "firma_prezentowa", label: "Firma prezentowa", emoji: "🎁" },
+  { value: "hotel_boutique", label: "Hotel boutique", emoji: "🏨" },
+  { value: "sklep_eko", label: "Sklep eko", emoji: "🌱" },
+  { value: "sklep_naturalny", label: "Sklep naturalny", emoji: "💚" },
 ];
 
 const STATUS_LABEL: Record<string, string> = {
   draft: "Draft",
+  pending_review: "Do zatwierdzenia",
+  approved: "Zatwierdzona",
   active: "Aktywna",
   paused: "Wstrzymana",
   completed: "Zakończona",
@@ -52,8 +66,10 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_COLOR: Record<string, string> = {
   draft: "bg-slate-100 text-slate-700",
+  pending_review: "bg-amber-100 text-amber-800",
+  approved: "bg-indigo-100 text-indigo-800",
   active: "bg-emerald-100 text-emerald-800",
-  paused: "bg-amber-100 text-amber-800",
+  paused: "bg-orange-100 text-orange-800",
   completed: "bg-blue-100 text-blue-800",
 };
 
@@ -98,6 +114,10 @@ export default function B2bLeadsPage() {
 
   // Copy state
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  // Bulk generation
+  const [bulkGenerating, setBulkGenerating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ current: number; total: number; segment: string } | null>(null);
 
   async function fetchCampaigns() {
     try {
@@ -196,7 +216,7 @@ export default function B2bLeadsPage() {
         return;
       }
 
-      // Save generated campaign to DB
+      // Save generated campaign to DB and set status to pending_review
       await fetch("/api/b2b-leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -204,6 +224,7 @@ export default function B2bLeadsPage() {
           id: target.id,
           ai_campaign_json: j.data.campaign,
           user_notes: feedback || target.user_notes,
+          status: "pending_review",
         }),
       });
 
@@ -214,6 +235,79 @@ export default function B2bLeadsPage() {
     } finally {
       setGenerating(false);
     }
+  }
+
+  async function updateCampaignStatus(id: number, status: string) {
+    await fetch("/api/b2b-leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status }),
+    });
+    await fetchCampaigns();
+  }
+
+  async function bulkGenerate() {
+    setBulkGenerating(true);
+    const segmentsToGenerate = SEGMENTS.filter(
+      (s) => !campaigns.find((c) => c.segment === s.value && c.ai_campaign_json)
+    );
+    const total = segmentsToGenerate.length;
+
+    for (let i = 0; i < segmentsToGenerate.length; i++) {
+      const seg = segmentsToGenerate[i];
+      setBulkProgress({ current: i + 1, total, segment: seg.label });
+
+      // Check if campaign exists for this segment
+      let existing = campaigns.find((c) => c.segment === seg.value);
+      if (!existing) {
+        // Create campaign first
+        const r = await fetch("/api/b2b-leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: `${seg.emoji} ${seg.label} — Rejestracja B2B`,
+            segment: seg.value,
+            objective: `Pozyskanie klientów hurtowych z segmentu "${seg.label}" do rejestracji w panelu B2B`,
+          }),
+        });
+        const j = await r.json();
+        if (j.data?.id) {
+          existing = { id: j.data.id, name: seg.label, segment: seg.value, status: "draft" } as B2bCampaign;
+        }
+      }
+
+      if (existing) {
+        // Generate AI campaign
+        try {
+          const r = await fetch("/api/b2b-leads/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              segment: seg.value,
+              objective: `Pozyskanie klientów hurtowych z segmentu "${seg.label}" do rejestracji w panelu B2B (b2b.brownhouseandtea.pl)`,
+            }),
+          });
+          const j = await parseStreamedJSON(r);
+          if (j?.data?.campaign) {
+            await fetch("/api/b2b-leads", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: existing.id,
+                ai_campaign_json: j.data.campaign,
+                status: "pending_review",
+              }),
+            });
+          }
+        } catch (e) {
+          console.error(`Bulk generate error for ${seg.value}:`, e);
+        }
+      }
+    }
+
+    setBulkGenerating(false);
+    setBulkProgress(null);
+    await fetchCampaigns();
   }
 
   function toggleSection(key: string) {
@@ -241,13 +335,32 @@ export default function B2bLeadsPage() {
             Kampanie lead generation dla kawiarni, restauracji i sklepów — Meta Lead Ads z AI
           </p>
         </div>
-        <button
-          onClick={() => setShowCreate(!showCreate)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Nowa kampania
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={bulkGenerate}
+            disabled={bulkGenerating}
+            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition-all"
+          >
+            {bulkGenerating ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {bulkProgress ? `${bulkProgress.current}/${bulkProgress.total} — ${bulkProgress.segment}` : "Generuję..."}
+              </>
+            ) : (
+              <>
+                <Zap className="w-4 h-4" />
+                Generuj dla wszystkich segmentów
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => setShowCreate(!showCreate)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Nowa kampania
+          </button>
+        </div>
       </div>
 
       {/* Create form */}
@@ -435,6 +548,57 @@ export default function B2bLeadsPage() {
                 {genError && (
                   <div className="mt-3 bg-rose-50 border border-rose-200 rounded-lg p-3 text-sm text-rose-700">
                     {genError}
+                  </div>
+                )}
+
+                {/* Approval workflow buttons */}
+                {campaignData && (
+                  <div className="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100">
+                    {(selected.status === "draft" || selected.status === "pending_review") && (
+                      <button
+                        onClick={() => updateCampaignStatus(selected.id, "approved")}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        Zatwierdź kampanię
+                      </button>
+                    )}
+                    {selected.status === "approved" && (
+                      <button
+                        onClick={() => updateCampaignStatus(selected.id, "active")}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <Play className="w-4 h-4" />
+                        Aktywuj kampanię
+                      </button>
+                    )}
+                    {selected.status === "active" && (
+                      <button
+                        onClick={() => updateCampaignStatus(selected.id, "paused")}
+                        className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <Pause className="w-4 h-4" />
+                        Wstrzymaj
+                      </button>
+                    )}
+                    {selected.status === "paused" && (
+                      <button
+                        onClick={() => updateCampaignStatus(selected.id, "active")}
+                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <Play className="w-4 h-4" />
+                        Wznów
+                      </button>
+                    )}
+                    {selected.status !== "draft" && (
+                      <button
+                        onClick={() => updateCampaignStatus(selected.id, "draft")}
+                        className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg text-sm transition-colors"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Wróć do draftu
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
