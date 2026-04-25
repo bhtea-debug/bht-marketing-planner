@@ -151,6 +151,7 @@ export default function LaunchesPage() {
   const [openSuggestion, setOpenSuggestion] = useState<any>(null);
   const [openNotes, setOpenNotes] = useState("");
   const [resuggesting, setResuggesting] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [portfolioReview, setPortfolioReview] = useState<any>(null);
   const [reviewingPortfolio, setReviewingPortfolio] = useState(false);
   const [showPortfolioReview, setShowPortfolioReview] = useState(false);
@@ -398,6 +399,31 @@ export default function LaunchesPage() {
       if (json.data?.review) setHasSavedReview(true);
     }).catch(() => {});
   }, []);
+
+  async function acceptSuggestedDate(overrideDate?: string) {
+    if (!openLaunch) return;
+    const date = overrideDate || openSuggestion?.suggested_date;
+    if (!date) return;
+    setApplying(true);
+    try {
+      const r = await fetch(`/api/launches/${openLaunch.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planned_launch_date: date, ai_suggested_date: date }),
+      });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        alert(`Nie udało się zapisać daty: ${err?.error || r.statusText}`);
+        return;
+      }
+      await load();
+      setOpenLaunch(null);
+    } catch (e) {
+      alert(`Błąd: ${(e as Error).message}`);
+    } finally {
+      setApplying(false);
+    }
+  }
 
   async function resuggest() {
     if (!openLaunch) return;
@@ -975,19 +1001,39 @@ export default function LaunchesPage() {
                 </button>
               </div>
             </div>
-            <div className="p-6 border-t flex items-center justify-end gap-3">
+            <div className="p-6 border-t flex items-center justify-between gap-3 flex-wrap">
               <button
                 onClick={() => delLaunch(openLaunch.id)}
                 className="text-red-500 hover:text-red-700 text-sm"
               >
                 Usuń
               </button>
-              <button
-                onClick={() => setOpenLaunch(null)}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
-              >
-                Zamknij
-              </button>
+              <div className="flex items-center gap-3 flex-wrap">
+                {openSuggestion?.suggested_date && (
+                  <button
+                    onClick={() => acceptSuggestedDate()}
+                    disabled={applying}
+                    className="px-4 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg flex items-center gap-2"
+                  >
+                    {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : '✓'}
+                    Akceptuj datę {openSuggestion.suggested_date}
+                  </button>
+                )}
+                <input
+                  type="date"
+                  defaultValue={openLaunch.planned_launch_date || openSuggestion?.suggested_date || ''}
+                  onChange={(e) => { if (e.target.value) acceptSuggestedDate(e.target.value); }}
+                  disabled={applying}
+                  className="text-sm px-2 py-1.5 border border-gray-300 rounded"
+                  title="Wybierz inną datę"
+                />
+                <button
+                  onClick={() => setOpenLaunch(null)}
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900"
+                >
+                  Zamknij
+                </button>
+              </div>
             </div>
           </div>
         </div>
