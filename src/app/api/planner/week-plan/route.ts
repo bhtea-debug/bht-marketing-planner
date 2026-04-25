@@ -192,46 +192,35 @@ export async function POST(req: NextRequest) {
 
 ---
 
-# DYREKTYWY JAKOŚCI — twarde reguły, łamanie = output do wyrzucenia
+# DYREKTYWY JAKOŚCI — dla zespołu 2-3 osób
 
-## 1. Hooki copy (creative_hook) — sensoryka, nie slogany
+KONTEKST: 1-2 osoby robią grafiki, 1 pisze copy. Realny czas tygodnia: 8-12h pracy łącznie. Plan musi być WYKONALNY.
 
-KAŻDY creative_hook musi:
-- mieć MIN. 2 zakotwiczenia sensoryczne (zapach, smak, dotyk, dźwięk, obraz, temperatura, ruch)
-- odnosić się do KONKRETNEGO momentu w czasie / sytuacji w życiu odbiorcy (nie "miłośnicy herbaty", tylko np. "sobotni poranek przed wstaniem dzieci")
-- mieć max 14 słów po polsku
-- być NIEPOWTARZALNY w obrębie tygodnia — żadne dwa kanały nie mogą mieć podobnego hooka
+## 1. Hooki copy (creative_hook) — konkretne, nie slogany
 
-ŹLE (NIE rób tak):
-- "Odkryj wyjątkowe herbaty Brown House & Tea"
-- "Najlepsza herbata na zimowe wieczory"
-- "Premium loose leaf tea — sprawdź teraz"
-- "Twój idealny rytuał z herbatą"
-- "Smak, który pokochasz"
+KAŻDY creative_hook:
+- max 12 słów po polsku
+- konkretny moment / sytuacja (nie "miłośnicy herbaty", a "sobotni poranek")
+- używaj prostego języka — bez poetyckich konstrukcji jeśli nie pasują do produktu
 
-DOBRZE (rób tak):
-- "Para z kubka pierwszego earl greya, kiedy kot jeszcze śpi na fotelu"
-- "Liście rozwijają się w 78°C — zegnij się, popatrz, poczekaj 90 sekund"
-- "Kiedy mama pyta 'jak w pracy' i ty po prostu nalewasz drugą"
-- "Mokry kamień w ogrodzie i zielona herbata, której nie chce się odstawiać"
+ŹLE: "Odkryj wyjątkowe herbaty BHT", "Smak który pokochasz", "Premium tea — sprawdź"
+DOBRZE: "Sobota, herbata, nic do roboty", "Liście rozwijają się 90 sekund — zegnij się i poczekaj"
 
-## 2. visual_brief — KAŻDY zupełnie inny
+NIE wymagam minimum 2 zakotwiczeń sensorycznych. Czasem prosty hook ("Przerwa o 15:00 — twoja herbata") działa lepiej niż wymyślony obraz.
 
-W obrębie JEDNEGO TYGODNIA briefy wizualne 4 kanałów MUSZĄ się różnić co najmniej 3 z 4 wymiarów:
-- scene (sceneria/setting)
-- composition (kadr — flat lay, makro, środowiskowy, portretowy, still life, w ruchu)
-- lighting (poranne okno, golden hour, świece, neonowe, cień drzewa, ciemne tło z punktowym)
-- props (rekwizyty)
+## 2. visual_brief — JEDEN dobry kierunek tygodnia
 
-Jeśli zauważasz że dwa briefy są podobne — przepisz jeden od zera.
+JEDEN spójny visual brief dla całego tygodnia (nie różne dla każdego kanału). Wszystkie kanały korzystają z tego samego nastroju, paletą zdjęć, props — tylko crop/format się zmienia.
 
-KAŻDY visual_brief MUSI zawierać:
-- scene: konkretne miejsce + pora dnia + 1 osoba LUB 1 element narracyjny (nie "stół z herbatą")
-- composition: dokładny typ kadru ("makro 1:1 na powierzchnię liści", "wide 16:9 z osobą po lewej w 1/3 kadru", "flat lay z góry 4:5 z asymetrycznym układem")
-- lighting: konkretne źródło światła ("miękkie światło z okna z lewej, godzina 8:00, lekka mgła") nie "ciepłe światło"
-- props: 3-6 konkretnych rekwizytów po nazwie (nie "akcesoria do herbaty")
-- mood_keywords: 3-5 słów oddających emocję
-- reference_note: krótkie odniesienie do realnego stylu wizualnego (np. "jak Kinfolk magazine, ale ciemniejsze")
+Brief tygodnia ma zawierać:
+- scene: 1 konkretne miejsce + pora dnia (np. "stół przy oknie, sobotni poranek 9:00")
+- composition: 1 podstawowy kadr (np. "still life, flat lay 4:5") + uwaga "Reels = pionowy crop tej samej sceny"
+- lighting: 1 typ światła (np. "miękkie z lewej, godzina 9:00")
+- props: 3-5 rekwizytów
+- mood_keywords: 3 słowa
+- reference_note: jeden referans (opcjonalnie)
+
+NIE wymagam 4 różnych briefów. Lepsza JEDNA piękna seria niż 4 średnie.
 
 ## 3. promo.mechanics — myśl mechanicznie
 
@@ -360,7 +349,7 @@ Wartości stałe (musisz ich użyć dokładnie tak):
 - end_date: "${weekEndIso}"
 
 Reguły:
-- MAKSYMALNIE 4 kanały, wybierz najważniejsze.
+- MAKSYMALNIE 2 kanały — wybierz NAJWAŻNIEJSZE. Lepiej zrobić 2 perfekcyjnie niż 5 średnio. Typowo: 1 paid (Meta single_image) + 1 organic (IG/email).
 - Briefy wizualne MUSZĄ wynikać z brandProfile. Jeśli brandProfile = null, użyj defaultowej estetyki BHT (ciepłe światło, drewno orzechowe, paleta piaskowa #f5f1ea/#e8dbc4/#8b6f4e/#3d2817, bez sztucznego białego światła).
 - Nie używaj cudzysłowów (") wewnątrz pól tekstowych — używaj ' lub « ».
 - TWARDA REGUŁA PRODUKTÓW: \`hero_products[].name\` MUSI być DOKŁADNIE jednym z ciągów w \`allowedProductNames\` poniżej. Tool API odrzuci output z wymyśloną nazwą — twój request padnie. Jeśli lista jest pusta, użyj dosłownie "(brak danych Woo)".
@@ -455,7 +444,7 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
           },
           channels: {
             type: 'array',
-            maxItems: 5,
+            maxItems: 2,
             items: {
               type: 'object',
               required: [
