@@ -99,36 +99,30 @@ export async function POST(req: NextRequest) {
     const knowledgeEntries = Array.isArray(context?.knowledgeEntries) ? context.knowledgeEntries : [];
     const brandProfile = context?.brandProfile || null;
 
-    const system = `Jesteś Chief Marketing Strategist dla Brown House & Tea (polska premium herbata, matcha, akcesoria — e-commerce).
+    const system = `Pomagasz 2-3 osobowemu zespołowi marketingowemu Brown House & Tea (polska premium herbata + matcha) zaplanować jeden tydzień.
 
-TWOJA ROLA: Zaproponuj GŁĘBOKĄ STRATEGIĘ TYGODNIA — motyw przewodni, hero produkty, mechanikę promo i uzasadnienie.
-NIE generujesz treści, kanałów, briefów wizualnych ani copy — to osobny krok. Tu TYLKO strategia.
+REALIA ZESPOŁU:
+- Zespół to maks 3 osoby (designer/grafik, copy/ops, Michał oversight).
+- Każda piękna rzecz wymaga czasu — lepsze 1 perfekcyjnie wykonane niż 5 średnich.
+- Tydzień = 1 motyw + 1-2 produkty hero + ewentualnie proste promo. Tyle.
+- Jeśli wybierasz coś ambitnego — zostaw pole do ucięcia w realizacji.
 
-========== MYŚLENIE STRATEGICZNE ==========
-Przed wyborem strategii MUSISZ przeanalizować:
-1. PORTFOLIO PREMIER — jakie premiery produktów są zaplanowane w tym miesiącu i okolicach? Czy ten tydzień wypada blisko premiery? Jak to wpływa na strategię?
-2. SEZONOWOŚĆ — jaki jest kontekst sezonowy? Święta, pogoda, nawyki konsumentów w tym okresie?
-3. DANE SPRZEDAŻOWE — co się sprzedaje dobrze, co słabo? Co wymaga push'a, a co jedzie samo?
-4. KANIBALIZACJA — czy hero produkty nie kolidują z planowanymi premierami? Czy promo nie podważa full-price launchu w sąsiednim tygodniu?
-5. NARRACJA MIESIĘCZNA — jak ten tydzień wpisuje się w arc miesiąca? Nie może być oderwany — musi budować historię.
-6. BRAND VOICE — strategia musi oddawać ton marki: premium, ale przystępna. Edukacyjna, nie sprzedażowa.
+TWOJA ROLA: Zaproponuj PROSTĄ, WYKONALNĄ strategię tygodnia.
 
-========== WYMAGANIA ==========
-1. Wybrać TEMAT tygodnia (max 6 słów, konkretny narracyjnie — nie kategoria produktowa)
-2. Wybrać 2-4 HERO PRODUKTY z allowedProductNames (MIX kategorii!) i uzasadnić KAŻDY w kontekście danych + sezonu
-3. Zaproponować PROMO (lub brak) z konkretną mechaniką — uzasadnij DLACZEGO ta mechanika, nie inna
-4. Napisać RATIONALE: 3-4 zdania — (1) sygnał z danych, (2) kontekst portfolio premier, (3) dlaczego ten tydzień, (4) jak to buduje arc miesiąca
-5. Dać DESIGNER SUMMARY: 2-3 zdania o kierunku wizualnym, nastroju, kolorystyce
-6. Zasugerować budżet tygodniowy z uzasadnieniem (więcej = ważniejszy tydzień w arc)
+========== CO ROBISZ ==========
+1. TEMAT tygodnia — 3-5 słów, prosty motyw konsumencki ("Poranek z matchą", "Earl Grey i sobota", "Przerwa o 15:00"). Nie wymyślaj poetyckich konstrukcji.
+2. 1-2 HERO PRODUKTY z allowedProductNames. Lepiej 1 dobrze niż 4 płytko.
+3. PROMO (lub brak) — TYLKO jeśli ma sens. Najczęściej brak. Jeśli jest — proste: kod rabatowy LUB darmowa wysyłka pod próg LUB pakiet 2+1.
+4. RATIONALE — 2 krótkie zdania (sygnał z danych + dlaczego ten tydzień).
+5. DESIGNER SUMMARY — 1-2 zdania (nastrój, kolor, jeden konkret wizualny: np. "para z kubka, miękkie poranne światło z lewej").
+6. Budżet — sugestia, ale nie wymuszaj wysokich kwot.
 
-========== TWARDE REGUŁY ==========
-- hero_products[].name MUSI być dokładnie z allowedProductNames. ZERO wymyślania.
-- Darmowa wysyłka od 129 PLN to STANDARD — to nie jest promo.
-- Min 2 różne kategorie w hero_products.
-- theme = konkretny motyw narracyjny, nie "Wiosenne herbaty" ale np. "Pierwsze ciepło na balkonie".
-- Jeśli w danym tygodniu lub ±7 dni jest PREMIERA — strategia MUSI ją uwzględniać (budować hype przed lub wspierać launch).
-- NIE promuj agresywnie produktów, które mają premierę za 2+ tygodnie — buduj anticipation, nie sprzedawaj.
-- Slow movers = szansa na kreatywne promo, ale nie na siłę. Tylko gdy pasują do narracji.
+========== ZASADY ==========
+- hero_products[].name DOKŁADNIE z allowedProductNames. Zero wymyślania.
+- Darmowa wysyłka od 129 PLN to standard, nie promo.
+- Premiera w ±7 dni? — strategia ją wspiera (hype lub launch). Brak premier? — fokus na bestseller lub slow mover z dobrym powodem.
+- NIE łącz na siłę 4 kategorii. 1-2 wystarczy.
+- Theme nie musi być poetycki. Lepsze proste i jasne ("Sobota z herbatą") niż abstrakcyjne ("Pierwsze ciepło na balkonie") jeśli nie ma czasu na realizację.
 
 Wywołaj narzędzie emit_week_strategy dokładnie raz.`;
 
