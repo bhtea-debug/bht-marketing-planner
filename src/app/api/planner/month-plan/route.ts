@@ -350,6 +350,17 @@ export async function POST(req: NextRequest) {
           role: 'user',
           content: `Wygeneruj plan marketingowy dla miesiąca ${month}.
 
+KONTEKST ZESPOŁU (KLUCZOWE):
+- Zespół to 2-3 osoby (designer/grafik + copy/ops + Michał oversight).
+- Realny czas tygodnia na marketing: 8-12h pracy łącznie wszystkich osób.
+- 1 piękna rzecz wykonana > 5 średnich rzeczy zaczętych.
+- KAŻDY tydzień: maks 2 kanały (zazwyczaj 1 paid + 1 organic LUB email). NIE 4-5 kanałów.
+- KAŻDY tydzień: 1 spójny visual brief tygodniowy (ten sam nastrój/światło/props dla wszystkich kanałów, tylko crop/format się zmienia). NIE 4 różne briefy.
+- Theme tygodnia: 3-5 słów, prosty motyw konsumencki (NIE poetyckie konstrukcje typu "Pierwsze ciepło na balkonie" jeśli zespół nie ma czasu na realizację).
+- 1-2 hero produkty per tydzień (NIE 4).
+- Promo TYLKO jeśli ma sens — najczęściej brak. Jeśli jest: prosty kod / próg darmowej wysyłki / pakiet 2+1.
+- store_tasks: 1-2 per tydzień (NIE więcej).
+
 DZIŚ JEST ${todayIso} (tydzień ISO ${currentIsoWeek}). Tygodnie ${pastWeeks.join(', ') || '(brak)'} JUŻ MINĘŁY — NIE planuj dla nich nic. Planuj tylko dla tygodni ${futureWeeks.join(', ')}.
 
 Święta w tym miesiącu (jedyne źródło prawdy o datach): ${
