@@ -3,6 +3,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { DollarSign, TrendingDown, AlertCircle, CheckCircle, Sparkles } from 'lucide-react';
+import { PageHeader } from '@/components/shell';
 import Card from '@/components/ui/card';
 import StatsCard from '@/components/ui/stats-card';
 import MonthPlanWizard from '@/components/planner/month-plan-wizard';
@@ -96,12 +97,12 @@ export default function BudgetPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Budżet marketingowy</h1>
-        <p className="text-slate-600 mt-2">
-          Śledzenie i zarządzanie budżetem kampanii marketingowych
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Finanse"
+        icon={DollarSign}
+        title="Budżet marketingowy"
+        description="Śledzenie i zarządzanie budżetem kampanii marketingowych."
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard

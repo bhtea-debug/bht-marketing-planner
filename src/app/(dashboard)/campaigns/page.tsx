@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import CampaignCard from '@/components/campaigns/campaign-card';
 import CampaignTimeline from '@/components/campaigns/campaign-timeline';
 import Modal from '@/components/ui/modal';
+import { PageHeader } from '@/components/shell';
+import { Megaphone } from 'lucide-react';
 
 type CampaignStatus = 'Szkic' | 'Aktywne' | 'Zakończone' | 'Wstrzymane';
 
@@ -208,16 +210,13 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-5">
-      {/* Page Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Kampanie marketingowe</h1>
-          <p className="text-[13px] text-slate-500 mt-1">
-            Zarządzaj kampaniami marketingowymi Brown House & Tea
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* View toggle */}
+      <PageHeader
+        eyebrow="Kampanie"
+        icon={Megaphone}
+        title="Kampanie marketingowe"
+        description="Zarządzaj kampaniami marketingowymi Brown House & Tea."
+        actions={(
+          <>
           <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
             <button
               onClick={() => setViewMode('timeline')}
@@ -246,8 +245,9 @@ export default function CampaignsPage() {
             <Plus size={16} />
             Nowa kampania
           </Button>
-        </div>
-      </div>
+          </>
+        )}
+      />
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">

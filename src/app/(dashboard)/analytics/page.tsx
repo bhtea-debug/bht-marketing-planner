@@ -3,6 +3,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Button from '@/components/ui/button';
+import { PageHeader } from '@/components/shell';
+import { TrendingUp as TrendIcon } from 'lucide-react';
 import { TrendingUp, TrendingDown, Share2, Users, BarChart3, Zap, Mail, Facebook, Instagram, AlertCircle } from 'lucide-react';
 
 // No fake/demo data — when API returns nothing, show zeros instead.
@@ -61,7 +63,6 @@ const StatCard = ({
           </div>
         </div>
         <div className="bg-white/20 p-3 rounded-lg backdrop-blur-sm">{Icon}</div>
-      </div>
     </div>
   );
 };
@@ -217,13 +218,13 @@ export default function AnalyticsPage() {
   const noIntegrations = data.integrations.length === 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold text-slate-900">Analityka kanałów</h1>
-          <p className="text-slate-600">Śledź wydajność marketingową na wszystkich platformach</p>
-        </div>
+    <div className="space-y-7">
+      <PageHeader
+        eyebrow="Pomiar"
+        icon={TrendIcon}
+        title="Analityka kanałów"
+        description="Śledź wydajność marketingową na wszystkich platformach."
+      />
 
         {/* Period Selector */}
         <div className="flex items-center gap-3 bg-white rounded-lg p-2 w-fit border border-slate-200 shadow-sm">

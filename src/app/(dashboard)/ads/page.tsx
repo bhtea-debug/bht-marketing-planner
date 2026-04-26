@@ -2,6 +2,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { PageHeader } from '@/components/shell';
+import { Sparkles as SparklesIcon } from 'lucide-react';
 import {
   Megaphone,
   TrendingUp,
@@ -174,11 +176,14 @@ export default function AdsManagerPage() {
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <h1 className="text-4xl font-bold text-slate-900 tracking-tight">Ads Manager</h1>
-          <p className="text-slate-500 mt-2">Zarządzaj wszystkimi kampaniami Meta Ads w jednym miejscu</p>
-        </div>
+      <div className="mb-8">
+        <PageHeader
+          eyebrow="Reklamy"
+          icon={SparklesIcon}
+          title="Ads Manager"
+          description="Zarządzaj wszystkimi kampaniami Meta Ads w jednym miejscu."
+        />
+        <div className="hidden">
         <button
           onClick={() => setShowWizard(true)}
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-br from-amber-700 to-amber-900 text-white font-semibold shadow-md hover:shadow-lg transition-all"

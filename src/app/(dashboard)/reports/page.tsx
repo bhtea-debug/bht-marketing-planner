@@ -5,6 +5,8 @@ import React from 'react';
 import { Download, Activity, Zap, Target, TrendingUp } from 'lucide-react';
 import Card from '@/components/ui/card';
 import StatsCard from '@/components/ui/stats-card';
+import { PageHeader } from '@/components/shell';
+import { FileText as RptIcon } from 'lucide-react';
 
 // Channel performance data
 const channelPerformanceData = [
@@ -42,13 +44,12 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Raporty</h1>
-        <p className="text-slate-600 mt-2">
-          Analiza wydajności kampanii i kanałów marketingowych
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Pomiar"
+        icon={RptIcon}
+        title="Raporty"
+        description="Analiza wydajności kampanii i kanałów marketingowych."
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

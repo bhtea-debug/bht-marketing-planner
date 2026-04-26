@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { Image as ImageIcon, Plus, Trash2, Film } from "lucide-react";
+import { PageHeader } from "@/components/shell";
 
 type Asset = {
   id: number;
@@ -59,13 +60,11 @@ export default function AssetsPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <ImageIcon className="w-6 h-6 text-orange-500" />
-          Biblioteka kreacji
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Zdjęcia i wideo, których AI używa przy push'owaniu reklam do Meta.
+      <PageHeader
+        eyebrow="Zasoby"
+        icon={ImageIcon}
+        title="Biblioteka kreacji"
+        description="Zdjęcia i wideo, których AI używa przy push'owaniu reklam do Meta.
           Wklej publiczny URL (Cloudinary, Woo, Drive z udostępnieniem). Powiąż z nazwą
           produktu (zgodnie z Woo) — wtedy AI dobierze je automatycznie do hero produktu kafelka.
         </p>

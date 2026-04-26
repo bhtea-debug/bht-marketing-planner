@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { Palette, Save, Loader2 } from "lucide-react";
+import { PageHeader } from "@/components/shell";
 
 export default function BrandPage() {
   const [profile, setProfile] = useState<any>({});
@@ -106,17 +107,12 @@ export default function BrandPage() {
 
   return (
     <div className="max-w-4xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <Palette className="w-6 h-6 text-orange-500" />
-          Profil wizualny marki
-        </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          To jest „brand book" dla AI. Im więcej tu wpiszesz, tym precyzyjniejsze będą briefy
-          wizualne dla grafika w planie miesięcznym. AI używa tego jako kontekst za każdym razem
-          kiedy generuje plan, more sugestie launch'a, czy push reklamy.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Marka"
+        icon={Palette}
+        title="Profil wizualny marki"
+        description='To jest brand book dla AI. Im więcej tu wpiszesz, tym precyzyjniejsze będą briefy wizualne dla grafika w planie miesięcznym. AI używa tego jako kontekst za każdym razem kiedy generuje plan, sugestie launchu, czy push reklamy.'
+      />
 
       <div className="bg-white rounded-xl border p-6 space-y-5">
         {field(

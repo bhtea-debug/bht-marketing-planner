@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PageHeader } from "@/components/shell";
 import {
   Users,
   Plus,
@@ -325,14 +326,12 @@ export default function B2bLeadsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-indigo-600" />
-            Leady B2B
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Kampanie lead generation dla kawiarni, restauracji i sklepów — Meta Lead Ads z AI
+      <div className="mb-6">
+        <PageHeader
+          eyebrow="Sprzedaż B2B"
+          icon={Users}
+          title="Leady B2B"
+          description="Kampanie lead generation dla kawiarni, restauracji i sklepów — Meta Lead Ads z AI
           </p>
         </div>
         <div className="flex items-center gap-2">

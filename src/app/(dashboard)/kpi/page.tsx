@@ -5,6 +5,8 @@ import React, { useState } from 'react';
 import { Users, Heart, Eye, TrendingUp } from 'lucide-react';
 import Card from '@/components/ui/card';
 import StatsCard from '@/components/ui/stats-card';
+import { PageHeader } from '@/components/shell';
+import { BarChart3 as KPIIcon } from 'lucide-react';
 
 // Channel selector tabs
 const channels = [
@@ -27,13 +29,12 @@ export default function KPIPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Wskaźniki KPI</h1>
-        <p className="text-slate-600 mt-2">
-          Śledzenie wydajności kampanii marketingowych
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Pomiar"
+        icon={KPIIcon}
+        title="Wskaźniki KPI"
+        description="Śledzenie wydajności kampanii marketingowych."
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

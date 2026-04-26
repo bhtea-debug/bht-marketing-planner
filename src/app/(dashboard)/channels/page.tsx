@@ -2,6 +2,8 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import { PageHeader } from '@/components/shell';
+import { Share2 as ChIcon } from 'lucide-react';
 import {
   Instagram,
   Facebook,
@@ -143,12 +145,12 @@ export default function ChannelsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Kanały marketingowe</h1>
-        <p className="text-slate-600 mt-2">
-          Zarządzaj kanałami marketingowymi i monitoruj wydajność Brown House & Tea
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Operacje"
+        icon={ChIcon}
+        title="Kanały marketingowe"
+        description="Zarządzaj kanałami marketingowymi i monitoruj wydajność Brown House & Tea."
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-white rounded-lg border border-amber-200 p-6">

@@ -6,6 +6,8 @@ import CalendarView from '@/components/calendar/calendar-view';
 import TaskList from '@/components/calendar/task-list';
 import TaskForm from '@/components/calendar/task-form';
 import Modal from '@/components/ui/modal';
+import { PageHeader } from '@/components/shell';
+import { Calendar as CalendarIcon } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -188,13 +190,12 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Kalendarz marketingowy</h1>
-        <p className="text-slate-600 mt-2">
-          Zaplanuj i zarządzaj harmonogramem kampanii marketingowych Brown House & Tea
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Plan miesięczny"
+        icon={CalendarIcon}
+        title="Kalendarz marketingowy"
+        description="Zaplanuj i zarządzaj harmonogramem kampanii marketingowych Brown House & Tea."
+      />
 
       {/* Main Content - Calendar and Task List */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
