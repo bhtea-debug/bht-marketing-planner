@@ -63,6 +63,7 @@ const StatCard = ({
           </div>
         </div>
         <div className="bg-white/20 p-3 rounded-lg backdrop-blur-sm">{Icon}</div>
+      </div>
     </div>
   );
 };
@@ -543,6 +544,5 @@ export default function AnalyticsPage() {
           </>
         )}
       </div>
-    </div>
   );
 }

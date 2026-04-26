@@ -64,11 +64,8 @@ export default function AssetsPage() {
         eyebrow="Zasoby"
         icon={ImageIcon}
         title="Biblioteka kreacji"
-        description="Zdjęcia i wideo, których AI używa przy push'owaniu reklam do Meta.
-          Wklej publiczny URL (Cloudinary, Woo, Drive z udostępnieniem). Powiąż z nazwą
-          produktu (zgodnie z Woo) — wtedy AI dobierze je automatycznie do hero produktu kafelka.
-        </p>
-      </div>
+        description="Zdjęcia i wideo, których AI używa przy push'owaniu reklam do Meta. Wklej publiczny URL (Cloudinary, Woo, Drive z udostępnieniem). Powiąż z nazwą produktu (zgodnie z Woo) — wtedy AI dobierze je automatycznie do hero produktu kafelka."
+      />
 
       <div className="bg-white rounded-xl border p-5 mb-6 space-y-3">
         <div className="grid grid-cols-2 gap-3">
