@@ -4,8 +4,8 @@
 
 :root {
   /* Backgrounds */
-  --color-bg: #fafaf7;
-  --color-bg-subtle: #f4f4f0;
+  --color-bg: #f8fafc;
+  --color-bg-subtle: #f1f5f9;
   --color-surface: #ffffff;
   --color-surface-hover: #fafbfc;
   --color-surface-active: #f4f6f8;
@@ -17,12 +17,12 @@
   --color-text-inverse: #ffffff;
 
   /* BHT Brand — amber/brown */
-  --color-accent: #92714a;
-  --color-accent-hover: #7d6140;
-  --color-accent-subtle: rgba(146, 113, 74, 0.08);
-  --color-accent-muted: rgba(146, 113, 74, 0.15);
-  --color-accent-50: #fdf8f3;
-  --color-accent-100: #f5e9d8;
+  --color-accent: #6366f1;
+  --color-accent-hover: #4f46e5;
+  --color-accent-subtle: rgba(99, 102, 241, 0.08);
+  --color-accent-muted: rgba(99, 102, 241, 0.15);
+  --color-accent-50: #eef2ff;
+  --color-accent-100: #e0e7ff;
 
   /* Knowledge accent — violet (Brain) */
   --color-knowledge: #7c3aed;
@@ -48,7 +48,7 @@
   --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
   --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -1px rgba(15, 23, 42, 0.04);
   --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
-  --shadow-ring: 0 0 0 3px rgba(146, 113, 74, 0.12);
+  --shadow-ring: 0 0 0 3px rgba(99, 102, 241, 0.18);
 
   /* Radius */
   --radius-sm: 6px;

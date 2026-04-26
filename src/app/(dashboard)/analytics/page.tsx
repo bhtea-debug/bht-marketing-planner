@@ -77,7 +77,7 @@ const MiniBar = ({ value, max, label, percentage }: { value: number; max: number
         <span className="text-xs font-semibold text-slate-900">{percentage.toFixed(1)}%</span>
       </div>
       <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-        <div className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full" style={{ width: `${width}%` }} />
+        <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full" style={{ width: `${width}%` }} />
       </div>
     </div>
   );
@@ -235,7 +235,7 @@ export default function AnalyticsPage() {
               onClick={() => setPeriod(p)}
               className={`px-4 py-2 rounded-md font-medium transition-all ${
                 period === p
-                  ? 'bg-amber-700 text-white shadow-md'
+                  ? 'bg-indigo-600 text-white shadow-md'
                   : 'text-slate-700 hover:bg-slate-100'
               }`}
             >
@@ -448,7 +448,7 @@ export default function AnalyticsPage() {
                         </div>
                         <div className="w-full h-3 bg-slate-200 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-amber-600 to-amber-500 rounded-full"
+                            className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full"
                             style={{ width: `${Math.min((data.meta.ads.budgetUsed / data.meta.ads.budgetLimit) * 100, 100)}%` }}
                           />
                         </div>

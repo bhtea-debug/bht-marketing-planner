@@ -227,7 +227,7 @@ function IntegrationsContent() {
           ...(brainStatus?.configured ? [<span key="brain" className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-violet-300" />Brain {brainStatus.live?.ok ? `• ${brainStatus.cache.entries} w cache` : '• offline'}</span>] : []),
         ]}
         action={totalConnected > 0 ? (
-          <a href="/analytics" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-amber-900 rounded-full text-[12px] font-semibold hover:bg-amber-50 transition-colors">
+          <a href="/analytics" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-indigo-900 rounded-full text-[12px] font-semibold hover:bg-indigo-50 transition-colors">
             Zobacz statystyki <ArrowRight size={13} />
           </a>
         ) : undefined}
@@ -248,7 +248,7 @@ function IntegrationsContent() {
         if (remaining.length === 0) return null;
         const meta = CATEGORY_META[cat];
         return (
-          <SectionBlock key={cat} icon={meta.Icon} iconColor="text-amber-700" label={meta.label} subtitle={meta.description}>
+          <SectionBlock key={cat} icon={meta.Icon} iconColor="text-indigo-600" label={meta.label} subtitle={meta.description}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {remaining.map((platform) => (
                 <PlatformCard key={platform.id} platform={platform} integration={connectedPlatforms[platform.id]} onDisconnect={handleDisconnect} />
@@ -269,7 +269,7 @@ function IntegrationsContent() {
               { name: 'NEXT_PUBLIC_APP_URL', platform: 'Wszystkie', desc: 'https://bht-marketing-planner.vercel.app' },
             ].map((v) => (
               <div key={v.name} className="flex items-center gap-3 px-5 py-3 hover:bg-slate-50/60 transition-colors">
-                <button onClick={() => handleCopy(v.name)} className="group inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold text-slate-800 bg-slate-100 hover:bg-amber-50 hover:text-amber-900 px-2.5 py-1 rounded-md min-w-[210px] transition-colors" title="Skopiuj nazwę">
+                <button onClick={() => handleCopy(v.name)} className="group inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold text-slate-800 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-900 px-2.5 py-1 rounded-md min-w-[210px] transition-colors" title="Skopiuj nazwę">
                   <span className="truncate">{v.name}</span>
                   {copiedVar === v.name ? <Check size={11} className="text-emerald-600 flex-shrink-0" /> : <Copy size={11} className="opacity-0 group-hover:opacity-60 flex-shrink-0" />}
                 </button>
@@ -278,8 +278,8 @@ function IntegrationsContent() {
               </div>
             ))}
           </div>
-          <div className="px-5 py-3.5 bg-amber-50/60 border-t border-amber-100/80">
-            <p className="text-[12px] text-amber-900 leading-relaxed">
+          <div className="px-5 py-3.5 bg-indigo-50/60 border-t border-indigo-100/80">
+            <p className="text-[12px] text-indigo-900 leading-relaxed">
               <strong className="font-semibold">GetResponse</strong> nie wymaga zmiennych środowiskowych — klucz API podajesz bezpośrednio w panelu integracji powyżej. Znajdziesz go w <span className="font-mono text-[11px] bg-white px-1.5 py-0.5 rounded">GetResponse → Integracje i API → API</span>.
             </p>
           </div>

@@ -522,7 +522,7 @@ export default function LaunchesPage() {
                 setDraft({ status: "idea", launch_type: "single" });
                 setSuggestion(null);
               }}
-              className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white px-3.5 py-2 rounded-lg text-[12.5px] font-semibold shadow-sm"
+              className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-lg text-[12.5px] font-semibold shadow-sm"
             >
               <Plus className="w-3.5 h-3.5" />
               Nowy launch
@@ -538,7 +538,7 @@ export default function LaunchesPage() {
           icon={Rocket}
           title="Brak zaplanowanych launchów"
           description="Dodaj pierwszy nowy produkt lub linię — AI zasugeruje datę, kategorię, cenę i plan promocji."
-          action={<button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg text-[13px] font-semibold shadow-sm">
+          action={<button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-[13px] font-semibold shadow-sm">
             Dodaj launch
           </button>}
         />
@@ -568,7 +568,7 @@ export default function LaunchesPage() {
                   {!conflictsExpanded && ' — kliknij żeby rozwinąć'}
                 </div>
               </div>
-              <span className={`text-xs ${conflictsExpanded ? 'rotate-180' : ''} transition-transform ${conflicts.some((c:any)=>c.severity==='warning') ? 'text-amber-600' : 'text-sky-600'}`}>▾</span>
+              <span className={`text-xs ${conflictsExpanded ? 'rotate-180' : ''} transition-transform ${conflicts.some((c:any)=>c.severity==='warning') ? 'text-indigo-600' : 'text-sky-600'}`}>▾</span>
             </button>
             {conflictsExpanded && (
               <div className="px-4 pb-3 pt-0 space-y-2">
@@ -617,7 +617,7 @@ export default function LaunchesPage() {
             <div
               key={l.id}
               onClick={() => openDetail(l)}
-              className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5 flex items-start justify-between gap-4 cursor-pointer hover:border-amber-300 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200"
+              className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5 flex items-start justify-between gap-4 cursor-pointer hover:border-indigo-300 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1 flex-wrap">
@@ -633,7 +633,7 @@ export default function LaunchesPage() {
                     <select
                       value={l.status}
                       onChange={(e) => patchLaunch(l.id, { status: e.target.value })}
-                      className={`appearance-none pl-2 pr-6 py-0.5 rounded text-xs font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500/40 ${STATUS_COLOR[l.status] || "bg-gray-100 text-gray-700"}`}
+                      className={`appearance-none pl-2 pr-6 py-0.5 rounded text-xs font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500/40 ${STATUS_COLOR[l.status] || "bg-gray-100 text-gray-700"}`}
                       title="Zmień status"
                     >
                       {Object.entries(STATUS_LABEL).map(([k, v]) => (
@@ -642,7 +642,7 @@ export default function LaunchesPage() {
                     </select>
                     <svg className="absolute right-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-60 pointer-events-none" viewBox="0 0 12 12"><path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
                     {savingField?.id === l.id && savingField.field === 'status' && (
-                      <Loader2 className="w-3 h-3 animate-spin text-amber-600 ml-1" />
+                      <Loader2 className="w-3 h-3 animate-spin text-indigo-600 ml-1" />
                     )}
                     {savedField?.id === l.id && savedField.field === 'status' && (
                       <span className="ml-1 text-emerald-600 text-[10px] font-semibold">✓</span>
@@ -663,7 +663,7 @@ export default function LaunchesPage() {
                       type="date"
                       value={l.planned_launch_date || ''}
                       onChange={(e) => patchLaunch(l.id, { planned_launch_date: e.target.value || null })}
-                      className="text-xs font-semibold text-gray-800 bg-transparent border-b border-dashed border-gray-300 hover:border-amber-500 focus:border-amber-600 focus:outline-none px-0.5 py-0 cursor-pointer"
+                      className="text-xs font-semibold text-gray-800 bg-transparent border-b border-dashed border-gray-300 hover:border-indigo-500 focus:border-indigo-600 focus:outline-none px-0.5 py-0 cursor-pointer"
                       title="Edytuj datę launchu"
                     />
                     {!l.planned_launch_date && l.ai_suggested_date && (
@@ -674,7 +674,7 @@ export default function LaunchesPage() {
                       >🤖 użyj {l.ai_suggested_date}</button>
                     )}
                     {savingField?.id === l.id && savingField.field === 'planned_launch_date' && (
-                      <Loader2 className="w-3 h-3 animate-spin text-amber-600" />
+                      <Loader2 className="w-3 h-3 animate-spin text-indigo-600" />
                     )}
                     {savedField?.id === l.id && savedField.field === 'planned_launch_date' && (
                       <span className="text-emerald-600 text-[10px] font-semibold">zapisano</span>

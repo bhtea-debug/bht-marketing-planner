@@ -184,7 +184,7 @@ export default function AdsManagerPage() {
         actions={(
           <button
             onClick={() => setShowWizard(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-amber-700 to-amber-900 text-white text-[12.5px] font-semibold shadow-md hover:shadow-lg transition-all"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-indigo-600 to-indigo-800 text-white text-[12.5px] font-semibold shadow-md hover:shadow-lg transition-all"
           >
             <Plus size={14} /> Nowa kampania
           </button>
@@ -215,7 +215,7 @@ export default function AdsManagerPage() {
                 key={p}
                 onClick={() => setPeriod(p)}
                 className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  period === p ? 'bg-white text-amber-900 shadow-sm' : 'text-slate-600'
+                  period === p ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-600'
                 }`}
               >
                 {p} dni

@@ -12,7 +12,7 @@ interface SectionProps {
   className?: string;
 }
 
-export function Section({ icon: Icon, iconColor = 'text-amber-700', label, subtitle, action, children, className = '' }: SectionProps) {
+export function Section({ icon: Icon, iconColor = 'text-indigo-600', label, subtitle, action, children, className = '' }: SectionProps) {
   return (
     <section className={`mb-7 ${className}`}>
       <div className="flex items-center gap-2 mb-3.5 px-1">

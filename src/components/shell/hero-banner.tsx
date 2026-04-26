@@ -9,7 +9,7 @@ interface HeroBannerProps {
   icon?: React.ElementType;
   chips?: React.ReactNode[];
   action?: React.ReactNode;
-  variant?: 'amber' | 'violet' | 'slate';
+  variant?: 'violet' | 'amber' | 'slate';
 }
 
 const VARIANTS = {
@@ -18,7 +18,7 @@ const VARIANTS = {
   slate: 'linear-gradient(135deg, #1e293b 0%, #334155 45%, #475569 100%)',
 };
 
-export function HeroBanner({ eyebrow, title, description, icon: Icon, chips, action, variant = 'amber' }: HeroBannerProps) {
+export function HeroBanner({ eyebrow, title, description, icon: Icon, chips, action, variant = 'violet' }: HeroBannerProps) {
   return (
     <section className="relative overflow-hidden rounded-2xl text-white shadow-md mb-7 w-full" style={{ background: VARIANTS[variant] }}>
       <div className="absolute inset-0 opacity-[0.08] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, white 0%, transparent 40%), radial-gradient(circle at 80% 80%, white 0%, transparent 35%)' }} />

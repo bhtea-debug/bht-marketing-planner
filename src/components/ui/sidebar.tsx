@@ -86,7 +86,7 @@ export function Sidebar() {
         <div className="flex flex-col h-full">
           {/* Brand */}
           <div className="px-5 pt-5 pb-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-700 via-amber-800 to-amber-900 flex items-center justify-center shadow-sm ring-1 ring-amber-900/10">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-700 flex items-center justify-center shadow-sm ring-1 ring-indigo-700/20">
               <span className="text-white font-bold text-[13px] tracking-tight">BH</span>
             </div>
             <div className="min-w-0">
@@ -126,27 +126,27 @@ export function Sidebar() {
                         onClick={() => setIsOpen(false)}
                         className={`group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 relative ${
                           active
-                            ? "bg-gradient-to-r from-amber-50 to-amber-50/40 text-amber-900 shadow-[inset_0_0_0_1px_rgba(146,113,74,0.10)]"
+                            ? "bg-gradient-to-r from-indigo-50 to-indigo-50/40 text-indigo-900 shadow-[inset_0_0_0_1px_rgba(99,102,241,0.18)]"
                             : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                         }`}
                       >
                         {active && (
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-amber-700 rounded-r-full" />
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-indigo-600 rounded-r-full" />
                         )}
                         <Icon
                           size={16}
                           strokeWidth={active ? 2.2 : 1.8}
                           className={`flex-shrink-0 transition-colors duration-150 ${
-                            active ? "text-amber-700" : "text-slate-400 group-hover:text-slate-700"
+                            active ? "text-indigo-600" : "text-slate-400 group-hover:text-slate-700"
                           }`}
                         />
                         <span className="flex-1 truncate">{item.label}</span>
                         {item.badge && (
-                          <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold bg-indigo-100 text-indigo-800 px-1.5 py-0.5 rounded-full">
                             {item.badge}
                           </span>
                         )}
-                        {active && <ChevronRight size={12} className="text-amber-600/60" />}
+                        {active && <ChevronRight size={12} className="text-indigo-500/70" />}
                       </Link>
                     );
                   })}
@@ -158,8 +158,8 @@ export function Sidebar() {
           {/* Footer */}
           <div className="px-4 py-3 border-t border-slate-100">
             <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-slate-50 transition-colors cursor-default">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-100 via-amber-200 to-amber-300 flex items-center justify-center ring-1 ring-amber-300/40">
-                <span className="text-amber-900 text-[11px] font-bold">BT</span>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 via-indigo-200 to-indigo-300 flex items-center justify-center ring-1 ring-indigo-300/40">
+                <span className="text-indigo-900 text-[11px] font-bold">BT</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-semibold text-slate-700 truncate">Brown House &amp; Tea</p>
