@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { Sparkles, Plus, Trash2, Loader2, Rocket, RefreshCw, X, BarChart3, ArrowUpDown } from "lucide-react";
+import { PageHeader, Section as ShellSection, EmptyState, Card as ShellCard } from "@/components/shell";
 
 type Launch = {
   id: number;
@@ -495,57 +496,52 @@ export default function LaunchesPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Rocket className="w-6 h-6 text-orange-500" />
-            Launche nowości
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Planuj nowe produkty i całe linie z wyprzedzeniem. AI sugeruje datę, grupę, cenę i plan promocji — możesz wrócić do analizy i poprosić o re-analizę z dodatkowymi uwagami.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {launches.filter(l => !['launched','cancelled'].includes(l.status)).length >= 2 && (
+      <PageHeader
+        eyebrow="Pipeline"
+        icon={Rocket}
+        title="Launche nowości"
+        description="Planuj nowe produkty i całe linie z wyprzedzeniem. AI sugeruje datę, grupę, cenę i plan promocji — możesz wrócić do analizy i poprosić o re-analizę z dodatkowymi uwagami."
+        actions={(
+          <>
+            {launches.filter(l => !['launched','cancelled'].includes(l.status)).length >= 2 && (
+              <button
+                onClick={openPortfolioReview}
+                disabled={reviewingPortfolio || loadingPortfolio}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 text-white px-3.5 py-2 rounded-lg text-[12.5px] font-semibold shadow-sm"
+              >
+                {(reviewingPortfolio || loadingPortfolio) ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {loadingPortfolio ? 'Ładuję...' : 'Analizuję...'}</>
+                ) : (
+                  <><BarChart3 className="w-3.5 h-3.5" /> {hasSavedReview ? 'Strategia launchy' : 'Przeanalizuj strategię'}</>
+                )}
+              </button>
+            )}
             <button
-              onClick={openPortfolioReview}
-              disabled={reviewingPortfolio || loadingPortfolio}
-              className="bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
+              onClick={() => {
+                setShowCreate(true);
+                setDraft({ status: "idea", launch_type: "single" });
+                setSuggestion(null);
+              }}
+              className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white px-3.5 py-2 rounded-lg text-[12.5px] font-semibold shadow-sm"
             >
-              {(reviewingPortfolio || loadingPortfolio) ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> {loadingPortfolio ? 'Ładuję...' : 'Analizuję...'}</>
-              ) : (
-                <><BarChart3 className="w-4 h-4" /> {hasSavedReview ? 'Strategia launchy' : 'Przeanalizuj strategię'}</>
-              )}
+              <Plus className="w-3.5 h-3.5" />
+              Nowy launch
             </button>
-          )}
-          <button
-            onClick={() => {
-              setShowCreate(true);
-              setDraft({ status: "idea", launch_type: "single" });
-              setSuggestion(null);
-            }}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium"
-          >
-            <Plus className="w-4 h-4" />
-            Nowy launch
-          </button>
-        </div>
-      </div>
+          </>
+        )}
+      />
 
       {loading ? (
         <div className="text-center py-12 text-gray-400">Ładowanie...</div>
       ) : launches.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-          <Rocket className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 mb-4">Brak zaplanowanych launchów. Dodaj pierwszy nowy produkt lub linię.</p>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium"
-          >
+        <EmptyState
+          icon={Rocket}
+          title="Brak zaplanowanych launchów"
+          description="Dodaj pierwszy nowy produkt lub linię — AI zasugeruje datę, kategorię, cenę i plan promocji."
+          action={<button onClick={() => setShowCreate(true)} className="inline-flex items-center gap-2 bg-amber-700 hover:bg-amber-800 text-white px-4 py-2 rounded-lg text-[13px] font-semibold shadow-sm">
             Dodaj launch
-          </button>
-        </div>
+          </button>}
+        />
       ) : (
         <>
         {(conflicts.length > 0 || undatedList.length > 0) && (
@@ -621,7 +617,7 @@ export default function LaunchesPage() {
             <div
               key={l.id}
               onClick={() => openDetail(l)}
-              className="bg-white rounded-xl border border-gray-200 p-5 flex items-start justify-between gap-4 cursor-pointer hover:border-orange-300 hover:shadow-sm transition"
+              className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.04)] p-5 flex items-start justify-between gap-4 cursor-pointer hover:border-amber-300 hover:shadow-md hover:-translate-y-[1px] transition-all duration-200"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1 flex-wrap">
