@@ -143,7 +143,7 @@ Wygeneruj 2 warianty TikTok-native dla Mii.`;
 
     const client = new Anthropic({ apiKey });
     const r = await client.messages.create({
-      model: 'claude-haiku-4-5',
+      model: 'claude-sonnet-4-5',
       max_tokens: 2500,
       tools,
       tool_choice: { type: 'tool', name: 'emit_mia_variants' },
