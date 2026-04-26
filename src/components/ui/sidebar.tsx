@@ -21,6 +21,7 @@ import {
   X,
   Users,
   ChevronRight,
+  Radio,
 } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: any; badge?: string };
@@ -31,6 +32,7 @@ const navGroups: NavGroup[] = [
     title: "Pulpit",
     items: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Trendy & playbook", href: "/trends", icon: Radio },
     ],
   },
   {
