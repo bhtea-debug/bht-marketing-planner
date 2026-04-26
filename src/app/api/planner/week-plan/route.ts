@@ -350,7 +350,7 @@ Wartości stałe (musisz ich użyć dokładnie tak):
 - end_date: "${weekEndIso}"
 
 Reguły:
-- MAKSYMALNIE 2 kanały — wybierz NAJWAŻNIEJSZE. Lepiej zrobić 2 perfekcyjnie niż 5 średnio. Typowo: 1 paid (Meta single_image) + 1 organic (IG/email).
+- MAKSYMALNIE 2 kanały — wybierz NAJWAŻNIEJSZE. Lepiej zrobić 2 perfekcyjnie niż 5 średnio. Typowo: 1 paid (Meta single_image) + 1 organic (IG/email/TikTok). TikTok rozważ gdy: produkt ma potencjał viralowy (smaki, ASMR przygotowania herbaty, blendy), masz pomysł na pionowy filmik 15-30s z hookiem w 1-3 sek. NIE rób TikTok gdy: brak osoby do nagrania w tym tygodniu lub temat jest typowo statyczny (zdjęcie kubka).
 - Briefy wizualne MUSZĄ wynikać z brandProfile. Jeśli brandProfile = null, użyj defaultowej estetyki BHT (ciepłe światło, drewno orzechowe, paleta piaskowa #f5f1ea/#e8dbc4/#8b6f4e/#3d2817, bez sztucznego białego światła).
 - Nie używaj cudzysłowów (") wewnątrz pól tekstowych — używaj ' lub « ».
 - TWARDA REGUŁA PRODUKTÓW: \`hero_products[].name\` MUSI być DOKŁADNIE jednym z ciągów w \`allowedProductNames\` poniżej. Tool API odrzuci output z wymyśloną nazwą — twój request padnie. Jeśli lista jest pusta, użyj dosłownie "(brak danych Woo)".
@@ -480,6 +480,8 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
                     'carousel',
                     'reels',
                     'story',
+                    'vertical_video',
+                    'tiktok_organic',
                     'newsletter',
                     'post',
                     'homepage_banner',

@@ -123,6 +123,7 @@ TWOJA ROLA: Zaproponuj PROSTĄ, WYKONALNĄ strategię tygodnia.
 - Darmowa wysyłka od 129 PLN to standard, nie promo.
 - Premiera w ±7 dni? — strategia ją wspiera (hype lub launch). Brak premier? — fokus na bestseller lub slow mover z dobrym powodem.
 - NIE łącz na siłę 4 kategorii. 1-2 wystarczy.
+- TikTok jako kanał — sygnalizuj w designer_summary kiedy temat ma potencjał na pionowy 15-30s film (np. nalewanie herbaty z parą, sensoryczne ujęcie blendu). Niech week-plan zdecyduje czy go użyć.
 - Theme nie musi być poetycki. Lepsze proste i jasne ("Sobota z herbatą") niż abstrakcyjne ("Pierwsze ciepło na balkonie") jeśli nie ma czasu na realizację.
 
 Wywołaj narzędzie emit_week_strategy dokładnie raz.`;

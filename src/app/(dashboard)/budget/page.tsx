@@ -25,6 +25,7 @@ const MONTH_NAMES = [
 
 export default function BudgetPage() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [channels, setChannels] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [wizardMonth, setWizardMonth] = useState<string | null>(null);
 
@@ -44,9 +45,14 @@ export default function BudgetPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch('/api/campaigns');
-        const data = res.ok ? await res.json() : [];
-        if (!cancelled) setCampaigns(data || []);
+        const [r1, r2] = await Promise.all([
+          fetch('/api/campaigns').then((x) => (x.ok ? x.json() : [])),
+          fetch('/api/channels').then((x) => (x.ok ? x.json() : [])),
+        ]);
+        if (!cancelled) {
+          setCampaigns(r1 || []);
+          setChannels(r2 || []);
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -58,7 +64,7 @@ export default function BudgetPage() {
     };
   }, []);
 
-  const { totalBudget, spent, remaining, utilizationPercentage, monthlyRows } = useMemo(() => {
+  const { totalBudget, spent, remaining, utilizationPercentage, monthlyRows, channelRows } = useMemo(() => {
     const totalBudget = campaigns.reduce(
       (s, c) => s + Number(c.budget_planned || 0),
       0
@@ -92,8 +98,24 @@ export default function BudgetPage() {
         };
       });
 
-    return { totalBudget, spent, remaining, utilizationPercentage, monthlyRows };
-  }, [campaigns]);
+    // Per-channel breakdown (incl. tiktok, meta paid, email, etc.)
+    const chanMap: Record<number, { name: string; color: string }> = {};
+    for (const c of channels) chanMap[c.id] = { name: c.name, color: c.color };
+    const chanBuckets: Record<string, { name: string; color: string; planned: number; actual: number; count: number }> = {};
+    for (const c of campaigns) {
+      const meta = chanMap[c.channel_id];
+      const key = meta?.name || 'inne';
+      if (!chanBuckets[key]) chanBuckets[key] = { name: key, color: meta?.color || '#94a3b8', planned: 0, actual: 0, count: 0 };
+      chanBuckets[key].planned += Number(c.budget_planned || 0);
+      chanBuckets[key].actual += Number(c.budget_spent || 0);
+      chanBuckets[key].count += 1;
+    }
+    // Always show TikTok row even if 0 — so user sees the gap
+    if (!chanBuckets['tiktok']) chanBuckets['tiktok'] = { name: 'tiktok', color: '#000000', planned: 0, actual: 0, count: 0 };
+    const channelRows = Object.values(chanBuckets).sort((a, b) => b.planned - a.planned);
+
+    return { totalBudget, spent, remaining, utilizationPercentage, monthlyRows, channelRows };
+  }, [campaigns, channels]);
 
   return (
     <div className="space-y-6">
@@ -138,11 +160,11 @@ export default function BudgetPage() {
               <button
                 key={m.key}
                 onClick={() => setWizardMonth(m.key)}
-                className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition hover:border-amber-400 hover:bg-amber-50 ${
-                  hasPlan ? 'border-slate-200 bg-white' : 'border-amber-300 bg-amber-50/40'
+                className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition hover:border-indigo-400 hover:bg-indigo-50/60 ${
+                  hasPlan ? 'border-slate-200 bg-white' : 'border-indigo-200 bg-indigo-50/40'
                 }`}
               >
-                <div className="flex items-center gap-1 text-xs text-amber-700">
+                <div className="flex items-center gap-1 text-xs text-indigo-700">
                   <Sparkles className="w-3 h-3" />
                   {hasPlan ? 'Edytuj plan' : 'Zaplanuj'}
                 </div>
@@ -203,6 +225,46 @@ export default function BudgetPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </Card>
+
+      <Card title="Budżet per kanał" subtitle="Rozbicie planu i wydatków per platforma — w tym TikTok jako osobna linia">
+        {loading ? (
+          <p className="text-slate-500 text-sm py-6 text-center">Ładowanie...</p>
+        ) : channelRows.length === 0 ? (
+          <p className="text-slate-500 text-sm py-6 text-center">Brak kanałów do wyświetlenia.</p>
+        ) : (
+          <div className="space-y-2.5">
+            {channelRows.map((c, idx) => {
+              const pct = totalBudget > 0 ? (c.planned / totalBudget) * 100 : 0;
+              const utilization = c.planned > 0 ? Math.min(100, (c.actual / c.planned) * 100) : 0;
+              return (
+                <div key={idx} className="bg-white rounded-xl border border-slate-200/60 p-3">
+                  <div className="flex items-center gap-3">
+                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: c.color }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-[13px] font-semibold text-slate-900 capitalize">{c.name}</div>
+                          <div className="text-[11px] text-slate-500">{c.count} {c.count === 1 ? 'kampania' : 'kampanii'} {c.name === 'tiktok' && c.count === 0 && '— brak zaplanowanych'}</div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-[13px] font-bold text-slate-900">{c.planned.toLocaleString()} PLN</div>
+                          <div className="text-[11px] text-slate-500">wydano: {c.actual.toLocaleString()} PLN</div>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${utilization}%`, backgroundColor: c.color, opacity: 0.85 }} />
+                        </div>
+                        <span className="text-[10px] font-semibold text-slate-500 min-w-[36px] text-right">{Math.round(pct)}% planu</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </Card>
