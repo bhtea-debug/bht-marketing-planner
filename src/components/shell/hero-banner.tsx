@@ -14,7 +14,7 @@ interface HeroBannerProps {
 
 const VARIANTS = {
   amber: 'linear-gradient(135deg, #6b4e2e 0%, #92714a 45%, #b08e63 100%)',
-  violet: 'linear-gradient(135deg, #4338ca 0%, #6366f1 45%, #818cf8 100%)',
+  violet: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #c026d3 100%)',
   slate: 'linear-gradient(135deg, #1e293b 0%, #334155 45%, #475569 100%)',
 };
 

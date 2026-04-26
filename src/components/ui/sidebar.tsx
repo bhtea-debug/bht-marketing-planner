@@ -79,14 +79,14 @@ export function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-[244px] bg-white/95 backdrop-blur-md border-r border-slate-200/70 transform transition-all duration-300 ease-out lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-[244px] bg-white/80 backdrop-blur-xl border-r border-slate-200/60 transform transition-all duration-300 ease-out lg:translate-x-0 ${
           isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Brand */}
           <div className="px-5 pt-5 pb-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-indigo-700 flex items-center justify-center shadow-sm ring-1 ring-indigo-700/20">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 ring-1 ring-white/40">
               <span className="text-white font-bold text-[13px] tracking-tight">BH</span>
             </div>
             <div className="min-w-0">
@@ -126,12 +126,12 @@ export function Sidebar() {
                         onClick={() => setIsOpen(false)}
                         className={`group flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 relative ${
                           active
-                            ? "bg-gradient-to-r from-indigo-50 to-indigo-50/40 text-indigo-900 shadow-[inset_0_0_0_1px_rgba(99,102,241,0.18)]"
+                            ? "bg-indigo-50/80 text-indigo-700 shadow-sm shadow-indigo-500/10"
                             : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                         }`}
                       >
                         {active && (
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-indigo-600 rounded-r-full" />
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-gradient-to-b from-indigo-500 to-violet-600 rounded-r-full" />
                         )}
                         <Icon
                           size={16}
@@ -158,8 +158,8 @@ export function Sidebar() {
           {/* Footer */}
           <div className="px-4 py-3 border-t border-slate-100">
             <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-slate-50 transition-colors cursor-default">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 via-indigo-200 to-indigo-300 flex items-center justify-center ring-1 ring-indigo-300/40">
-                <span className="text-indigo-900 text-[11px] font-bold">BT</span>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 via-violet-400 to-purple-500 flex items-center justify-center ring-1 ring-white/40 shadow-sm">
+                <span className="text-white text-[11px] font-bold">BT</span>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[12px] font-semibold text-slate-700 truncate">Brown House &amp; Tea</p>

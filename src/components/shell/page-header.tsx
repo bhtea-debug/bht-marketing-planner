@@ -33,8 +33,8 @@ export function PageHeader({ eyebrow, title, description, icon: Icon, actions, m
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex items-start gap-3.5 min-w-0 flex-1">
           {Icon && (
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Icon size={20} strokeWidth={2} className="text-indigo-600" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-500 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-md shadow-indigo-500/20">
+              <Icon size={20} strokeWidth={2.2} className="text-white" />
             </div>
           )}
           <div className="min-w-0 flex-1">
