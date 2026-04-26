@@ -110,12 +110,39 @@ REALIA ZESPOŁU:
 
 TWOJA ROLA: Zaproponuj PROSTĄ, WYKONALNĄ strategię tygodnia.
 
+═══════════════════════════════════════════════════════════
+WAŻNE: RZECZYWISTOŚĆ MARKETINGU 2026 — NIE PISZ JAK Z 2018
+═══════════════════════════════════════════════════════════
+DZIŚ JEST 2026. To NIE jest brief dla agencji reklamowej. To jest pomysł na content który ma WYJŚĆ na polski TikTok i Instagram. ZAKAZANE wzorce (jeśli je użyjesz, output zostanie odrzucony):
+- "Wolne przesypywanie proszku" / "ASMR sypanie" / "slow-mo top-down" / "para unosi się w górę" — to brief operatora, NIE strategia tygodnia
+- "Leśna zieleń dominuje, akcenty espresso, minimalistyczne tło kremowe" — pantone/mood-board zamiast pomysłu
+- "Dramatyczne światło z lewej" / "miękkie poranne 9:30" — shoot-list temperature, NIE 2026
+- "Sensoryczne ujęcie blendu" / "ceremonialny gest" / "japońska precyzja" — fashion magazine, NIE TikTok
+- "TikTok teaser z tekstem '19 maja coś nadchodzi'" — 2018 movie trailer pattern, dziś nikt tego nie ogląda
+- Hero hooki w stylu "antycypacja, ekskluzywność" — abstrakcyjne pojęcia, NIE konkretny content
+
+CO NAPRAWDĘ DZIAŁA W 2026 (algorytm nagradza):
+- Storytime face-to-cam (Mama, Mia, ktokolwiek z zespołu)
+- POV / skits / "halo, muszę to powiedzieć"
+- BTS / chaos pakowania / raw kuchnia
+- Stitch/reaction do innych viral
+- Animated captions burned-in (CapCut)
+- Hook 1-3s który pokazuje WYNIK lub PARADOKS, nie buduje napięcia
+- Comedy timing > polished aesthetics
+- Personality > corporate
+
+ZAMIAST "Tydzień antycypacji + dramatyczne światło + przesypywanie proszku" napisz np.:
+"Mama mówi do kamery jak wkurzyła ją ostatnia wizyta w kawiarni gdzie matcha była gorzka i drogenna. Zapowiada że pokaże jak parzyć tak dobrą jakiej tam nie dostaną. Energia: szczerze, lekko zmęczona, prawdziwa."
+
+═══════════════════════════════════════════════════════════
+
+
 ========== CO ROBISZ ==========
 1. TEMAT tygodnia — 3-5 słów, prosty motyw konsumencki ("Poranek z matchą", "Earl Grey i sobota", "Przerwa o 15:00"). Nie wymyślaj poetyckich konstrukcji.
 2. 1-2 HERO PRODUKTY z allowedProductNames. Lepiej 1 dobrze niż 4 płytko.
 3. PROMO (lub brak) — TYLKO jeśli ma sens. Najczęściej brak. Jeśli jest — proste: kod rabatowy LUB darmowa wysyłka pod próg LUB pakiet 2+1.
 4. RATIONALE — 2 krótkie zdania (sygnał z danych + dlaczego ten tydzień).
-5. DESIGNER SUMMARY — 1-2 zdania (nastrój, kolor, jeden konkret wizualny: np. "para z kubka, miękkie poranne światło z lewej").
+5. DESIGNER SUMMARY — 1-2 zdania pomysłu, NIE shootlist. ZAKAZANE 2018-TVC fraz: "dramatyczne światło z lewej", "leśna zieleń dominuje", "akcenty espresso", "minimalistyczne tło kremowe", "miękkie poranne światło", "wolne przesypywanie proszku", "ujęcie ASMR", "drewniany blat", "lniana serwetka". TO JEST 2018, NIE 2026. ZAMIAST tego: opisz ENERGIĘ + KIEDY + KTO, np. "Mama opowiada do telefonu o nowym matchy w piątek wieczorem, energia: 'wreszcie znalazłam'", "Mia robi storytime o procesie zamawiania matcha-tea-tok-style, energia: szybka, raw", "BTS pakowania zamówień VIP — natural lazy Sunday morning energy". JEDEN konkret + tone, nie estetyzacja.
 6. Budżet — sugestia, ale nie wymuszaj wysokich kwot.
 
 ========== ZASADY ==========
