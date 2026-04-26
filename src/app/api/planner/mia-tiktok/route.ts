@@ -1,5 +1,5 @@
 // @ts-nocheck
-export const maxDuration = 60;
+export const maxDuration = 180;
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
@@ -40,8 +40,8 @@ export async function POST(req: NextRequest) {
       brainStrategy = sec
         .map((c: any) => { try { return JSON.parse(c.payload_json); } catch { return null; } })
         .filter(Boolean)
-        .map((s: any) => ({ module: s.module_slug, title: s.title, excerpt: typeof s.content === 'string' ? s.content.slice(0, 800) : '' }))
-        .slice(0, 15);
+        .map((s: any) => ({ module: s.module_slug, title: s.title, excerpt: typeof s.content === 'string' ? s.content.slice(0, 500) : '' }))
+        .slice(0, 8);
     } catch {}
 
     const system = `Jesteś TIKTOK CREATIVE DIRECTOR dla Brown House & Tea (premium herbaciarnia, sklep brownhouseandtea.pl).
@@ -143,8 +143,8 @@ Wygeneruj 2 warianty TikTok-native dla Mii.`;
 
     const client = new Anthropic({ apiKey });
     const r = await client.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 4000,
+      model: 'claude-haiku-4-5',
+      max_tokens: 2500,
       tools,
       tool_choice: { type: 'tool', name: 'emit_mia_variants' },
       system,
