@@ -157,6 +157,7 @@ export async function POST(req: NextRequest) {
     const knowledgeEntries: any[] = Array.isArray(context?.knowledgeEntries)
       ? context.knowledgeEntries
       : [];
+    const brainStrategy: any[] = Array.isArray(context?.brainStrategy) ? context.brainStrategy : [];
 
     // Existing tasks in this month — for context awareness & dedup.
     const existingTasks: any[] = Array.isArray(context?.existingTasks)

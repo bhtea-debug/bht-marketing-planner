@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
 
     const storePolicies = context?.storePolicies || null;
     const knowledgeEntries = Array.isArray(context?.knowledgeEntries) ? context.knowledgeEntries : [];
+    const brainStrategy = Array.isArray(context?.brainStrategy) ? context.brainStrategy : [];
     const brandProfile = context?.brandProfile || null;
 
     const system = `Pomagasz 2-3 osobowemu zespołowi marketingowemu Brown House & Tea (polska premium herbata + matcha) zaplanować jeden tydzień.
@@ -155,6 +156,7 @@ ${allowedProductNames.length > 0 ? allowedProductNames.map(n => `  - ${n}`).join
 ${brandProfile ? `\n========== PROFIL MARKI ==========\n${typeof brandProfile === 'string' ? brandProfile : JSON.stringify(brandProfile, null, 2)}` : ''}
 ${storePolicies ? `\nPOLITYKI SKLEPU:\n${JSON.stringify(storePolicies, null, 2)}` : ''}
 ${knowledgeEntries.length > 0 ? `\nBAZA WIEDZY:\n${knowledgeEntries.map((k: any) => `  [${k.category}] ${k.content}`).join('\n')}` : ''}
+${brainStrategy.length > 0 ? `\n========== STRATEGIA FIRMY (BH&T Brain) ==========\n${brainStrategy.map((s: any) => `\n### ${s.module || 'misc'} / ${s.title}\n${s.excerpt}`).join('\n')}\n\nKONIECZNIE skonfrontuj plan tygodnia z fundamentami strategicznymi powyżej.` : ''}
 
 ========== DANE HANDLOWE ==========
 - Top produkty: ${collectNames(commerceObj?.topProducts).slice(0, 8).join(', ') || 'brak'}

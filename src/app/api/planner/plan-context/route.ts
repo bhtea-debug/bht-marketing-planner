@@ -2,7 +2,7 @@
 export const maxDuration = 60;
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { brand_profile, product_launches } from '@/db/schema';
+import { brand_profile, product_launches, brain_cache } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { ensureAssetsAndPushLogs } from '@/lib/ensure-tables';
 import {
@@ -223,6 +223,27 @@ export async function POST(req: NextRequest) {
       console.warn('[plan-context] knowledge fetch failed', e);
     }
 
+    // ----- Brain strategy (READ-ONLY from nudge-brain via brain_cache) -----
+    let brainStrategy: any[] = [];
+    try {
+      const brainSections = await db
+        .select()
+        .from(brain_cache)
+        .where(eq(brain_cache.kind, 'section'));
+      brainStrategy = brainSections
+        .map((c: any) => { try { return JSON.parse(c.payload_json); } catch { return null; } })
+        .filter(Boolean)
+        .map((s: any) => ({
+          module: s.module_slug,
+          title: s.title,
+          category: s.category || null,
+          excerpt: typeof s.content === 'string' ? s.content.slice(0, 1500) : '',
+        }))
+        .slice(0, 30); // cap for token budget
+    } catch (e) {
+      console.warn('[plan-context] brain fetch failed', e);
+    }
+
     // ----- Existing tasks & campaigns for analysis -----
     let existingTasks: any[] = [];
     try {
@@ -261,6 +282,7 @@ export async function POST(req: NextRequest) {
         configuredAOV: Number(process.env.META_AVG_ORDER_VALUE || 120),
         storePolicies,
         knowledgeEntries,
+        brainStrategy,
         existingTasks,
       },
     });

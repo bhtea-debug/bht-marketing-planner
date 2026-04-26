@@ -970,10 +970,10 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
 
           {step === 'generating' && (
             <div className="flex flex-col items-center py-12 gap-3">
-              <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
               <p className="text-sm text-slate-600">
                 {strategyDoneCount === 0
-                  ? 'Pobieram historię Meta, sprzedaż Woo i profil marki…'
+                  ? 'Pobieram historię Meta, sprzedaż Woo, profil marki i strategię z Brain…'
                   : `Faza 1: Generuję strategię… ${strategyDoneCount}/${weekQueue.length}`
                 }
               </p>
@@ -1913,7 +1913,7 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
 
           {step === 'saving' && (
             <div className="flex flex-col items-center py-12 gap-3">
-              <Loader2 className="w-8 h-8 text-amber-600 animate-spin" />
+              <Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
               <p className="text-sm text-slate-600">Zapisuję kampanie i zadania w kalendarzu…</p>
             </div>
           )}
