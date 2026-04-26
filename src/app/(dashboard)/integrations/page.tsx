@@ -197,7 +197,7 @@ function IntegrationsContent() {
   const totalConnected = platforms.filter((p) => connectedPlatforms[p.id]).length;
 
   const grouped = useMemo(() => {
-    const out: Record<Category, Platform[]> = { social: [], email: [], analytics: [] };
+    const out: Record<Category, Platform[]> = { social: [], email: [], analytics: [], knowledge: [] };
     platforms.forEach((p) => out[p.category].push(p));
     return out;
   }, [connectedPlatforms]);
