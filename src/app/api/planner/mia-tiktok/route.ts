@@ -145,7 +145,22 @@ Wygeneruj 2 warianty TikTok-native dla Mii.`;
       console.error('[mia-tiktok] empty input, full tu:', JSON.stringify(tu).slice(0, 800));
       return NextResponse.json({ error: 'empty tool input', tu }, { status: 500 });
     }
-    return NextResponse.json({ data: tu.input });
+    // Claude sometimes returns array fields as JSON strings — normalize.
+    const out: any = { ...tu.input };
+    if (typeof out.variants === 'string') {
+      try { out.variants = JSON.parse(out.variants); } catch (e) { console.warn('[mia-tiktok] failed to parse variants string'); }
+    }
+    if (Array.isArray(out.variants)) {
+      out.variants = out.variants.map((v: any) => {
+        if (typeof v?.video_structure === 'string') { try { v.video_structure = JSON.parse(v.video_structure); } catch {} }
+        if (typeof v?.props === 'string') { try { v.props = JSON.parse(v.props); } catch {} }
+        if (typeof v?.text_overlay_lines === 'string') { try { v.text_overlay_lines = JSON.parse(v.text_overlay_lines); } catch {} }
+        if (typeof v?.hashtags === 'string') { try { v.hashtags = JSON.parse(v.hashtags); } catch {} }
+        if (typeof v?.reference_videos === 'string') { try { v.reference_videos = JSON.parse(v.reference_videos); } catch {} }
+        return v;
+      });
+    }
+    return NextResponse.json({ data: out });
   } catch (e: any) {
     console.error('[mia-tiktok]', e);
     return NextResponse.json({ error: e.message }, { status: 500 });
