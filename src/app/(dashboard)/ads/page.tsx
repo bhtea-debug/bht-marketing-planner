@@ -176,21 +176,20 @@ export default function AdsManagerPage() {
   return (
     <div className="p-6 lg:p-10 max-w-[1600px] mx-auto">
       {/* Header */}
-      <div className="mb-8">
-        <PageHeader
-          eyebrow="Reklamy"
-          icon={SparklesIcon}
-          title="Ads Manager"
-          description="Zarządzaj wszystkimi kampaniami Meta Ads w jednym miejscu."
-        />
-        <div className="hidden">
-        <button
-          onClick={() => setShowWizard(true)}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-br from-amber-700 to-amber-900 text-white font-semibold shadow-md hover:shadow-lg transition-all"
-        >
-          <Plus size={18} /> Nowa kampania
-        </button>
-      </div>
+      <PageHeader
+        eyebrow="Reklamy"
+        icon={SparklesIcon}
+        title="Ads Manager"
+        description="Zarządzaj wszystkimi kampaniami Meta Ads w jednym miejscu."
+        actions={(
+          <button
+            onClick={() => setShowWizard(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-amber-700 to-amber-900 text-white text-[12.5px] font-semibold shadow-md hover:shadow-lg transition-all"
+          >
+            <Plus size={14} /> Nowa kampania
+          </button>
+        )}
+      />
 
       {/* Account + period selectors */}
       <div className="flex flex-wrap items-center gap-4 mb-8 p-4 bg-white rounded-xl border border-slate-200">

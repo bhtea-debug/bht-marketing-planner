@@ -326,14 +326,14 @@ export default function B2bLeadsPage() {
 
   return (
     <div>
+      <PageHeader
+        eyebrow="Sprzedaż B2B"
+        icon={Users}
+        title="Leady B2B"
+        description="Kampanie lead generation dla kawiarni, restauracji i sklepów — Meta Lead Ads z AI."
+      />
       <div className="mb-6">
-        <PageHeader
-          eyebrow="Sprzedaż B2B"
-          icon={Users}
-          title="Leady B2B"
-          description="Kampanie lead generation dla kawiarni, restauracji i sklepów — Meta Lead Ads z AI
-          </p>
-        </div>
+        <div className="hidden"></div>
         <div className="flex items-center gap-2">
           <button
             onClick={bulkGenerate}
