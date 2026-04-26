@@ -18,6 +18,7 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
+import { HeroBanner, Section as ShellSection } from '@/components/shell';
 
 export default function IntegrationsPage() {
   return (
@@ -215,38 +216,22 @@ function IntegrationsContent() {
         </div>
       )}
 
-      {/* Hero Card */}
-      <section className="relative overflow-hidden rounded-2xl text-white shadow-md" style={{ background: 'linear-gradient(135deg, #6b4e2e 0%, #92714a 45%, #b08e63 100%)' }}>
-        <div className="absolute inset-0 opacity-[0.08] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, white 0%, transparent 40%), radial-gradient(circle at 80% 80%, white 0%, transparent 35%)' }} />
-        <div className="relative px-6 py-7 md:px-8 md:py-8">
-          <div className="flex items-center gap-2 mb-2">
-            <Plug size={14} className="opacity-80" />
-            <span className="text-[10px] font-semibold tracking-[0.18em] uppercase opacity-90">Centrum integracji</span>
-          </div>
-          <h1 className="text-[26px] md:text-[28px] font-bold tracking-tight">Połącz Brown House &amp; Tea</h1>
-          <p className="text-[13px] md:text-[14px] mt-1.5 opacity-85 max-w-xl leading-relaxed">Zarządzaj wszystkimi platformami marketingowymi z jednego miejsca — kampanie, email, statystyki i automatyzacje.</p>
-          <div className="flex flex-wrap items-center gap-3 mt-5">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm rounded-full text-[12px] font-medium ring-1 ring-white/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
-              {totalConnected} z {totalAvailable} platform aktywnych
-            </div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm rounded-full text-[12px] font-medium ring-1 ring-white/20">
-              <Lock size={12} /> Bezpieczne klucze API
-            </div>
-            {brainStatus?.configured && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm rounded-full text-[12px] font-medium ring-1 ring-white/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-300" />
-                Brain {brainStatus.live?.ok ? `• ${brainStatus.cache.entries} w cache` : '• offline'}
-              </div>
-            )}
-            {totalConnected > 0 && (
-              <a href="/analytics" className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-white text-amber-900 rounded-full text-[12px] font-semibold hover:bg-amber-50 transition-colors">
-                Zobacz statystyki <ArrowRight size={13} />
-              </a>
-            )}
-          </div>
-        </div>
-      </section>
+      <HeroBanner
+        eyebrow="Centrum integracji"
+        icon={Plug}
+        title="Połącz Brown House & Tea"
+        description="Zarządzaj wszystkimi platformami marketingowymi z jednego miejsca — kampanie, email, statystyki i automatyzacje."
+        chips={[
+          <span key="active" className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />{totalConnected} z {totalAvailable} platform aktywnych</span>,
+          <span key="lock" className="inline-flex items-center gap-1.5"><Lock size={12} /> Bezpieczne klucze API</span>,
+          ...(brainStatus?.configured ? [<span key="brain" className="inline-flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-violet-300" />Brain {brainStatus.live?.ok ? `• ${brainStatus.cache.entries} w cache` : '• offline'}</span>] : []),
+        ]}
+        action={totalConnected > 0 ? (
+          <a href="/analytics" className="inline-flex items-center gap-1.5 px-4 py-2 bg-white text-amber-900 rounded-full text-[12px] font-semibold hover:bg-amber-50 transition-colors">
+            Zobacz statystyki <ArrowRight size={13} />
+          </a>
+        ) : undefined}
+      />
 
       {connectedList.length > 0 && (
         <SectionBlock icon={CheckCircle2} iconColor="text-emerald-600" label="Aktywne integracje" subtitle={`${connectedList.length} ${connectedList.length === 1 ? 'połączona' : 'połączone'}`}>
