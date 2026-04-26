@@ -27,10 +27,12 @@ export async function PATCH(
       'ai_suggestion_json',
       'user_notes',
       'notes',
+      'target_channels',
+      'channel_rationale',
     ];
     const patch: any = { updated_at: new Date().toISOString() };
     for (const k of allowed) if (k in body) {
-      if (k === 'ai_suggestion_json' && body[k] && typeof body[k] !== 'string') {
+      if ((k === 'ai_suggestion_json' || k === 'target_channels') && body[k] && typeof body[k] !== 'string') {
         patch[k] = JSON.stringify(body[k]);
       } else {
         patch[k] = body[k];

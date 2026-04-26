@@ -153,19 +153,22 @@ export async function POST(req: NextRequest) {
 
     // ----- Launches (this month window) -----
     let launches: any[] = [];
+    let launchesAllChannels: any[] = [];
     try {
       const all = await db.select().from(product_launches);
-      launches = all
-        .filter((l: any) => {
-          const d = l.planned_launch_date || l.ai_suggested_date;
-          if (!d) return false;
-          if (l.status === 'launched' || l.status === 'cancelled') return false;
-          const dd = new Date(d);
-          const preStart = new Date(dd);
-          preStart.setUTCDate(dd.getUTCDate() - 14);
-          return preStart <= monthEnd && dd >= monthStart;
-        })
-        .map((l: any) => ({
+      const inWindow = all.filter((l: any) => {
+        const d = l.planned_launch_date || l.ai_suggested_date;
+        if (!d) return false;
+        if (l.status === 'launched' || l.status === 'cancelled') return false;
+        const dd = new Date(d);
+        const preStart = new Date(dd);
+        preStart.setUTCDate(dd.getUTCDate() - 14);
+        return preStart <= monthEnd && dd >= monthStart;
+      });
+      const fmt = (l: any) => {
+        let chans: string[] = [];
+        try { chans = l.target_channels ? JSON.parse(l.target_channels) : []; } catch {}
+        return {
           id: l.id,
           name: l.name,
           short_pitch: l.short_pitch,
@@ -173,7 +176,17 @@ export async function POST(req: NextRequest) {
           price_pln: l.price_pln,
           launchDate: l.planned_launch_date || l.ai_suggested_date,
           isSuggestedByAI: !l.planned_launch_date && !!l.ai_suggested_date,
-        }));
+          target_channels: chans,
+          channel_rationale: l.channel_rationale || null,
+        };
+      };
+      launchesAllChannels = inWindow.map(fmt);
+      // Marketing plan only cares about D2C/Allegro launches.
+      // If target_channels is unset (legacy), assume D2C-eligible for backwards compat.
+      launches = launchesAllChannels.filter((x: any) => {
+        if (!x.target_channels || x.target_channels.length === 0) return true;
+        return x.target_channels.includes('d2c') || x.target_channels.includes('allegro');
+      });
     } catch {}
 
     // ----- Brand profile -----
@@ -299,7 +312,8 @@ export async function POST(req: NextRequest) {
       data: {
         meta: metaContext,
         commerce,
-        launches,
+        launches,                 // filtered to D2C/Allegro only — for marketing plan
+        launchesAllChannels,       // full pipeline (B2B/Rossmann/etc.) — for awareness, not promotion
         brandProfile: brandForPrompt,
         configuredAOV: Number(process.env.META_AVG_ORDER_VALUE || 120),
         storePolicies,

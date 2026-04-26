@@ -156,6 +156,11 @@ export const product_launches = sqliteTable('product_launches', {
   ai_suggestion_json: text('ai_suggestion_json'), // full saved suggestion
   user_notes: text('user_notes'), // user feedback for re-analysis
   notes: text('notes'),
+  // Sales channels this launch targets — JSON array of:
+  // 'd2c' | 'allegro' | 'rossmann_full' | 'rossmann_test' | 'rossmann_amoya' | 'b2b_premium' | 'export' | 'other_chains'
+  // Marketing plan only includes launches that include 'd2c' or 'allegro'.
+  target_channels: text('target_channels'),
+  channel_rationale: text('channel_rationale'),
   created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updated_at: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });

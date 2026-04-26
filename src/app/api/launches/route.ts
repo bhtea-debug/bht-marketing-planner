@@ -75,6 +75,8 @@ export async function POST(req: NextRequest) {
           : null,
         user_notes: body.user_notes || null,
         notes: body.notes || null,
+        target_channels: body.target_channels ? (typeof body.target_channels === 'string' ? body.target_channels : JSON.stringify(body.target_channels)) : null,
+        channel_rationale: body.channel_rationale || null,
       })
       .returning();
     return NextResponse.json({ data: inserted[0] }, { status: 201 });

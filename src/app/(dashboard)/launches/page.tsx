@@ -22,6 +22,8 @@ type Launch = {
   ai_suggestion_json?: string;
   user_notes?: string;
   notes?: string;
+  target_channels?: string[] | string;
+  channel_rationale?: string;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -162,6 +164,7 @@ export default function LaunchesPage() {
   const [loadingPortfolio, setLoadingPortfolio] = useState(false);
   const [hasSavedReview, setHasSavedReview] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'status'>('date');
+  const [channelFilter, setChannelFilter] = useState<string>('all');
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
   const [addingSuggestions, setAddingSuggestions] = useState(false);
   const [applyingDate, setApplyingDate] = useState<Record<number, 'applying' | 'refreshing' | 'done' | null>>({});
@@ -184,6 +187,22 @@ export default function LaunchesPage() {
       }
     } catch {}
   }
+
+  function getChannels(l: any): string[] {
+    if (!l?.target_channels) return [];
+    if (Array.isArray(l.target_channels)) return l.target_channels;
+    try { return JSON.parse(l.target_channels) || []; } catch { return []; }
+  }
+  const CHANNEL_LABEL: Record<string, { label: string; color: string }> = {
+    d2c: { label: 'D2C sklep', color: '#6366f1' },
+    allegro: { label: 'Allegro', color: '#f97316' },
+    rossmann_full: { label: 'Rossmann', color: '#dc2626' },
+    rossmann_test: { label: 'Rossmann test', color: '#ef4444' },
+    rossmann_amoya: { label: "Amo'ya", color: '#a16207' },
+    b2b_premium: { label: 'B2B Premium', color: '#0891b2' },
+    export: { label: 'Eksport', color: '#7c3aed' },
+    other_chains: { label: 'Sieci PL', color: '#059669' },
+  };
 
   async function patchLaunch(id: number, patch: Record<string, any>) {
     const fieldKey = Object.keys(patch)[0] || 'unknown';
@@ -587,6 +606,18 @@ export default function LaunchesPage() {
             )}
           </div>
         )}
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          <span className="text-xs text-gray-500">Kanał:</span>
+          {([['all', 'Wszystkie'], ['marketing', '🎯 Marketing plan'], ['d2c', 'D2C'], ['rossmann_full', 'Rossmann'], ['b2b_premium', 'B2B'], ['export', 'Eksport']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setChannelFilter(key)}
+              className={`text-xs px-2 py-1 rounded ${channelFilter === key ? 'bg-indigo-100 text-indigo-700 font-semibold ring-1 ring-indigo-200' : 'text-gray-500 hover:bg-gray-100'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="flex items-center gap-2 mb-3">
           <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />
           <span className="text-xs text-gray-500">Sortuj:</span>
@@ -601,7 +632,17 @@ export default function LaunchesPage() {
           ))}
         </div>
         <div className="grid gap-3">
-          {[...launches].sort((a, b) => {
+          {[...launches]
+            .filter((l) => {
+              if (channelFilter === 'all') return true;
+              if (channelFilter === 'marketing') {
+                const ch = getChannels(l);
+                if (ch.length === 0) return true; // legacy = assume marketing
+                return ch.includes('d2c') || ch.includes('allegro');
+              }
+              return getChannels(l).includes(channelFilter);
+            })
+            .sort((a, b) => {
             if (sortBy === 'date') {
               const da = a.planned_launch_date || a.ai_suggested_date || '9999';
               const db2 = b.planned_launch_date || b.ai_suggested_date || '9999';
@@ -652,6 +693,29 @@ export default function LaunchesPage() {
                     {TYPE_LABEL[l.launch_type || "single"]}
                   </span>
                   {l.category && <span className="text-xs text-gray-500">{l.category}</span>}
+                  {/* Channel badges */}
+                  {(() => {
+                    const channels = getChannels(l);
+                    const isMarketingPlan = channels.length === 0 || channels.includes('d2c') || channels.includes('allegro');
+                    return (
+                      <>
+                        {isMarketingPlan && (
+                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100" title="Wchodzi do planu marketingowego">
+                            <span className="w-1 h-1 rounded-full bg-indigo-500" /> w marketingu
+                          </span>
+                        )}
+                        {channels.map((ch) => {
+                          const meta = CHANNEL_LABEL[ch];
+                          if (!meta) return <span key={ch} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">{ch}</span>;
+                          return (
+                            <span key={ch} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ backgroundColor: `${meta.color}15`, color: meta.color, border: `1px solid ${meta.color}30` }}>
+                              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: meta.color }} /> {meta.label}
+                            </span>
+                          );
+                        })}
+                      </>
+                    );
+                  })()}
                 </div>
                 {l.short_pitch && <p className="text-sm text-gray-600 mb-2">{l.short_pitch}</p>}
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">

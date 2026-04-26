@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
-import { product_launches, campaigns, brand_profile, planning_knowledge } from '@/db/schema';
+import { product_launches, campaigns, brand_profile, planning_knowledge, brain_cache } from '@/db/schema';
 import { gte, eq } from 'drizzle-orm';
 import { buildWooSalesContext } from '@/lib/woo-api';
 import { getWooProducts } from '@/lib/woo-api';
@@ -56,6 +56,22 @@ export async function POST(req: NextRequest) {
     try {
       const bpRows = await db.select().from(brand_profile).where(eq(brand_profile.id, 1)).limit(1);
       brandData = bpRows[0] || null;
+    } catch {}
+
+    // Brain channel-strategy sections — channel/product fit knowledge
+    let channelStrategy: any[] = [];
+    try {
+      const sec = await db.select().from(brain_cache).where(eq(brain_cache.kind, 'section'));
+      channelStrategy = sec
+        .map((c: any) => { try { return JSON.parse(c.payload_json); } catch { return null; } })
+        .filter(Boolean)
+        .filter((s: any) => {
+          const t = (s.title || '').toLowerCase();
+          // Pull only sections about channels (definition, strategy per channel, mapping)
+          return /1\.5|kana[lł]|d2c|rossmann|b2b|hurt|horeca|amo'?ya|allegro|pipeline launch|priorytety/.test(t);
+        })
+        .map((s: any) => ({ title: s.title, content: typeof s.content === 'string' ? s.content.slice(0, 1500) : '' }))
+        .slice(0, 12);
     } catch {}
 
     // Planning knowledge base — accumulated AI insights
@@ -195,6 +211,35 @@ f) SYNERGIA: czy nowy produkt może WZMOCNIĆ istniejące (np. "akcesoria do mat
 g) OBCIĄŻENIE MARKETINGU: ile kampanii/launchy już jest w danym okresie? Mały zespół nie może prowadzić 3 launche naraz.
 
 ═══════════════════════════════════════════
+§1.5. DOPASOWANIE PRODUKT → KANAŁ SPRZEDAŻY (KLUCZOWE!)
+═══════════════════════════════════════════
+BHT operuje na 7 kanałach sprzedażowych — KAŻDY ma inny portfel, inną cenę, inną komunikację:
+
+1. **rossmann_full** — pełna dystrybucja Rossmanna (1820 sklepów). Trzy nogi: matcha hero + funkcyjne wellness + smakowe premium. Klient drogerii: kupuje konkretną obietnicę, cena średnia, format: 50g/100g standard.
+2. **rossmann_test** — test 100-200 sklepów, incubator dla nowych SKU przed pełną.
+3. **rossmann_amoya** — private label (powrót Q4 2026, marka Amo'ya, NIE BHT). Wydzielony.
+4. **d2c** — sklep brownhouseandtea.pl + Allegro. Pełna oferta 4-warstwowa: hero matcha (6 SKU) + funkcyjne wellness Core + smakowe Core + smakowe Extended. Komunikacja marki, retencja fanów. NIE motor wzrostu, ale serce komunikacji. **TYLKO TEN KANAŁ wchodzi do planu marketingowego.**
+5. **allegro** — komplementarny do D2C, pełna oferta z subset bestsellers.
+6. **b2b_premium** — Hurt + HoReCa razem. Klient: kawiarnie specialty, hotele butikowe, sklepy internetowe, firmy prezentowe. Mix wszystkich kategorii. Pojemność hurt > kg. Cena B2B (60-70% retail). Pilotaż H2 2026: kawiarnie WAW/KRK/WRO + Matcha Lattea ZERO + iced lines.
+7. **export** — dystrybutorzy DE/EU. Pilotaż 2026 (8 klientów DE = szum, ale specialty tea EU). Najmocniejsze: Matcha Premium Japan, Single-origin.
+8. **other_chains** — Spar, Intermarche, Super-Pharm, Bio Planet (noga 2 dywersyfikacji).
+
+REGUŁY DOPASOWANIA:
+- Funkcyjne wellness (Focus, Hydration, ZERO) → Rossmann pełna + D2C + B2B (3 kanały)
+- Premium niche (gyokuro, single-origin) → D2C + B2B + export (NIE Rossmann — drogeria nie ten klient)
+- Smakowe owocowe → D2C + Rossmann (jeśli premium pricing) + B2B (sklepy prezentowe)
+- Akcesoria (chasen, chawan) → D2C only (Rossmann nie sprzeda)
+- Iced/cold brew → D2C + B2B HoReCa (lato)
+- Limited edition / advent → D2C + B2B (zestawy prezentowe)
+- Linie smakowe → Rossmann full (3 SKU jako noga) + D2C jako pełna kolekcja
+
+JAK WYBRAĆ target_channels:
+- LUKA W KANALE (jeśli kanał ma za mało SKU w danej kategorii) → +1 punkt
+- PRICING FIT (czy nasza cena działa w tym kanale) → MUSI być ok
+- KLIENT FIT (czy persona kanału kupi) → MUSI być ok
+- ZASTOSUJ regułę: NIE wszystkie launche idą do Rossmanna. NIE wszystkie idą do B2B. ALE D2C dostaje praktycznie WSZYSTKO bo to "pełna oferta polskiego specjalisty".
+
+═══════════════════════════════════════════
 §2. TWARDE REGUŁY SPACING'U (OBOWIĄZKOWE)
 ═══════════════════════════════════════════
 - MAX 2 launche / miesiąc kalendarzowy. Jeśli miesiąc ma 2+ → PRZESUŃ.
@@ -262,6 +307,8 @@ Bez markdown, bez code fences, bez prozy.
     "brand_narrative_fit": "<jak wpisuje się w narrację marki na ten rok>",
     "strategic_recommendation": "<1-2 zdania: co powinno się wydarzyć przed/po tym launchu w skali całej marki>"
   },
+  "target_channels": ["d2c", "b2b_premium"],
+  "channel_rationale": "<1-2 zdania: dlaczego TE kanały. Co pasuje do produktu, co nie. Jeśli D2C nie jest tutaj — tłumacz dlaczego. PAMIĘTAJ: tylko D2C launche wchodzą do planu marketingowego.>",
   "target_audience_refined": "<konkretny opis persony + jak się ma do audience innych produktów>",
   "pricing_check": {
     "verdict": "ok|too_low|too_high|missing",
@@ -299,7 +346,7 @@ Bez markdown, bez code fences, bez prozy.
       context,
       null,
       2
-    )}\n\nZwróć tylko JSON wg schematu z systemu.`;
+    )}\n\nKANAŁY SPRZEDAŻY BHT (z Brain — strategia per kanał):\n${channelStrategy.length > 0 ? channelStrategy.map((s) => '### ' + s.title + '\\n' + s.content).join('\\n\\n') : '(brak danych z Brain)'}\n\nZwróć tylko JSON wg schematu z systemu.`;
 
     async function callLLM(prompt: string, sys: string) {
       const r = await client.messages.create({
