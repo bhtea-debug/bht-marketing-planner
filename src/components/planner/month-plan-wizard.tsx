@@ -14,6 +14,120 @@ const MONTH_NAMES = [
   'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień',
 ];
 
+function MiaTikTokVariantSection({ week, data, loading, error, onGenerate }: any) {
+  const [open, setOpen] = useState(false);
+  const variants = data?.variants || [];
+  return (
+    <div className="bg-gradient-to-br from-fuchsia-50 to-violet-50 border border-violet-200 rounded-lg overflow-hidden mt-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-violet-100/40 transition-colors"
+      >
+        <span className="w-6 h-6 rounded-md bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">M</span>
+        <div className="flex-1 min-w-0">
+          <div className="text-[12px] font-bold text-violet-900">Wariant Mia (TikTok-native) ✨</div>
+          <div className="text-[10.5px] text-violet-700/80">
+            {variants.length > 0 ? `${variants.length} alternatywne propozycje TikTok-native` : 'Generuj alternatywę: hook 1-3s, text overlay, trending sound — Mia jako reżyser'}
+          </div>
+        </div>
+        <span className="text-violet-600 text-xs">{open ? '▾' : '▸'}</span>
+      </button>
+      {open && (
+        <div className="px-3 pb-3 space-y-3 border-t border-violet-200/60 bg-white/40">
+          {!data && !loading && (
+            <div className="pt-3">
+              <button
+                type="button"
+                onClick={onGenerate}
+                className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-br from-fuchsia-500 to-violet-600 text-white rounded-lg text-[12px] font-semibold shadow-sm hover:shadow-md transition-all"
+              >
+                ✨ Wygeneruj wariant Mia
+              </button>
+              <p className="text-[10.5px] text-violet-700/70 mt-2 px-1 leading-snug">
+                AI wygeneruje 2 alternatywne pomysły TikTok-native zaprojektowane pod algorytm TikToka — Mia (córka, ~15 lat, zna trendy) jako reżyser/edytor, niekoniecznie przed kamerą. Hook 1-3s, text overlay zamiast lektora, trending sounds.
+              </p>
+            </div>
+          )}
+          {loading && (
+            <div className="pt-3 flex items-center gap-2 text-[12px] text-violet-700">
+              <span className="w-3 h-3 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+              Mia myśli... (~30-60s)
+            </div>
+          )}
+          {error && (
+            <div className="pt-3 px-2 py-1.5 bg-red-50 border border-red-100 rounded text-[11px] text-red-700">{error}</div>
+          )}
+          {data?.tiktok_strategy_note && (
+            <div className="pt-3 p-2.5 bg-violet-100/60 rounded-md text-[11.5px] text-violet-900 leading-relaxed">
+              <div className="text-[9.5px] uppercase tracking-wider font-bold text-violet-700 mb-1">Strategia tygodnia (TikTok)</div>
+              {data.tiktok_strategy_note}
+            </div>
+          )}
+          {variants.map((v: any, vi: number) => (
+            <div key={vi} className="bg-white rounded-lg border border-violet-200/60 p-3 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-[13px] font-bold text-slate-900">{vi + 1}. {v.name}</h4>
+                <div className="flex gap-1.5">
+                  <span className={'text-[10px] font-semibold px-2 py-0.5 rounded-full ' + (v.difficulty === 'easy' ? 'bg-emerald-100 text-emerald-800' : v.difficulty === 'medium' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}>{v.difficulty}</span>
+                </div>
+              </div>
+              <p className="text-[11.5px] text-slate-700">{v.concept}</p>
+              <div className="text-[11px]">
+                <span className="text-violet-700 font-semibold">Hook (0-3s):</span> <span className="text-slate-700">{v.hook_seconds_1_3}</span>
+              </div>
+              {Array.isArray(v.video_structure) && v.video_structure.length > 0 && (
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-violet-700 mb-1">Struktura</div>
+                  <ol className="space-y-0.5 text-[11px] text-slate-700 list-decimal list-inside">
+                    {v.video_structure.map((b: string, bi: number) => <li key={bi}>{b}</li>)}
+                  </ol>
+                </div>
+              )}
+              {v.visual_brief_for_mia && (
+                <div className="bg-slate-50 rounded p-2 text-[11px] text-slate-700 space-y-1">
+                  <div><b>Setup:</b> {v.visual_brief_for_mia.filming_setup}</div>
+                  {Array.isArray(v.visual_brief_for_mia.props) && <div><b>Props:</b> {v.visual_brief_for_mia.props.join(', ')}</div>}
+                  <div><b>Światło:</b> {v.visual_brief_for_mia.lighting}</div>
+                  {Array.isArray(v.visual_brief_for_mia.reference_videos) && (
+                    <div><b>Referencje:</b> {v.visual_brief_for_mia.reference_videos.join(' · ')}</div>
+                  )}
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-2 text-[11px]">
+                <div><span className="font-semibold text-violet-700">Sound:</span> {v.sound_suggestion}</div>
+                <div><span className="font-semibold text-violet-700">CTA:</span> {v.cta}</div>
+              </div>
+              {Array.isArray(v.text_overlay_lines) && v.text_overlay_lines.length > 0 && (
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-violet-700 mb-1">Text overlay</div>
+                  <div className="flex flex-wrap gap-1">
+                    {v.text_overlay_lines.map((t: string, ti: number) => <span key={ti} className="text-[11px] px-2 py-0.5 bg-slate-900 text-white rounded">{t}</span>)}
+                  </div>
+                </div>
+              )}
+              <div className="flex flex-wrap gap-1">
+                {(v.hashtags || []).map((h: string, hi: number) => <span key={hi} className="text-[10.5px] text-violet-700 font-semibold">{h.startsWith('#') ? h : '#' + h}</span>)}
+              </div>
+              <div className="text-[10.5px] text-slate-500 italic">↪ {v.why_tiktok_not_instagram}</div>
+              {v.series_potential && <div className="text-[10.5px] text-emerald-700"><b>Seria:</b> {v.series_potential}</div>}
+            </div>
+          ))}
+          {data && (
+            <button
+              type="button"
+              onClick={onGenerate}
+              className="text-[11px] text-violet-700 hover:text-violet-900 font-semibold underline-offset-2 hover:underline"
+            >
+              ↻ Wygeneruj nowe propozycje
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const todayMonth = new Date().toISOString().slice(0, 7);
   const [step, setStep] = useState<'config' | 'generating' | 'strategy' | 'generating_content' | 'review' | 'saving' | 'done' | 'error' | 'interview'>(
@@ -27,6 +141,51 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [savedCount, setSavedCount] = useState(0);
   const [pushing, setPushing] = useState<string | null>(null);
+  const [miaVariants, setMiaVariants] = useState<Record<string | number, any>>({});
+  const [miaLoading, setMiaLoading] = useState<Record<string | number, boolean>>({});
+  const [miaError, setMiaError] = useState<Record<string | number, string>>({});
+
+  async function fetchMiaVariants(week: any) {
+    const key = week.isoWeek || week.label;
+    setMiaLoading((m) => ({ ...m, [key]: true }));
+    setMiaError((m) => ({ ...m, [key]: '' }));
+    try {
+      const heroNames = (week.hero_products || []).map((p: any) => (typeof p === 'string' ? p : p?.name || '')).filter(Boolean);
+      const allowedProductNames = Array.isArray(sharedContext?.commerce?.activeProducts)
+        ? sharedContext.commerce.activeProducts.map((p: any) => p?.name).filter(Boolean)
+        : (Array.isArray(sharedContext?.allowedProductNames) ? sharedContext.allowedProductNames : []);
+      const r = await fetch('/api/planner/mia-tiktok', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          week: {
+            isoWeek: week.isoWeek,
+            label: week.label,
+            dateRange: week.dateRange,
+            theme: week.theme,
+            hero_products: heroNames,
+            promo: week.promo,
+          },
+          allowedProductNames,
+        }),
+      });
+      if (!r.ok) throw new Error('Endpoint zwrócił ' + r.status);
+      const j = await r.json();
+      const data = j.data || j;
+      setMiaVariants((m) => ({ ...m, [key]: data }));
+      // Persist into the plan
+      setPlan((prev: any) => {
+        if (!prev) return prev;
+        const next = { ...prev, weeks: (prev.weeks || []).map((w: any) => w.isoWeek === week.isoWeek ? { ...w, mia_tiktok_variants: data } : w) };
+        return next;
+      });
+    } catch (e: any) {
+      setMiaError((m) => ({ ...m, [key]: e?.message || 'Błąd generowania' }));
+    } finally {
+      setMiaLoading((m) => ({ ...m, [key]: false }));
+    }
+  }
+
   const [pushResults, setPushResults] = useState<Record<string, any>>({});
   // week-by-week generation progress
   const [weekQueue, setWeekQueue] = useState<number[]>([]);
@@ -1722,6 +1881,16 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                                   <div className="bg-green-50/50 border border-green-100 rounded p-2 text-[11px] text-green-800">
                                     <b>Zadania do kalendarza:</b> {w.linked_calendar_tasks.join(' · ')}
                                   </div>
+                                )}
+                                {/* Wariant Mia (TikTok-native) */}
+                                {organicChannels.some((c: any) => /tiktok/i.test(c.channel || '')) && (
+                                  <MiaTikTokVariantSection
+                                    week={w}
+                                    data={miaVariants[w.isoWeek || w.label]}
+                                    loading={!!miaLoading[w.isoWeek || w.label]}
+                                    error={miaError[w.isoWeek || w.label]}
+                                    onGenerate={() => fetchMiaVariants(w)}
+                                  />
                                 )}
                               </div>
                             </div>
