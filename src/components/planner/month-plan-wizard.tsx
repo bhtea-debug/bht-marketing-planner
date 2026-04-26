@@ -74,51 +74,30 @@ function MiaTikTokVariantSection({ week, data, loading, error, onGenerate, hasTi
             </div>
           )}
           {variants.map((v: any, vi: number) => (
-            <div key={vi} className="bg-white rounded-lg border border-violet-200/60 p-3 space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <h4 className="text-[13px] font-bold text-slate-900">{vi + 1}. {v.name}</h4>
-                <div className="flex gap-1.5">
-                  <span className={'text-[10px] font-semibold px-2 py-0.5 rounded-full ' + (v.difficulty === 'easy' ? 'bg-emerald-100 text-emerald-800' : v.difficulty === 'medium' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}>{v.difficulty}</span>
+            <div key={vi} className="bg-white rounded-lg border border-violet-200/60 p-3 space-y-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-[13.5px] font-bold text-slate-900 leading-snug">{vi + 1}. {v.name}</h4>
+                  {v.tiktok_format && <span className="inline-block mt-1 text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-violet-100 text-violet-800">{v.tiktok_format}</span>}
+                </div>
+                <span className={'text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ' + (v.difficulty === 'easy' ? 'bg-emerald-100 text-emerald-800' : v.difficulty === 'medium' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}>{v.difficulty}</span>
+              </div>
+              <p className="text-[12px] text-slate-700">{v.concept_one_liner || v.concept}</p>
+              <div className="bg-violet-50/70 rounded-md p-2 space-y-1.5">
+                <div className="text-[11px]">
+                  <span className="text-violet-700 font-semibold">Pierwsze 2 sek:</span> <span className="text-slate-800">{v.opening_first_2_seconds || v.hook_seconds_1_3}</span>
+                </div>
+                <div className="text-[11px]">
+                  <span className="text-violet-700 font-semibold">Mia mówi/pisze:</span> <span className="text-slate-800">{v.spoken_or_text}</span>
                 </div>
               </div>
-              <p className="text-[11.5px] text-slate-700">{v.concept}</p>
-              <div className="text-[11px]">
-                <span className="text-violet-700 font-semibold">Hook (0-3s):</span> <span className="text-slate-700">{v.hook_seconds_1_3}</span>
+              <div className="grid grid-cols-1 gap-1.5 text-[11px]">
+                <div><span className="font-semibold text-violet-700">Trend / sound:</span> <span className="text-slate-700">{v.sound_or_trend_reference || v.sound_suggestion}</span></div>
+                <div><span className="font-semibold text-violet-700">Gdzie i jak:</span> <span className="text-slate-700">{v.where_and_how_filmed || v.filming_setup}</span></div>
+                <div><span className="font-semibold text-violet-700">CTA:</span> <span className="text-slate-700">{v.cta}</span></div>
               </div>
-              {Array.isArray(v.video_structure) && v.video_structure.length > 0 && (
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider font-bold text-violet-700 mb-1">Struktura</div>
-                  <ol className="space-y-0.5 text-[11px] text-slate-700 list-decimal list-inside">
-                    {v.video_structure.map((b: string, bi: number) => <li key={bi}>{b}</li>)}
-                  </ol>
-                </div>
-              )}
-              {v.visual_brief_for_mia && (
-                <div className="bg-slate-50 rounded p-2 text-[11px] text-slate-700 space-y-1">
-                  <div><b>Setup:</b> {v.visual_brief_for_mia.filming_setup}</div>
-                  {Array.isArray(v.visual_brief_for_mia.props) && <div><b>Props:</b> {v.visual_brief_for_mia.props.join(', ')}</div>}
-                  <div><b>Światło:</b> {v.visual_brief_for_mia.lighting}</div>
-                  {Array.isArray(v.visual_brief_for_mia.reference_videos) && (
-                    <div><b>Referencje:</b> {v.visual_brief_for_mia.reference_videos.join(' · ')}</div>
-                  )}
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div><span className="font-semibold text-violet-700">Sound:</span> {v.sound_suggestion}</div>
-                <div><span className="font-semibold text-violet-700">CTA:</span> {v.cta}</div>
-              </div>
-              {Array.isArray(v.text_overlay_lines) && v.text_overlay_lines.length > 0 && (
-                <div>
-                  <div className="text-[10px] uppercase tracking-wider font-bold text-violet-700 mb-1">Text overlay</div>
-                  <div className="flex flex-wrap gap-1">
-                    {v.text_overlay_lines.map((t: string, ti: number) => <span key={ti} className="text-[11px] px-2 py-0.5 bg-slate-900 text-white rounded">{t}</span>)}
-                  </div>
-                </div>
-              )}
-              <div className="flex flex-wrap gap-1">
-                {(v.hashtags || []).map((h: string, hi: number) => <span key={hi} className="text-[10.5px] text-violet-700 font-semibold">{h.startsWith('#') ? h : '#' + h}</span>)}
-              </div>
-              <div className="text-[10.5px] text-slate-500 italic">↪ {v.why_tiktok_not_instagram}</div>
+              {v.bonus_notes_for_mia && <div className="text-[10.5px] text-slate-600 italic bg-slate-50 rounded p-2">💡 {v.bonus_notes_for_mia}</div>}
+              <div className="text-[10.5px] text-slate-500 italic border-t border-slate-100 pt-2">↪ {v.why_this_is_tiktok_not_instagram || v.why_tiktok_not_instagram}</div>
               {v.series_potential && <div className="text-[10.5px] text-emerald-700"><b>Seria:</b> {v.series_potential}</div>}
             </div>
           ))}
