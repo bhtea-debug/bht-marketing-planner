@@ -306,3 +306,16 @@ export const b2b_campaigns = sqliteTable('b2b_campaigns', {
 
 export type B2bCampaign = typeof b2b_campaigns.$inferSelect;
 export type NewB2bCampaign = typeof b2b_campaigns.$inferInsert;
+
+// Brain cache — copies of read-only data from BH&T Brain (nudge-brain) app.
+// Marketing app NEVER writes to Brain. This table stores fetched payloads keyed
+// by (kind, key). kind = 'module' | 'section' | 'modules_index' | 'sections_index'.
+export const brain_cache = sqliteTable('brain_cache', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  kind: text('kind').notNull(),              // 'module' | 'section' | 'modules_index' | 'sections_index'
+  key: text('key').notNull(),                // moduleSlug or `${moduleSlug}/${sectionSlug}` or '*' for indexes
+  payload_json: text('payload_json').notNull(),
+  fetched_at: text('fetched_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+export type BrainCache = typeof brain_cache.$inferSelect;
+export type NewBrainCache = typeof brain_cache.$inferInsert;

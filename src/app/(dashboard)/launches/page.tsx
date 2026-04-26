@@ -165,6 +165,52 @@ export default function LaunchesPage() {
   const [addingSuggestions, setAddingSuggestions] = useState(false);
   const [applyingDate, setApplyingDate] = useState<Record<number, 'applying' | 'refreshing' | 'done' | null>>({});
   const [applyingAll, setApplyingAll] = useState(false);
+  const [savingField, setSavingField] = useState<{id: number, field: string} | null>(null);
+  const [savedField, setSavedField] = useState<{id: number, field: string} | null>(null);
+  const [conflicts, setConflicts] = useState<any[]>([]);
+  const [undatedList, setUndatedList] = useState<any[]>([]);
+  const [conflictsExpanded, setConflictsExpanded] = useState(false);
+  const [manualEdits, setManualEdits] = useState(0);
+  const [reanalyzeDismissed, setReanalyzeDismissed] = useState(false);
+
+  async function fetchConflicts() {
+    try {
+      const r = await fetch('/api/launches/conflicts');
+      if (r.ok) {
+        const j = await r.json();
+        setConflicts(j.conflicts || []);
+        setUndatedList(j.undated || []);
+      }
+    } catch {}
+  }
+
+  async function patchLaunch(id: number, patch: Record<string, any>) {
+    const fieldKey = Object.keys(patch)[0] || 'unknown';
+    setSavingField({ id, field: fieldKey });
+    // Optimistic update
+    setLaunches((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+    try {
+      const res = await fetch(`/api/launches/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new Error('save failed');
+      const j = await res.json();
+      if (j?.data) setLaunches((prev) => prev.map((x) => (x.id === id ? { ...x, ...j.data } : x)));
+      setSavedField({ id, field: fieldKey });
+      fetchConflicts();
+      setManualEdits((n) => n + 1);
+      setReanalyzeDismissed(false);
+      setTimeout(() => setSavedField((cur) => (cur && cur.id === id && cur.field === fieldKey ? null : cur)), 1200);
+    } catch (e) {
+      // Revert on failure: refetch from server
+      load();
+      alert('Nie udało się zapisać. Spróbuj ponownie.');
+    } finally {
+      setSavingField((cur) => (cur && cur.id === id && cur.field === fieldKey ? null : cur));
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -177,7 +223,7 @@ export default function LaunchesPage() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); fetchConflicts(); }, []);
 
   function openDetail(l: Launch) {
     setOpenLaunch(l);
@@ -502,6 +548,49 @@ export default function LaunchesPage() {
         </div>
       ) : (
         <>
+        {(conflicts.length > 0 || undatedList.length > 0) && (
+          <div className={`mb-4 rounded-xl border ${conflicts.some((c:any)=>c.severity==='warning') ? 'bg-amber-50 border-amber-200' : 'bg-sky-50 border-sky-200'}`}>
+            <button
+              type="button"
+              onClick={() => setConflictsExpanded((v) => !v)}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-black/[0.02] transition-colors"
+            >
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${conflicts.some((c:any)=>c.severity==='warning') ? 'bg-amber-200/60 text-amber-800' : 'bg-sky-200/60 text-sky-800'}`}>
+                <span className="text-base font-bold">!</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm font-semibold ${conflicts.some((c:any)=>c.severity==='warning') ? 'text-amber-900' : 'text-sky-900'}`}>
+                  {conflicts.length === 0
+                    ? `${undatedList.length} launch${undatedList.length === 1 ? '' : 'y'} bez ustalonej daty`
+                    : `${conflicts.length} potencjaln${conflicts.length === 1 ? 'a kolizja' : conflicts.length < 5 ? 'e kolizje' : 'ych kolizji'} w kalendarzu launchów`}
+                </div>
+                <div className={`text-[11px] mt-0.5 ${conflicts.some((c:any)=>c.severity==='warning') ? 'text-amber-700' : 'text-sky-700'}`}>
+                  {conflicts.filter((c:any)=>c.severity==='warning').length > 0 && `${conflicts.filter((c:any)=>c.severity==='warning').length} ostrzeżeniań`}
+                  {conflicts.filter((c:any)=>c.severity==='warning').length > 0 && conflicts.filter((c:any)=>c.severity==='info').length > 0 && ' · '}
+                  {conflicts.filter((c:any)=>c.severity==='info').length > 0 && `${conflicts.filter((c:any)=>c.severity==='info').length} sugestię`}
+                  {undatedList.length > 0 && conflicts.length > 0 && ` · ${undatedList.length} bez daty`}
+                  {!conflictsExpanded && ' — kliknij żeby rozwinąć'}
+                </div>
+              </div>
+              <span className={`text-xs ${conflictsExpanded ? 'rotate-180' : ''} transition-transform ${conflicts.some((c:any)=>c.severity==='warning') ? 'text-amber-600' : 'text-sky-600'}`}>▾</span>
+            </button>
+            {conflictsExpanded && (
+              <div className="px-4 pb-3 pt-0 space-y-2">
+                {conflicts.map((c:any, idx:number) => (
+                  <div key={idx} className={`text-[12px] flex items-start gap-2 ${c.severity==='warning' ? 'text-amber-900' : 'text-sky-900'}`}>
+                    <span className={`mt-0.5 inline-block w-1.5 h-1.5 rounded-full flex-shrink-0 ${c.severity==='warning' ? 'bg-amber-500' : 'bg-sky-500'}`} />
+                    <span>{c.message}</span>
+                  </div>
+                ))}
+                {undatedList.length > 0 && (
+                  <div className="pt-2 mt-2 border-t border-current/10 text-[12px] text-slate-700">
+                    <span className="font-semibold">Bez daty:</span> {undatedList.map((u:any) => u.name).join(', ')}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex items-center gap-2 mb-3">
           <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />
           <span className="text-xs text-gray-500">Sortuj:</span>
@@ -537,20 +626,64 @@ export default function LaunchesPage() {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1 flex-wrap">
                   <h3 className="font-semibold text-gray-900">{l.name}</h3>
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_COLOR[l.status] || "bg-gray-100 text-gray-700"}`}>
-                    {STATUS_LABEL[l.status] || l.status}
-                  </span>
+                  {conflicts.some((c: any) => Array.isArray(c.launch_ids) && c.launch_ids.includes(l.id)) && (
+                    <span
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200"
+                      title={conflicts.filter((c: any) => Array.isArray(c.launch_ids) && c.launch_ids.includes(l.id)).map((c: any) => c.message).join('\n')}
+                    >⚠ kolizja</span>
+                  )}
+                  {/* Inline status quick-switch */}
+                  <div className="relative inline-flex items-center" onClick={(e) => e.stopPropagation()}>
+                    <select
+                      value={l.status}
+                      onChange={(e) => patchLaunch(l.id, { status: e.target.value })}
+                      className={`appearance-none pl-2 pr-6 py-0.5 rounded text-xs font-medium cursor-pointer focus:outline-none focus:ring-2 focus:ring-amber-500/40 ${STATUS_COLOR[l.status] || "bg-gray-100 text-gray-700"}`}
+                      title="Zmień status"
+                    >
+                      {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                        <option key={k} value={k}>{v}</option>
+                      ))}
+                    </select>
+                    <svg className="absolute right-1.5 top-1/2 -translate-y-1/2 w-2.5 h-2.5 opacity-60 pointer-events-none" viewBox="0 0 12 12"><path d="M3 4.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    {savingField?.id === l.id && savingField.field === 'status' && (
+                      <Loader2 className="w-3 h-3 animate-spin text-amber-600 ml-1" />
+                    )}
+                    {savedField?.id === l.id && savedField.field === 'status' && (
+                      <span className="ml-1 text-emerald-600 text-[10px] font-semibold">✓</span>
+                    )}
+                  </div>
                   <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700">
                     {TYPE_LABEL[l.launch_type || "single"]}
                   </span>
                   {l.category && <span className="text-xs text-gray-500">{l.category}</span>}
                 </div>
                 {l.short_pitch && <p className="text-sm text-gray-600 mb-2">{l.short_pitch}</p>}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-                  {l.planned_launch_date && (<span>📅 Launch: <b>{l.planned_launch_date}</b></span>)}
-                  {!l.planned_launch_date && l.ai_suggested_date && (
-                    <span className="text-orange-600">🤖 AI sugeruje: <b>{l.ai_suggested_date}</b></span>
-                  )}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                  {/* Inline date editor */}
+                  <div className="inline-flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                    <span className="text-gray-400">📅</span>
+                    <span className="text-gray-500">Launch:</span>
+                    <input
+                      type="date"
+                      value={l.planned_launch_date || ''}
+                      onChange={(e) => patchLaunch(l.id, { planned_launch_date: e.target.value || null })}
+                      className="text-xs font-semibold text-gray-800 bg-transparent border-b border-dashed border-gray-300 hover:border-amber-500 focus:border-amber-600 focus:outline-none px-0.5 py-0 cursor-pointer"
+                      title="Edytuj datę launchu"
+                    />
+                    {!l.planned_launch_date && l.ai_suggested_date && (
+                      <button
+                        onClick={() => patchLaunch(l.id, { planned_launch_date: l.ai_suggested_date })}
+                        className="text-orange-600 hover:text-orange-800 text-[11px] font-medium underline-offset-2 hover:underline"
+                        title="Zastosuj sugestię AI"
+                      >🤖 użyj {l.ai_suggested_date}</button>
+                    )}
+                    {savingField?.id === l.id && savingField.field === 'planned_launch_date' && (
+                      <Loader2 className="w-3 h-3 animate-spin text-amber-600" />
+                    )}
+                    {savedField?.id === l.id && savedField.field === 'planned_launch_date' && (
+                      <span className="text-emerald-600 text-[10px] font-semibold">zapisano</span>
+                    )}
+                  </div>
                   {l.price_pln != null && <span>💰 {l.price_pln} PLN</span>}
                   {l.target_audience && <span>🎯 {l.target_audience}</span>}
                   {l.user_notes && <span className="text-amber-700">📝 uwagi do AI</span>}
@@ -569,6 +702,42 @@ export default function LaunchesPage() {
       )}
 
       {/* Portfolio review modal */}
+      {/* Sticky CTA: re-analyze strategy after manual edits */}
+      {manualEdits > 0 && !reanalyzeDismissed && !showPortfolioReview && (
+        <div className="fixed bottom-6 right-6 z-40 max-w-sm">
+          <div className="bg-white rounded-xl shadow-lg border border-amber-200 p-4 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-4 h-4 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-semibold text-slate-900 leading-tight">Plan zmieniony — odpal re-analizę</div>
+              <p className="text-[12px] text-slate-500 mt-0.5">{manualEdits} {manualEdits === 1 ? 'edycja' : (manualEdits < 5 ? 'edycje' : 'edycji')} od ostatniej analizy AI</p>
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={() => { setShowPortfolioReview(true); setManualEdits(0); }}
+                  className="px-3 py-1.5 text-[12px] font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 rounded-lg transition-colors"
+                >
+                  Przeanalizuj ponownie
+                </button>
+                <button
+                  onClick={() => setReanalyzeDismissed(true)}
+                  className="px-3 py-1.5 text-[12px] font-medium text-slate-500 hover:text-slate-700 transition-colors"
+                >
+                  Później
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => setReanalyzeDismissed(true)}
+              className="p-1 -m-1 text-slate-400 hover:text-slate-700"
+              aria-label="Zamknij"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {showPortfolioReview && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
-import { product_launches, campaigns, brand_profile, planning_knowledge, portfolio_reviews } from '@/db/schema';
+import { product_launches, campaigns, brand_profile, planning_knowledge, portfolio_reviews, brain_cache } from '@/db/schema';
 import { gte, eq, desc } from 'drizzle-orm';
 import { buildWooSalesContext } from '@/lib/woo-api';
 import { getWooProducts } from '@/lib/woo-api';
@@ -76,7 +76,16 @@ export async function POST(req: NextRequest) {
     // Planning knowledge
     let knowledgeEntries: any[] = [];
     try { knowledgeEntries = await db.select().from(planning_knowledge).where(eq(planning_knowledge.active, 1)); } catch {}
+    // Brain — read-only company strategy from BH&T Brain knowledge base
+    let brainSections: any[] = [];
+    try {
+    const cached = await db.select().from(brain_cache).where(eq(brain_cache.kind, 'section'));
+    brainSections = cached
+      .map((c: any) => { try { return JSON.parse(c.payload_json); } catch { return null; } })
+      .filter(Boolean);
+    } catch {}
 
+    
     // Full product catalog
     let fullCatalog: any[] = [];
     try { fullCatalog = await getWooProducts().catch(() => []); } catch {}
@@ -158,6 +167,12 @@ export async function POST(req: NextRequest) {
       } : null,
       knowledgeEntries: knowledgeEntries.slice(0, 20).map(k => ({
         category: k.category, content: k.content,
+      })),
+      brainStrategy: brainSections.slice(0, 25).map((s: any) => ({
+        module: s.module_slug,
+        title: s.title,
+        category: s.category || null,
+        excerpt: typeof s.content === 'string' ? s.content.slice(0, 1200) : '',
       })),
       commerce: commerce?.configured ? {
         topProducts: commerce.topProducts?.slice(0, 10),
