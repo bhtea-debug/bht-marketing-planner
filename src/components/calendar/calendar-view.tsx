@@ -102,16 +102,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({ tasks, onDayClick }) => {
                     min-h-[100px] p-1.5 border-r border-slate-100/80 last:border-r-0 cursor-pointer
                     transition-all duration-100 relative
                     ${!isCurrentMonth ? 'bg-slate-50/60' : 'bg-white hover:bg-blue-50/30'}
-                    ${isSelected ? 'bg-amber-50/50 ring-1 ring-inset ring-amber-300/60' : ''}
+                    ${isSelected ? 'bg-indigo-50/60 ring-1 ring-inset ring-indigo-300/60' : ''}
                   `}
                 >
                   {/* Day number */}
                   <div className="flex items-center justify-center mb-1">
                     <span className={`
                       w-7 h-7 flex items-center justify-center rounded-full text-[13px] font-medium
-                      ${isTodayDate ? 'bg-amber-700 text-white font-semibold' : ''}
+                      ${isTodayDate ? 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white font-semibold shadow-md shadow-indigo-500/30' : ''}
                       ${!isCurrentMonth ? 'text-slate-300' : 'text-slate-700'}
-                      ${isSelected && !isTodayDate ? 'bg-amber-100 text-amber-800' : ''}
+                      ${isSelected && !isTodayDate ? 'bg-indigo-100 text-indigo-800' : ''}
                     `}>
                       {format(day, 'd')}
                     </span>

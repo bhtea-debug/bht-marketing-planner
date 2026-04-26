@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Calendar,
+  LayoutDashboard,
   Megaphone,
   Share2,
   Wallet,
@@ -26,6 +27,12 @@ type NavItem = { label: string; href: string; icon: any; badge?: string };
 type NavGroup = { title: string; items: NavItem[] };
 
 const navGroups: NavGroup[] = [
+  {
+    title: "Pulpit",
+    items: [
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    ],
+  },
   {
     title: "Planowanie",
     items: [
