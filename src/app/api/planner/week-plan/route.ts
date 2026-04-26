@@ -301,6 +301,47 @@ REGUŁY:
 
     const fullSystem = `${MARKETING_SKILL}${QUALITY_DIRECTIVES}
 
+═══════════════════════════════════════════════════════════
+RZECZYWISTOŚĆ INSTAGRAMA 2026 (CZYTAJ ZANIM PISZESZ REELS/POST/STORY)
+═══════════════════════════════════════════════════════════
+Jeśli kanał = instagram_organic / instagram_reels / facebook_organic — TO JEST ROK 2026 NIE 2018. Brief MUSI brzmieć jak współczesny IG content, nie jak TVC z agencji.
+
+CO DZIAŁA NA IG 2026:
+- Reels storytelling 7-30s, raczej face-to-cam i głos kreatorki niż tylko makro produktu
+- Carousel z text-on-image dla edukacji ("Co to gyokuro?" w 7 slajdach)
+- Hook PROSTY: pytanie, kontrowersja, mocne stwierdzenie. NIE poetyckie zdania.
+- Caption KONWERSACYJNY (3-5 zdań pierwsza osoba), nie korporacyjny
+- Less polish > more polish (raw kuchnia, telefon w ręku, Mama tłumacząca)
+- BTS, vlog-style, "moja codzienność" energy
+
+CZEGO ZABIJESZ REELS W 2026 (red flags):
+1. Briefy wizualne pisane jak shoot list dla photographera/stylist:
+   - "Lniana serwetka ecru, drewniana łyżeczka, świeże maliny 5-7 sztuk" — stop. To props lista do sesji w studio.
+   - "Temperatura 5000K", "kierunek światła z lewej", "godzina 9:30" — to brief do kamery, nie pomysł na content
+   - "Ceramiczna miska kremowa #fffbf2" — pantone w opisie scenki to TVC żargon
+2. Hooki poetic: "Para unosi się w górę, czas zwalnia", "Jak liść w mocno parzonej wodzie..." — Hallmark cards. STOP.
+3. Body jak Wikipedia: "Matcha robiona z liści tencha, gyokuro z liści gyokuro..." — to wpis blogowy. Reels potrzebuje story, nie definicji.
+4. Generic CTAs: "Tap link w bio – zestawy", "Kliknij link w bio – sprawdź nowość" — wymyśl coś z osobistym voice.
+5. Nadmierna estetyzacja: "drewno orzechowe + paleta piaskowa #f5f1ea" jako jedyny opis sceny — to jest to samo co inne herbaciarnie, nie wyróżni was.
+
+JAK PISAĆ BRIEF IG REELS 2026:
+- scene = JEDEN konkret + wskazówka tone, np. "Mama w kuchni mówi prosto do kamery z kubkiem w ręku — autentyczne, lekko zmęczone po pracy" (NIE: "drewniany stół, lniana zasłona, godzina 9:30")
+- props = MAX 2-3 pozycje, naturalne (NIE: lista jak shoot list)
+- lighting = "naturalne dzienne, takie jakie jest" (NIE: "5000K, miękkie, długie cienie w prawo")
+- creative_hook = jak ktoś mówi do koleżanki, max 12 słów, BEZ poezji
+  GOOD: "Mama myśli że już wszystko wie o herbacie. Kupiła to."
+  GOOD: "Sprzedaliśmy 3000 paczek tej herbaty w jeden dzień"
+  BAD: "Para unosi się w górę, czas zwalnia"
+- body = pierwszy-osobowy storytelling 3-5 zdań, NIE definicje. Jakby Mama/Mia opowiadała znajomemu.
+- cta = wariuj, nie zawsze "link w bio". Może być: "komentarz jeśli próbowaliście", "save jeśli wam przyda", "share z kimś kto pije za dużo kawy"
+
+FACEBOOK_ORGANIC 2026:
+- Dłuższy storytelling OK, demograficznie 35+
+- Posty dziennikarskie / personalne ("napisałam długi post...") działają
+- Photo + 1-2 paragraf + ZNAJDUJ THE story, nie "nasza nowość"
+
+═══════════════════════════════════════════════════════════
+
 INSTRUKCJA WYKONAWCZA: Wywołaj narzędzie emit_week_plan dokładnie raz z kompletnym obiektem tygodnia. Pisz po polsku. Stosuj się ŚCIŚLE do playbooka i dyrektyw jakości powyżej. Zanim wywołasz narzędzie, w głowie sprawdź:
 1. Czy hook ma 2 zakotwiczenia sensoryczne?
 2. Czy briefy wizualne się od siebie różnią w 3+ wymiarach?
@@ -350,8 +391,8 @@ Wartości stałe (musisz ich użyć dokładnie tak):
 - end_date: "${weekEndIso}"
 
 Reguły:
-- MAKSYMALNIE 2 kanały — wybierz NAJWAŻNIEJSZE. Lepiej zrobić 2 perfekcyjnie niż 5 średnio. Typowo: 1 paid (Meta single_image) + 1 organic (IG/email/TikTok). TikTok rozważ gdy: produkt ma potencjał viralowy (smaki, ASMR przygotowania herbaty, blendy), masz pomysł na pionowy filmik 15-30s z hookiem w 1-3 sek. NIE rób TikTok gdy: brak osoby do nagrania w tym tygodniu lub temat jest typowo statyczny (zdjęcie kubka).
-- Briefy wizualne MUSZĄ wynikać z brandProfile. Jeśli brandProfile = null, użyj defaultowej estetyki BHT (ciepłe światło, drewno orzechowe, paleta piaskowa #f5f1ea/#e8dbc4/#8b6f4e/#3d2817, bez sztucznego białego światła).
+- MAKSYMALNIE 2 kanały — wybierz NAJWAŻNIEJSZE. Lepiej zrobić 2 perfekcyjnie niż 5 średnio. Typowo: 1 paid (Meta single_image) + 1 organic (IG Reels storytelling/email/TikTok). IG Reels = story-driven, face-to-cam, NIE statyczny pickup z parą. TikTok rozważ gdy: produkt ma potencjał viralowy (smaki, ASMR przygotowania herbaty, blendy), masz pomysł na pionowy filmik 15-30s z hookiem w 1-3 sek. NIE rób TikTok gdy: brak osoby do nagrania w tym tygodniu lub temat jest typowo statyczny (zdjęcie kubka).
+- Briefy wizualne czerpią z brandProfile, ALE: dla IG/Reels/FB w 2026 OPISUJ POMYSŁ A NIE SHOOT-LIST. Krótko, naturalnie, z energią kreatorki — nie z agencji reklamowej. Patrz blok 'RZECZYWISTOŚĆ INSTAGRAMA 2026' w systemie. Studio briefs (props lista, temperatura światła, pantone tła) są dozwolone TYLKO dla single_image/homepage_banner/popup, NIE dla Reels/Story/post.
 - Nie używaj cudzysłowów (") wewnątrz pól tekstowych — używaj ' lub « ».
 - TWARDA REGUŁA PRODUKTÓW: \`hero_products[].name\` MUSI być DOKŁADNIE jednym z ciągów w \`allowedProductNames\` poniżej. Tool API odrzuci output z wymyśloną nazwą — twój request padnie. Jeśli lista jest pusta, użyj dosłownie "(brak danych Woo)".
 
