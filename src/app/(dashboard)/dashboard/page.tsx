@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Sparkles, Rocket, Megaphone, TrendingUp, Users, Wallet,
   ArrowRight, Plug, Plus, CheckCircle2, AlertCircle, Calendar as CalendarIcon,
-  Brain, Activity,
+  Brain, Activity, Radio,
 } from 'lucide-react';
 import Link from 'next/link';
 import { HeroBanner } from '@/components/shell';
@@ -24,6 +24,7 @@ interface DashStats {
   recentLaunches: any[];
   upcomingCampaigns: any[];
   conflicts: number;
+  trends?: { count: number; last_scanned_at: string | null; top: any[] };
 }
 
 export default function DashboardPage() {
@@ -33,13 +34,14 @@ export default function DashboardPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [c, l, i, b, conflicts, b2b] = await Promise.all([
+        const [c, l, i, b, conflicts, b2b, trends] = await Promise.all([
           fetch('/api/campaigns').then(r => r.ok ? r.json() : []).catch(() => []),
           fetch('/api/launches').then(r => r.ok ? r.json() : { data: [] }).catch(() => ({ data: [] })),
           fetch('/api/integrations').then(r => r.ok ? r.json() : []).catch(() => []),
           fetch('/api/brain/status').then(r => r.ok ? r.json() : null).catch(() => null),
           fetch('/api/launches/conflicts').then(r => r.ok ? r.json() : { conflicts: [] }).catch(() => ({ conflicts: [] })),
           fetch('/api/b2b-leads').then(r => r.ok ? r.json() : []).catch(() => []),
+          fetch('/api/trends?limit=20').then(r => r.ok ? r.json() : { count: 0, last_scanned_at: null }).catch(() => ({ count: 0, last_scanned_at: null })),
         ]);
 
         const launches = l?.data || [];
@@ -62,6 +64,7 @@ export default function DashboardPage() {
           recentLaunches: upcoming.slice(0, 4),
           upcomingCampaigns,
           conflicts: (conflicts?.conflicts || []).length,
+          trends: trends ? { count: trends.count || 0, last_scanned_at: trends.last_scanned_at, top: (trends.trends || []).slice(0, 5) } : { count: 0, last_scanned_at: null, top: [] },
         });
       } finally {
         setLoading(false);
@@ -82,6 +85,7 @@ export default function DashboardPage() {
           <span key="l" className="inline-flex items-center gap-1.5"><Rocket size={11} />{stats.launchesPlanned} launchów w pipeline</span>,
           stats.brain?.live && <span key="b" className="inline-flex items-center gap-1.5"><Brain size={11} />Brain · {stats.brain.sections} sekcji</span>,
           stats.conflicts > 0 && <span key="cf" className="inline-flex items-center gap-1.5 text-amber-100"><AlertCircle size={11} />{stats.conflicts} kolizji</span>,
+          stats.trends && stats.trends.count > 0 && <span key="tr" className="inline-flex items-center gap-1.5"><Radio size={11} />Trendy · {stats.trends.count} live</span>,
         ].filter(Boolean) : []}
         action={(
           <div className="flex gap-2">
@@ -214,6 +218,9 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+
+          {/* Live Trends */}
+          <TrendsCard trends={stats?.trends} />
         </div>
       </div>
 
@@ -229,6 +236,67 @@ export default function DashboardPage() {
           <QuickAction href="/calendar" icon={CalendarIcon} label="Kalendarz" gradient="from-blue-500 to-cyan-600" />
           <QuickAction href="/analytics" icon={TrendingUp} label="Analityka" gradient="from-fuchsia-500 to-pink-600" />
         </div>
+      </div>
+    </div>
+  );
+}
+
+function TrendsCard({ trends }: any) {
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<string | null>(null);
+  const lastScan = trends?.last_scanned_at;
+  const ageHours = lastScan ? Math.floor((Date.now() - new Date(lastScan).getTime()) / 3600000) : null;
+  const ageLabel = ageHours == null ? 'nigdy' : ageHours < 24 ? `${ageHours}h temu` : `${Math.floor(ageHours / 24)} dni temu`;
+  const stale = ageHours != null && ageHours > 168; // > 7 days
+
+  async function runScan() {
+    setScanning(true);
+    setScanResult(null);
+    try {
+      const r = await fetch('/api/trends/scan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const j = await r.json();
+      if (j.ok) {
+        setScanResult(`Zaktualizowano: ${j.trends_count} trendów`);
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        setScanResult('Błąd: ' + (j.error || 'unknown'));
+      }
+    } catch (e: any) {
+      setScanResult('Błąd: ' + e.message);
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  return (
+    <div className="bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-600 rounded-2xl shadow-lg shadow-emerald-500/20 overflow-hidden text-white relative">
+      <div className="absolute inset-0 opacity-[0.10] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, white, transparent 50%)' }} />
+      <div className="relative px-5 py-4">
+        <div className="flex items-center gap-2.5 mb-3">
+          <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center ring-1 ring-white/30">
+            <Radio size={15} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-[14px] font-semibold">Live trendy social</h2>
+            <p className="text-[11px] opacity-80">TT · IG · FB · skan tygodniowy</p>
+          </div>
+        </div>
+        <div className="flex items-baseline gap-2 mb-2">
+          <span className="text-[24px] font-bold tracking-tight">{trends?.count || 0}</span>
+          <span className="text-[12px] opacity-85">aktywnych trendów</span>
+        </div>
+        <div className="flex items-center gap-2 text-[11px] mb-3">
+          <span className={`w-1.5 h-1.5 rounded-full ${stale ? 'bg-amber-300' : 'bg-emerald-300'}`} />
+          <span className="opacity-90">{stale ? `Wygasa (${ageLabel})` : `Świeże · ${ageLabel}`}</span>
+        </div>
+        <button
+          onClick={runScan}
+          disabled={scanning}
+          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg text-[11.5px] font-semibold transition-colors disabled:opacity-50"
+        >
+          {scanning ? 'Skanuję rynek... (~2 min)' : '↻ Skanuj trendy teraz'}
+        </button>
+        {scanResult && <p className="text-[10.5px] opacity-90 mt-2">{scanResult}</p>}
       </div>
     </div>
   );

@@ -319,3 +319,22 @@ export const brain_cache = sqliteTable('brain_cache', {
 });
 export type BrainCache = typeof brain_cache.$inferSelect;
 export type NewBrainCache = typeof brain_cache.$inferInsert;
+
+// Marketing trends — live snapshot of what works on TikTok/Instagram/Facebook
+// right now. Updated weekly by /api/trends/scan (AI with web_search) so the
+// week-plan and mia-tiktok prompts always have fresh tactics.
+export const marketing_trends = sqliteTable('marketing_trends', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  platform: text('platform').notNull(),       // 'tiktok' | 'instagram' | 'facebook' | 'cross' | 'polish_specific'
+  kind: text('kind').notNull(),                // 'viral_sound' | 'format' | 'hook_pattern' | 'avoid' | 'audience_shift' | 'algorithm_change' | 'general'
+  title: text('title').notNull(),              // short label
+  description: text('description').notNull(),  // 1-3 sentences explaining the trend
+  example: text('example'),                    // optional concrete example
+  source_urls: text('source_urls'),            // JSON-stringified array of URLs the AI cited
+  relevance_score: integer('relevance_score').default(50), // 0-100
+  active: integer('active').default(1),        // soft-archive flag
+  scanned_at: text('scanned_at').notNull().default(sql`CURRENT_TIMESTAMP`),
+  expires_at: text('expires_at'),              // optional staleness date
+});
+export type MarketingTrend = typeof marketing_trends.$inferSelect;
+export type NewMarketingTrend = typeof marketing_trends.$inferInsert;

@@ -2,7 +2,7 @@
 export const maxDuration = 60;
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/db';
-import { brand_profile, product_launches, brain_cache } from '@/db/schema';
+import { brand_profile, product_launches, brain_cache, marketing_trends } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { ensureAssetsAndPushLogs } from '@/lib/ensure-tables';
 import {
@@ -244,6 +244,28 @@ export async function POST(req: NextRequest) {
       console.warn('[plan-context] brain fetch failed', e);
     }
 
+    // ----- Live marketing trends (TikTok/IG/FB scanned weekly) -----
+    let liveTrends: any[] = [];
+    let trendsLastScanAt: string | null = null;
+    try {
+      const t = await db.select().from(marketing_trends).where(eq(marketing_trends.active, 1));
+      liveTrends = t
+        .map((row: any) => ({
+          platform: row.platform,
+          kind: row.kind,
+          title: row.title,
+          description: row.description,
+          example: row.example,
+          relevance_score: row.relevance_score,
+          scanned_at: row.scanned_at,
+        }))
+        .sort((a: any, b: any) => (b.relevance_score || 0) - (a.relevance_score || 0))
+        .slice(0, 30);
+      trendsLastScanAt = liveTrends[0]?.scanned_at || null;
+    } catch (e) {
+      console.warn('[plan-context] trends fetch failed', e);
+    }
+
     // ----- Existing tasks & campaigns for analysis -----
     let existingTasks: any[] = [];
     try {
@@ -283,6 +305,8 @@ export async function POST(req: NextRequest) {
         storePolicies,
         knowledgeEntries,
         brainStrategy,
+        liveTrends,
+        trendsLastScanAt,
         existingTasks,
       },
     });

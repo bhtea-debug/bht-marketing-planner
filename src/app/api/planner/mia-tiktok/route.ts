@@ -3,7 +3,7 @@ export const maxDuration = 180;
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
-import { brain_cache, brand_profile } from '@/db/schema';
+import { brain_cache, brand_profile, marketing_trends } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 /**
@@ -42,6 +42,15 @@ export async function POST(req: NextRequest) {
         .filter(Boolean)
         .map((s: any) => ({ module: s.module_slug, title: s.title, excerpt: typeof s.content === 'string' ? s.content.slice(0, 500) : '' }))
         .slice(0, 8);
+    } catch {}
+    let liveTrends: any[] = [];
+    try {
+      const t = await db.select().from(marketing_trends).where(eq(marketing_trends.active, 1));
+      liveTrends = t
+        .filter((x: any) => x.platform === 'tiktok' || x.platform === 'cross' || x.platform === 'polish_specific')
+        .sort((a: any, b: any) => (b.relevance_score || 0) - (a.relevance_score || 0))
+        .slice(0, 15)
+        .map((row: any) => ({ kind: row.kind, title: row.title, description: row.description, example: row.example }));
     } catch {}
 
     const system = `Jesteś NATIVE TIKTOK CREATOR. Nie reżyser. Nie creative director. NIE filmowiec. Robisz TikToki sam/a od 3 lat, znasz algorytm, języki, trendy, niche humor, sounds, kiedy się zmienia format i kiedy stary trend jest już cringe. Tworzysz dla małych kont (1-5K obs) które mają ambicję urosnąć.
@@ -144,6 +153,8 @@ ${allowedProductNames.length ? allowedProductNames.slice(0, 30).map((n) => '- ' 
 ${brandData ? `PROFIL MARKI (skrót): ${brandData.brand_voice || ''} | wizualny mood: ${brandData.visual_mood || ''} | DO: ${brandData.do_list || ''} | DON'T: ${brandData.dont_list || ''}` : ''}
 
 ${brainStrategy.length ? '========== STRATEGIA Z BRAIN ==========\n' + brainStrategy.map((s) => '### ' + s.title + '\n' + s.excerpt).join('\n\n') : ''}
+
+${liveTrends.length ? '========== LIVE TRENDY (skan w tym tygodniu) ==========\n' + liveTrends.map((t) => '[' + t.kind + '] ' + t.title + ' — ' + t.description + (t.example ? ' (przykład: ' + t.example + ')' : '')).join('\n') + '\n\nUWZGLĘDNIJ aktualne trendy. Jeśli kind=avoid — NIE używaj.' : ''}
 
 Wygeneruj 2 warianty TikTok-native dla Mii.`;
 
