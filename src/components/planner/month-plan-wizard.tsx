@@ -14,9 +14,20 @@ const MONTH_NAMES = [
   'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień',
 ];
 
-function MiaTikTokVariantSection({ week, data, loading, error, onGenerate }: any) {
+function MiaTikTokVariantSection({ week, data, loading, error, onGenerate, hasTiktokSlot, hasInstagramSlot }: any) {
   const [open, setOpen] = useState(false);
   const variants = data?.variants || [];
+  // Smart subtitle based on what channels are already in the week
+  let subtitle = '';
+  if (variants.length > 0) {
+    subtitle = `${variants.length} propozycje TikTok-native gotowe`;
+  } else if (hasTiktokSlot) {
+    subtitle = 'AI zaplanowało TikToka — wygeneruj jak go nakręcić w stylu Mii';
+  } else if (hasInstagramSlot) {
+    subtitle = 'Alternatywa zamiast Reelsa: TikTok-native pod algorytm TikToka, nie IG';
+  } else {
+    subtitle = 'Dodatkowy wariant: 2-3 filmy TikTok-native (Mia jako reżyser)';
+  }
   return (
     <div className="bg-gradient-to-br from-fuchsia-50 to-violet-50 border border-violet-200 rounded-lg overflow-hidden mt-2">
       <button
@@ -26,10 +37,8 @@ function MiaTikTokVariantSection({ week, data, loading, error, onGenerate }: any
       >
         <span className="w-6 h-6 rounded-md bg-gradient-to-br from-fuchsia-500 to-violet-600 flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0">M</span>
         <div className="flex-1 min-w-0">
-          <div className="text-[12px] font-bold text-violet-900">Wariant Mia (TikTok-native) ✨</div>
-          <div className="text-[10.5px] text-violet-700/80">
-            {variants.length > 0 ? `${variants.length} alternatywne propozycje TikTok-native` : 'Generuj alternatywę: hook 1-3s, text overlay, trending sound — Mia jako reżyser'}
-          </div>
+          <div className="text-[12px] font-bold text-violet-900 flex items-center gap-1.5">Wariant Mia (TikTok-native) ✨ {hasInstagramSlot && !hasTiktokSlot && <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-violet-200/60 text-violet-800 normal-case">alternatywa do IG</span>}</div>
+          <div className="text-[10.5px] text-violet-700/80">{subtitle}</div>
         </div>
         <span className="text-violet-600 text-xs">{open ? '▾' : '▸'}</span>
       </button>
@@ -1882,16 +1891,16 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                                     <b>Zadania do kalendarza:</b> {w.linked_calendar_tasks.join(' · ')}
                                   </div>
                                 )}
-                                {/* Wariant Mia (TikTok-native) */}
-                                {organicChannels.some((c: any) => /tiktok/i.test(c.channel || '')) && (
-                                  <MiaTikTokVariantSection
-                                    week={w}
-                                    data={miaVariants[w.isoWeek || w.label]}
-                                    loading={!!miaLoading[w.isoWeek || w.label]}
-                                    error={miaError[w.isoWeek || w.label]}
-                                    onGenerate={() => fetchMiaVariants(w)}
-                                  />
-                                )}
+                                {/* Wariant Mia (TikTok-native) — zawsze jako alternatywa */}
+                                <MiaTikTokVariantSection
+                                  week={w}
+                                  data={miaVariants[w.isoWeek || w.label]}
+                                  loading={!!miaLoading[w.isoWeek || w.label]}
+                                  error={miaError[w.isoWeek || w.label]}
+                                  hasTiktokSlot={organicChannels.some((c: any) => /tiktok/i.test(c.channel || ''))}
+                                  hasInstagramSlot={organicChannels.some((c: any) => /instagram/i.test(c.channel || ''))}
+                                  onGenerate={() => fetchMiaVariants(w)}
+                                />
                               </div>
                             </div>
                           )}
