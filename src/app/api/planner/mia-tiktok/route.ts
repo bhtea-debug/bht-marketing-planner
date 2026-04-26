@@ -152,7 +152,16 @@ Wygeneruj 2 warianty TikTok-native dla Mii.`;
     });
 
     const tu = r.content.find((c: any) => c.type === 'tool_use');
-    if (!tu) return NextResponse.json({ error: 'no tool output' }, { status: 500 });
+    console.log('[mia-tiktok] stop_reason:', r.stop_reason, 'content blocks:', r.content.length);
+    console.log('[mia-tiktok] tool_use found:', !!tu, 'input keys:', tu ? Object.keys(tu.input || {}) : []);
+    if (!tu) {
+      console.error('[mia-tiktok] no tool_use, raw content:', JSON.stringify(r.content).slice(0, 500));
+      return NextResponse.json({ error: 'no tool output', raw: r.content }, { status: 500 });
+    }
+    if (!tu.input || Object.keys(tu.input).length === 0) {
+      console.error('[mia-tiktok] empty input, full tu:', JSON.stringify(tu).slice(0, 800));
+      return NextResponse.json({ error: 'empty tool input', tu }, { status: 500 });
+    }
     return NextResponse.json({ data: tu.input });
   } catch (e: any) {
     console.error('[mia-tiktok]', e);
