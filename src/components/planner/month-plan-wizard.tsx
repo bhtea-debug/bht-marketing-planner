@@ -182,12 +182,18 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
       const j = await r.json();
       const data = j.data || j;
       setMiaVariants((m) => ({ ...m, [key]: data }));
-      // Persist into the plan
+      // Persist into the plan AND save the draft immediately so it survives close/reload.
       setPlan((prev: any) => {
         if (!prev) return prev;
         const next = { ...prev, weeks: (prev.weeks || []).map((w: any) => w.isoWeek === week.isoWeek ? { ...w, mia_tiktok_variants: data } : w) };
         return next;
       });
+      // Auto-save draft (silent) so the variants don't get lost on close/refresh.
+      try {
+        await saveDraft({ silent: true });
+      } catch (e) {
+        console.warn('[mia-tiktok] auto-save after generation failed', e);
+      }
     } catch (e: any) {
       setMiaError((m) => ({ ...m, [key]: e?.message || 'Błąd generowania' }));
     } finally {
@@ -381,21 +387,28 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
   // ----- DRAFT PERSISTENCE HELPERS -----
   // Snapshot of everything we need to restore the wizard later.
   function buildDraftPayload() {
+    // Make sure miaVariants are also persisted at top level (fallback even if plan.weeks didn't get them merged)
+    const planWithMia = plan ? {
+      ...plan,
+      weeks: (plan.weeks || []).map((w: any) => {
+        const k = w.isoWeek || w.label;
+        return miaVariants[k] && !w.mia_tiktok_variants ? { ...w, mia_tiktok_variants: miaVariants[k] } : w;
+      }),
+    } : plan;
     return {
       version: 2,
       month,
       accountId,
-      plan,
+      plan: planWithMia,
       sharedContext,
       selectedWeeks,
       deployedWeeks,
       weekErrors,
-      // Phase 1 strategy data
       strategies,
       approvedWeeks,
       weekFeedback,
       weekQueue,
-      // which step we're on (so we can restore it)
+      miaVariants,
       savedStep: step,
     };
   }
@@ -481,6 +494,16 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
       if (p.weekErrors) setWeekErrors(p.weekErrors);
       // Restore Phase 1 strategy state
       if (p.strategies) setStrategies(p.strategies);
+        if (p.miaVariants && typeof p.miaVariants === 'object') setMiaVariants(p.miaVariants);
+        // Also rebuild miaVariants from plan.weeks[].mia_tiktok_variants if not directly stored
+        if (!p.miaVariants && p.plan?.weeks) {
+          const rebuilt: Record<string|number, any> = {};
+          for (const w of p.plan.weeks) {
+            const key = w.isoWeek || w.label;
+            if (w.mia_tiktok_variants) rebuilt[key] = w.mia_tiktok_variants;
+          }
+          if (Object.keys(rebuilt).length) setMiaVariants(rebuilt);
+        }
       if (p.approvedWeeks) setApprovedWeeks(p.approvedWeeks);
       if (p.weekFeedback) setWeekFeedback(p.weekFeedback);
       if (p.weekQueue) setWeekQueue(p.weekQueue);
@@ -2106,8 +2129,8 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                 Otwórz zakładkę „Kampanie", żeby przejrzeć i aktywować.
               </p>
               <button
-                onClick={onClose}
-                className="bg-amber-600 hover:bg-amber-700 text-white rounded-lg px-6 py-2 text-sm font-medium"
+                onClick={autoSaveAndClose}
+                className="bg-gradient-to-br from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-lg px-6 py-2 text-sm font-medium shadow-md"
               >
                 Zamknij
               </button>
