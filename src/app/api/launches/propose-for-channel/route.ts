@@ -161,14 +161,53 @@ DLA EKSPORT DE:
 - Format: paczki w EN+DE labels
 
 ═══════════════════════════════════════════
+KALENDARZ HERBACIANY 2026 — KAŻDA propozycja MUSI uwzględnić daty
+═══════════════════════════════════════════
+KRYTYCZNE daty które AI MUSI BRAĆ POD UWAGĘ przy "suggested_month":
+
+🍃 **21 MAJA — MIĘDZYNARODOWY DZIEŃ HERBATY** (World Tea Day, ONZ 2019)
+   - NAJWAŻNIEJSZA data dla brandu herbacianego
+   - Każda propozycja na MAJ 2026 MUSI to nawiązać (limited edition, kampania, kolekcja)
+   - To jest "Black Friday" dla herbaciarni — nie wolno przegapić
+
+🍃 **15 GRUDNIA — Międzynarodowy Dzień Herbaty (UN, 2005)**
+   - Druga wersja, mniej znana, ale dla connoisseurów
+
+📅 **POLSKIE ŚWIĘTA wpływające na proposals:**
+   - 12 maja — Dzień Pielęgniarki (segment Wellness Daily)
+   - 26 maja — Dzień Matki PL (Gift Giver, zestawy)
+   - 1 czerwca — Dzień Dziecka (rodzinne zestawy)
+   - 23 czerwca — Dzień Ojca PL
+   - 14 października — Dzień Edukacji Narodowej / Dzień Nauczyciela (segment "nauczyciel" — 108 użyć kupon, working segment)
+   - 1 listopada — Dzień Wszystkich Świętych (cisza w marketingu)
+   - 11 listopada — Dzień Niepodległości
+   - Listopad: Black Friday (Discount Hunter)
+   - Grudzień: święta (Gift Giver wszystko)
+
+📅 **OKAZJE TEMATYCZNE:**
+   - Wrzesień: Back-to-school / back-to-office (student, biuro)
+   - 1 października: Międzynarodowy Dzień Kawy — perfect anti-trend ("dziś pij herbatę")
+   - Październik-listopad: koniec lata, immune season, hot drinks rosną
+   - Styczeń-luty: detox / new year reset / lekkość po świętach
+   - Marzec-kwiecień: spring renewal, koniec zimy
+   - Czerwiec-sierpień: iced tea, cold brew, lekkość
+   - Wrzesień-październik: matcha rituals, koncentracja, back-to-routine
+
+ZASADA: dla każdej propozycji w "suggested_month" — sprawdź czy ten miesiąc ma kluczowe daty herbaciane / polskie / sezonowe. Jeśli TAK, "why_now" MUSI to wykorzystać.
+
+═══════════════════════════════════════════
 REALIZM OPERACYJNY (TWARDA ZASADA)
 ═══════════════════════════════════════════
 TWOJE PROPOZYCJE MUSZĄ BYĆ MOŻLIWE DO ZREALIZOWANIA przez BHT. NIE proponuj:
 
-1. **Hyper-niche surowców** których BHT może nie mieć dostawcy:
-   - "First flush 2026" / "Single-plantation Shizuoka 2026" / "Yamamoto Reserve" / "Kabusencha" — TO TRUDNE do pozyskania w Polsce, BHT może tego NIE MIEĆ
-   - Bezpieczne: "sencha japońska premium" / "matcha japońska" / "blend wellness" — kategorie które już są w obrocie BHT
-   - Jeśli proponujesz konkretny single-origin / region / typ pierwszego zbioru — DODAJ flag "wymaga walidacji dostawcy"
+1. **First Flush ŻADNEJ herbaty (TWARDY ZAKAZ)**:
+   - "Darjeeling First Flush" / "Assam First Flush" / "Nepal First Flush" / "Japan First Harvest" / "Kabusencha" — WSZYSTKIE wymagają:
+     a) zamówienia 6+ miesięcy wcześniej u producenta
+     b) transportu SAMOLOTEM (nie statkiem) — drogie + minimum kg
+     c) ekspres window 4-6 tygodni od zbioru, potem traci jakość
+   - Dla MAŁEJ polskiej firmy = NIEOPŁACALNE. NIE proponuj.
+   - Bezpieczne alternatywy: "regular flush" / "second flush" / "autumnal flush" / "premium grade" bez konkretyzacji harvest window. Albo "japońska sencha premium" jako kategoria.
+   - Single-origin jest OK ale BEZ first-flush. Np. "single-origin Assam autumnal flush" jest OK, "Assam First Flush 2026" — NIE.
 
 2. **Edycji pod jeden zawód jako głównego targetu** (np. "Pielęgniarka Edition", "Strażak Edition"):
    - Zbyt wąskie okno czasowe (jeden Dzień Zawodu w roku) = mała sprzedaż przy dużym wysiłku
@@ -199,6 +238,27 @@ PREFERUJ propozycje SKALOWALNE które mogą być w sprzedaży 12 miesięcy w rok
 
 ═══════════════════════════════════════════
 KRYTYCZNE: Najpierw wypełnij pole proposals (NAJWAŻNIEJSZE — to dla usera). Potem KRÓTKO diagnose i gaps. NIE marnuj tokens na długi opis kanału. Każda propozycja ma być wykorzystywalna jako przyszły launch.
+
+═══════════════════════════════════════════
+ANTI-BANAL — propozycje OBOWIĄZKOWO ciekawe
+═══════════════════════════════════════════
+BANALNE propozycje będą odrzucone przez user-a. Jeśli twoja propozycja brzmi jak ma sens dla każdego brandu herbacianego — to BANAL. Test:
+
+❌ BANAL: "Premium herbata zielona z dodatkiem mango"
+❌ BANAL: "Black tea blend na zimę"
+❌ BANAL: "Matcha latte mix do domu"
+❌ BANAL: "Herbata na koncentrację z guaraną"
+
+✅ CIEKAWE: "World Tea Day Edition — 21.05 limited drop, 7 herbat × 5g sample box dla connoiseurów (każda z innego kraju, BHT mapuje smak per region)"
+✅ CIEKAWE: "Anti-Coffee Box (1 października) — 'jeśli kawa cię zawodzi, oto 5 alternatyw na różne pory dnia', positioning vs cafe culture"
+✅ CIEKAWE: "Wellness Daily Subscription (12-msc) — kuratorska skrzynka co miesiąc inny mood, dla persony Anna który już regularnie kupuje matchę"
+
+KAŻDA propozycja musi mieć:
+- ANGLE (co INNEGO niż konkurencja, np. "BHT używa 100% naturalnych aromatów" jako USP)
+- HOOK (storytelling, dlaczego TYLKO BHT może to zrobić)
+- DATA-TIE (konkretne święto, sezon, sygnał)
+
+Nie pisz "premium [coś] dla świadomych klientów". To nic.
 
 Wywołaj emit_proposals dokładnie raz.`;
 
@@ -238,7 +298,7 @@ Wywołaj emit_proposals dokładnie raz.`;
       },
     }];
 
-    const userMsg = `${userPrompt ? '========== INSTRUKCJA DODATKOWA OD UŻYTKOWNIKA ==========\n' + userPrompt + '\n\n' : ''}========== OBECNY PIPELINE TEGO KANAŁU ==========
+    const userMsg = `DZIŚ JEST ${new Date().toISOString().slice(0, 10)} (${['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'][new Date().getDay()]}). UWZGLĘDNIJ TĘ DATĘ przy decyzji "suggested_month" i "why_now". Spójrz na kalendarz herbaciany w systemie i wykorzystaj nadchodzące okazje.\n\n${userPrompt ? '========== INSTRUKCJA DODATKOWA OD UŻYTKOWNIKA ==========\n' + userPrompt + '\n\n' : ''}========== OBECNY PIPELINE TEGO KANAŁU ==========
 ${launchesForThisChannel.length === 0 ? '(brak — kanał pusty, oferta TYLKO z istniejącego katalogu)' : launchesForThisChannel.map((l: any) => '- ' + l.name + (l.category ? ' [' + l.category + ']' : '') + (l.price_pln ? ' (' + l.price_pln + ' PLN)' : '') + (l.short_pitch ? ' — ' + l.short_pitch : '')).join('\n')}
 
 ========== STRATEGIA KANAŁU Z BRAIN (priorytet) ==========
