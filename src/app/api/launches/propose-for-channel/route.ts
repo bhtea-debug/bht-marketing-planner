@@ -318,7 +318,8 @@ Nie pisz "premium [coś] dla świadomych klientów". To nic.
 Wywołaj emit_proposals dokładnie raz.`;
 
     const tools = [{
-      name: 'emit_proposals',
+      name: 'emit_proposals', // ONLY valid channel codes for target_channels: d2c, allegro, rossmann_full, rossmann_test, rossmann_amoya, b2b_premium, export, other_chains. NIE b2b_horeca/b2c/shop.
+      
       description: 'Emit channel-specific product proposals',
       input_schema: {
         type: 'object',

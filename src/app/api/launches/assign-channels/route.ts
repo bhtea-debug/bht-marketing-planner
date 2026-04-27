@@ -71,7 +71,8 @@ REGUŁY:
 Wywołaj emit_assignments dokładnie raz dla wszystkich launchów.`;
 
     const tools = [{
-      name: 'emit_assignments',
+      name: 'emit_assignments', // ONLY valid channel codes: d2c, allegro, rossmann_full, rossmann_test, rossmann_amoya, b2b_premium, export, other_chains. NIE b2b_horeca, NIE b2c, NIE shop, NIE store. Walidator może odrzucić.
+      
       description: 'Emit target_channels per launch',
       input_schema: {
         type: 'object',

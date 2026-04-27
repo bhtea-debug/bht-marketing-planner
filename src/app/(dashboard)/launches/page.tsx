@@ -793,7 +793,7 @@ export default function LaunchesPage() {
         )}
         <div className="flex items-center gap-2 mb-2 flex-wrap">
           <span className="text-xs text-gray-500">Kanał:</span>
-          {([['all', 'Wszystkie'], ['marketing', '🎯 Marketing plan'], ['d2c', 'D2C'], ['rossmann_full', 'Rossmann'], ['b2b_premium', 'B2B'], ['export', 'Eksport']] as const).map(([key, label]) => (
+          {([['all', 'Wszystkie'], ['marketing', '🎯 Marketing plan'], ['d2c', 'D2C'], ['allegro', 'Allegro'], ['rossmann_full', 'Rossmann'], ['rossmann_test', 'Rossmann test'], ['rossmann_amoya', 'Amo\'ya'], ['b2b_premium', 'B2B'], ['export', 'Eksport'], ['other_chains', 'Sieci PL']] as const).map(([key, label]) => (
             <button
               key={key}
               onClick={() => setChannelFilter(key)}
