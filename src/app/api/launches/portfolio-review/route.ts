@@ -1,4 +1,5 @@
 // @ts-nocheck
+export const maxDuration = 300;
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
@@ -393,7 +394,7 @@ Porównaj swoją nową propozycję z poprzednią i wyraźnie opisz CO SIĘ ZMIEN
 
     const r = await client.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 16000,
+      max_tokens: 8000,
       system,
       messages: [{ role: 'user', content: userPrompt }],
     });
