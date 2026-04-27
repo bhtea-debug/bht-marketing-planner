@@ -383,12 +383,18 @@ Właściciel dał Ci feedback do poprzedniej analizy. UWZGLĘDNIJ te uwagi w now
 
     if (previousReview && userComments.trim()) {
       // Trim previousReview to essentials — full JSON makes prompt 2x bigger
+      // Defensive: previousReview fields may be strings (from buggy older saves) — coerce to arrays
+      const safeArr = (v: any): any[] => {
+        if (Array.isArray(v)) return v;
+        if (typeof v === 'string') { try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch { return []; } }
+        return [];
+      };
       const trimmedPrev = {
-        portfolio_summary: previousReview.portfolio_summary?.slice(0, 500),
-        year_narrative: previousReview.year_narrative?.slice(0, 500),
-        current_issues: previousReview.current_issues?.slice(0, 5),
-        proposed_timeline: (previousReview.proposed_timeline || []).slice(0, 10).map((t: any) => ({
-          launch_id: t.launch_id, launch_name: t.launch_name, proposed_date: t.proposed_date, change: t.change,
+        portfolio_summary: typeof previousReview.portfolio_summary === 'string' ? previousReview.portfolio_summary.slice(0, 500) : '',
+        year_narrative: typeof previousReview.year_narrative === 'string' ? previousReview.year_narrative.slice(0, 500) : '',
+        current_issues: safeArr(previousReview.current_issues).slice(0, 5),
+        proposed_timeline: safeArr(previousReview.proposed_timeline).slice(0, 10).map((t: any) => ({
+          launch_id: t?.launch_id, launch_name: t?.launch_name, proposed_date: t?.proposed_date, change: t?.change,
         })),
       };
       userPrompt += `\n\nPOPRZEDNIA ANALIZA (skrócona, do porównania):\n${JSON.stringify(trimmedPrev, null, 2)}\n\nPorównaj swoją nową propozycję z poprzednią — wskaż CO ZMIENIŁEŚ i dlaczego na podstawie uwag użytkownika.`;
