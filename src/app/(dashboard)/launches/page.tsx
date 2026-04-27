@@ -160,6 +160,7 @@ export default function LaunchesPage() {
   const [showPortfolioReview, setShowPortfolioReview] = useState(false);
   const [portfolioComments, setPortfolioComments] = useState("");
   const [portfolioVersion, setPortfolioVersion] = useState(0);
+  const [cachedLaunchCount, setCachedLaunchCount] = useState<number>(0);
   const [portfolioUpdatedAt, setPortfolioUpdatedAt] = useState("");
   const [loadingPortfolio, setLoadingPortfolio] = useState(false);
   const [hasSavedReview, setHasSavedReview] = useState(false);
@@ -425,6 +426,7 @@ export default function LaunchesPage() {
         setPortfolioComments(json.data.user_comments || "");
         setPortfolioVersion(json.data.version || 1);
         setPortfolioUpdatedAt(json.data.updated_at || "");
+        setCachedLaunchCount(json.data.launch_count || 0);
         setHasSavedReview(true);
         return true;
       }
