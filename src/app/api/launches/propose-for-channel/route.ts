@@ -148,6 +148,8 @@ DLA EKSPORT DE:
 - Format: paczki w EN+DE labels
 
 ═══════════════════════════════════════════
+KRYTYCZNE: Najpierw wypełnij `proposals` (NAJWAŻNIEJSZE — to dla user clickable). Potem krótko diagnose i gaps. NIE marnuj tokens na długi opis kanału. Każda propozycja ma być wykorzystywalna jako przyszły launch.
+
 Wywołaj emit_proposals dokładnie raz.`;
 
     const tools = [{
@@ -155,10 +157,8 @@ Wywołaj emit_proposals dokładnie raz.`;
       description: 'Emit channel-specific product proposals',
       input_schema: {
         type: 'object',
-        required: ['channel_diagnosis', 'gap_analysis', 'proposals'],
+        required: ['proposals', 'channel_diagnosis', 'gap_analysis'],
         properties: {
-          channel_diagnosis: { type: 'string', description: '2-3 zdania: stan kanału w pipeline TERAZ. Co już ma, czego brakuje, jaka kondycja.' },
-          gap_analysis: { type: 'array', items: { type: 'string' }, description: '3-5 konkretnych luk w obecnym portfolio kanału' },
           proposals: {
             type: 'array',
             description: `${count} propozycji produktów dla tego kanału`,
@@ -182,6 +182,8 @@ Wywołaj emit_proposals dokładnie raz.`;
               },
             },
           },
+          channel_diagnosis: { type: 'string', description: 'KRÓTKO max 80 słów: stan kanału w pipeline TERAZ. Co już ma, czego brakuje. NIE pisz długiego eseju — najważniejsze są PROPOZYCJE.' },
+          gap_analysis: { type: 'array', items: { type: 'string', description: 'max 25 słów każda' }, description: '3-5 konkretnych luk, max 25 słów każda' },
         },
       },
     }];
@@ -208,7 +210,7 @@ Zaproponuj ${count} produktów dla kanału ${channel}.`;
     const client = new Anthropic({ apiKey });
     const r = await client.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 5000,
+      max_tokens: 8000,
       tools,
       tool_choice: { type: 'tool', name: 'emit_proposals' },
       system,
