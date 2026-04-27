@@ -15,9 +15,9 @@ import { eq } from 'drizzle-orm';
 const CHANNEL_CONTEXT: Record<string, string> = {
   d2c: 'sklep brownhouseandtea.pl + Allegro. 6% obrotu, NIE motor wzrostu, ale serce komunikacji marki. Pełna oferta 4-warstwowa: matcha hero + funkcyjne wellness + smakowe Core + smakowe Extended. Klient: 4 segmenty (Tea Connoisseur 29%, Wellness Daily 35%, Gift Giver 25%, Discount Hunter — choć nieobsługiwany). KAŻDY launch tu trafia jako "pełna oferta polskiego specjalisty".',
   allegro: 'komplementarny do D2C. Bestsellers + nowe SKU które chcemy testować poza ekosystemem D2C. Klient bardziej cenowo-wrażliwy.',
-  rossmann_full: 'pełna dystrybucja drogerii (1820 sklepów, 47% obrotu BHT 2028 = 5.8M PLN). TRZY nogi portfolio: (1) matcha hero — Premium Japan, Lattea, Focus, Crazy Good; (2) funkcyjne wellness — Hydration Heroes, ZERO; (3) smakowe premium — Strawberry Lemonade, Caramel Pear, Raspberry Rose. Klient drogerii: kupuje konkretną obietnicę, format 50g/100g. NIE WCHODZI: niche premium gyokuro/single-origin, akcesoria, limited-edition prestige.',
-  rossmann_test: 'test 100-200 sklepów Rossmanna dla nowych SKU przed pełną dystrybucją. Incubator. Niski stake.',
-  rossmann_amoya: 'private label Amo\'ya (NIE marka BHT). Powrót Q4 2026 po rebrandingu. Wydzielony finansowo i operacyjnie. 19% obrotu BHT 2028 = 2.4M PLN.',
+  rossmann_full: 'pełna dystrybucja drogerii (1820 sklepów, 47% obrotu BHT 2028 = 5.8M PLN). TRZY nogi portfolio: (1) matcha hero — Premium Japan, Lattea, Focus, Crazy Good; (2) funkcyjne wellness — Hydration Heroes, ZERO; (3) smakowe premium — Strawberry Lemonade, Caramel Pear, Raspberry Rose. Klient drogerii: kupuje konkretną obietnicę, format 50g/100g aluminium z window, cena 19-39 zł. **TWARDA ZASADA: ZERO LIMITEK / ZERO EDYCJI OKAZJONALNYCH / ZERO ZESTAWÓW ŚWIĄTECZNYCH.** Drogeria nie robi event-driven products — to półka stała. Tylko year-round SKU. NIE WCHODZI: niche premium gyokuro/single-origin, akcesoria, limited-edition prestige, gift boxy, edycje sezonowe.',
+  rossmann_test: 'test 100-200 sklepów Rossmanna dla nowych SKU przed pełną dystrybucją. Incubator dla year-round produktów które potem awansują do pełnej. **ZERO limitek tutaj też.**',
+  rossmann_amoya: 'private label Amo\'ya (NIE marka BHT). Powrót Q4 2026 po rebrandingu. Wydzielony finansowo i operacyjnie. 19% obrotu BHT 2028 = 2.4M PLN. **Year-round produkty pod marką Amo\'ya, nie BHT.**',
   b2b_premium: 'Hurt + HoReCa razem (13% obrotu 2028 = 1.6M PLN). Klient: kawiarnie specialty (WAW/KRK/WRO), hotele butikowe, sklepy prezentowe, firmy prezentowe, drobni odsprzedawcy, restauracje. Mix wszystkich kategorii. Pojemność: kg-wise. Cena B2B 60-70% retail. PILOTAŻ H2 2026: kawiarnie + Matcha Lattea ZERO + iced lines. NAJBARDZIEJ pasuje: Lattea ZERO, iced/cold brew, premium single-origin, akcesoria, zestawy prezentowe. SŁABO pasuje: limited-edition single SKU.',
   export: 'DE/EU dystrybutorzy (9% obrotu 2028 = 1.1M PLN). Pilotaż 2026: 8 klientów DE = szum, ale specialty tea EU to największy rynek. Pilotaż: landing DE + Matcha Premium Japan + partner logistyczny. NAJMOCNIEJSZE: Matcha Premium Japan, single-origin, premium niche.',
   other_chains: 'Spar, Intermarche, Super-Pharm, Bio Planet (8% obrotu 2028 = 1M PLN). Noga 2 dywersyfikacji ryzyka Rossmanna.',
@@ -112,6 +112,11 @@ export async function POST(req: Request) {
 KANAŁ ${channel.toUpperCase()} — DEFINICJA STRATEGICZNA
 ═══════════════════════════════════════════
 ${channelDef}
+
+${(channel === 'rossmann_full' || channel === 'rossmann_test' || channel === 'rossmann_amoya' || channel === 'other_chains') ? '⛔ TWARDY ZAKAZ LIMITEK W TYM KANALE — drogeria/sieć fizyczna NIE robi event-driven products. Półka stała = year-round SKU. Jeśli zaproponujesz \'Edycja Dzień Matki\' / \'Zestaw świąteczny\' / \'Limited drop\' / \'Edycja World Tea Day\' — propozycja JEST NIEWAŻNA. Akceptowalne TYLKO stałe SKU które sprzedają się 12 miesięcy.' : ''}
+${channel === 'b2b_premium' ? '⚠ B2B HoReCa preferuje year-round (kawiarnia chce stałego SKU w menu). Max 1 sezonowa linia (np. iced w lato). Bez gift boxów dla B2B HoReCa.' : ''}
+${channel === 'd2c' || channel === 'allegro' ? '⚠ NA TERAZ (kwiecień 2026): owner powiedział \'olejmy limitki\' — 100% year-round, zero limitek/zestawów okazjonalnych nawet w D2C/Allegro.' : ''}
+${channel === 'export' ? '⚠ Eksport DE — year-round, klasyka premium herbaty japońskiej (Matcha Premium Japan, single-origin sencha/gyokuro). Bez first-flush, bez limitek.' : ''}
 
 ═══════════════════════════════════════════
 TWOJA ROBOTA
