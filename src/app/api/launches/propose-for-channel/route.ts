@@ -168,10 +168,11 @@ TWOJE PROPOZYCJE MUSZĄ BYĆ MOŻLIWE DO ZREALIZOWANIA przez BHT. NIE proponuj:
    - LEPIEJ: szeroki segment potrzeb obejmujący KILKA zawodów. Nazwa: "Shift Worker Focus" / "Late Hours Energy" / "Przepracowani — bądźcie OK"
    - Targetuj POTRZEBĘ (zmęczenie, koncentracja w nocy, regeneracja po stresie), NIE konkretny zawód
 
-3. **Naturalnych aromatów na poziomie 95%+ z owoców** jako standard:
-   - Drogie, trudno dostępne, wymagają specjalnego dostawcy
-   - Bezpieczne: "premium aromat naturalny" bez liczbowego procentu
-   - Jeśli proponujesz "100% z owoców" — uznaj że pricing musi to zaakceptować (+20-30% vs standard) i zaznacz w risk
+3. **Aromaty naturalne premium są STANDARDEM BHT (USP):**
+   - BHT codziennie używa naturalnych aromatów 95%+ z owoców — to ICH siła vs konkurencja używająca syntetyków
+   - WOLNO i NALEŻY proponować herbaty smakowe z naturalnymi aromatami premium ("aromat malinowy 95% naturalny", "100% z owoców")
+   - NIE bój się tego — to BHT, nie supermarketowy brand
+   - Komunikuj różnicę: "podczas gdy inni używają syntetyków, BHT robi z prawdziwych owoców"
 
 4. **Limitowanych edycji jako głównej strategii**:
    - 1000 szt × 79 zł = 79k zł brutto, marża ~30%, czyli ~24k zł netto za 4-6 tyg pracy zespołu (label, foto, copy, kupon, mailing)
