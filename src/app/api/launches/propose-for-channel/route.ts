@@ -116,9 +116,36 @@ ${channelDef}
 ═══════════════════════════════════════════
 TWOJA ROBOTA
 ═══════════════════════════════════════════
-Zaproponuj DOKŁADNIE ${count} produktów / linii / zestawów które:
-1. PASUJĄ do tego kanału (klient, format, pricing, dystrybucja, marża)
-2. WYPEŁNIAJĄ luki w portfolio kanału (zobacz launchesForThisChannel)
+Zaproponuj DOKŁADNIE ${count} produktów / linii / zestawów. KRYTYCZNY ROZKŁAD:
+
+═══ ROZKŁAD ${count} PROPOZYCJI (TWARDA REGUŁA — NIE łam) ═══
+- MIN 75% (${count >= 4 ? 'minimum 3 z 4' : 'minimum 2 z 3'}) MUSI być **YEAR-ROUND** (stały produkt, sprzedawany 12 miesięcy w roku, re-orderable)
+- MAX 25% (${count >= 4 ? 'max 1 z 4' : 'max 1 z 3'}) może być limitka / zestaw okazjonalny / event-driven
+- Owner BHT preferuje SKALOWALNE: silnik biznesu = stałe SKU, NIE niekończąca się seria limitek
+
+═══ TYPY YEAR-ROUND PRODUKTÓW (z których MUSISZ wybierać 75% propozycji) ═══
+- **Signature blend stały** — nowy hero produkt na półkę, sprzedaje się każdego dnia
+- **Akcesoria** — chasen, chawan, kyusu, mug, set startowy (D2C)
+- **Refill pack** — większe formaty znanego produktu (200g, 500g)
+- **Abonament / subskrypcja** — monthly box, quarterly discovery (powtarzalny przychód)
+- **Multi-pack stały** — 3-4 produkty już w katalogu sprzedawane razem ze zniżką
+- **Single-origin stały** (BEZ first-flush — second flush, autumnal flush, premium grade)
+- **Functional blend stały** — adaptogen / focus / sleep / immune (pasuje do ringu trends)
+
+═══ CO LICZY SIĘ JAKO LIMITKA/ZESTAW (max 1) ═══
+- Edycja okazjonalna pod święto/event (Dzień Mamy, World Tea Day, advent)
+- Zestaw prezentowy okolicznościowy
+- Gift box pod konkretną okazję
+- Limited drop pod narrative event (np. współpraca z artystą)
+
+═══ PRZED finalizacją sprawdź siebie ═══
+1. Policz ile z propozycji to limitki/zestawy. Jeśli >25% → wymień nadmiar na year-round.
+2. Każda propozycja musi mieć w short_pitch wyraźny sygnał czy to year-round czy event-driven.
+3. Field "category" wskazuje "limitowana_edycja" / "zestaw" — TYLKO dla 1 z 4 max.
+
+KAŻDA propozycja MUSI:
+1. PASOWAĆ do kanału (klient, format, pricing, dystrybucja, marża)
+2. WYPEŁNIAĆ luki w portfolio kanału
 3. SĄ STRATEGICZNIE ZGODNE z fundamentami Brain — KAŻDA propozycja MUSI cytować konkretną sekcję strategii kanału (np. "wpisuje się w priorytet P5 segmenty zawodowe", "wzmacnia nogę 1 portfolio Rossmann — matcha hero", "obsługuje persona Wellness Daily 35%")
 4. UWZGLĘDNIAJĄ trendy rynkowe TEA/WELLNESS z marketTrends (Polski rynek + globalny). Jeśli matcha rośnie +25% — wykorzystaj. Jeśli adaptogen tea trend — proponuj. Jeśli anti-coffee shift — pozycjonuj.
 5. UNIKAJĄ duplikatów z wooCatalog
