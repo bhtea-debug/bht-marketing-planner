@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
 import { product_launches, brain_cache, brand_profile, planning_knowledge } from '@/db/schema';
+import { getWooProducts } from '@/lib/woo-api';
 import { eq } from 'drizzle-orm';
 
 /**
@@ -78,6 +79,12 @@ export async function POST(req: Request) {
     let knowledge: any[] = [];
     try {
       knowledge = await db.select().from(planning_knowledge).where(eq(planning_knowledge.active, 1));
+    } catch {}
+
+    // WooCommerce catalog — REAL existing products in the store (avoid proposing duplicates)
+    let wooCatalog: any[] = [];
+    try {
+      wooCatalog = await getWooProducts().catch(() => []);
     } catch {}
 
     const channelDef = CHANNEL_CONTEXT[channel];
@@ -184,6 +191,12 @@ TWOJE PROPOZYCJE MUSZĄ BYĆ MOŻLIWE DO ZREALIZOWANIA przez BHT. NIE proponuj:
 
 PREFERUJ propozycje SKALOWALNE które mogą być w sprzedaży 12 miesięcy w roku.
 
+6. **Duplikatów / "podobne do istniejącego SKU" w katalogu Woo**:
+   - SPRAWDŹ listę katalogu (przekażę poniżej w userMsg)
+   - Jeśli proponujesz "Matcha Latte Refresh" a w katalogu jest "Matcha Refresh" — to DUPLIKAT
+   - Jeśli proponujesz "Earl Grey Premium" a jest już "Earl Grey Classic" — to za podobne
+   - PROPOZYCJA musi WNOSIĆ COŚ NOWEGO: nowy format, nowy segment, nowy use-case, nowy storytelling
+
 ═══════════════════════════════════════════
 KRYTYCZNE: Najpierw wypełnij pole proposals (NAJWAŻNIEJSZE — to dla usera). Potem KRÓTKO diagnose i gaps. NIE marnuj tokens na długi opis kanału. Każda propozycja ma być wykorzystywalna jako przyszły launch.
 
@@ -234,7 +247,7 @@ ${channelSections.length === 0 ? '(brak)' : channelSections.slice(0, 8).map((s: 
 ========== POZOSTAŁA STRATEGIA Z BRAIN (cele, persony, KPI, marże, fundamenty) ==========
 ${otherStrategySections.map((s: any) => '### ' + s.title + '\n' + (s.content || '').slice(0, 1500)).join('\n\n')}
 
-${knowledge.length > 0 ? '========== WNIOSKI Z PRZESZŁOŚCI (krytyczne — NIE łamać) ==========\n' + knowledge.map((k: any) => '[' + k.category + '] ' + k.content).join('\n') + '\n\n' : ''}${brandData ? '========== PROFIL MARKI ==========\n' + JSON.stringify({
+${knowledge.length > 0 ? '========== WNIOSKI Z PRZESZŁOŚCI (krytyczne — NIE łamać) ==========\n' + knowledge.map((k: any) => '[' + k.category + '] ' + k.content).join('\n') + '\n\n' : ''}${wooCatalog.length > 0 ? '========== AKTUALNY KATALOG SKLEPU WOOCOMMERCE (' + wooCatalog.length + ' produktów) ==========\nNIE proponuj produktów które już istnieją lub są bardzo podobne do tego co masz w katalogu:\n' + wooCatalog.slice(0, 60).map((p: any) => '- ' + p.name + (p.categories?.[0]?.name ? ' [' + p.categories[0].name + ']' : '') + (p.price ? ' (' + p.price + ' zł)' : '')).join('\n') + '\n\nPRZED kazdą propozycją SPRAWDŹ: czy produkt o podobnej nazwie/koncepcie już istnieje? Jeśli TAK — albo zmień koncept na coś INNEGO, albo wytłumacz w portfolio_synergy dlaczego to JEST inny produkt mimo podobieństwa.\n\n' : ''}${brandData ? '========== PROFIL MARKI ==========\n' + JSON.stringify({
   brand_voice: brandData.brand_voice,
   visual_mood: brandData.visual_mood,
   target_persona: brandData.target_persona,
