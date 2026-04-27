@@ -461,7 +461,7 @@ Właściciel dał Ci feedback do poprzedniej analizy. UWZGLĘDNIJ te uwagi w now
     };
 
     const r = await client.messages.create({
-      model: 'claude-sonnet-4-5',
+      model: 'claude-haiku-4-5',
       max_tokens: 12000,
       tools: [portfolioTool],
       tool_choice: { type: 'tool', name: 'emit_portfolio_review' },
