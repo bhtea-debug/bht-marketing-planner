@@ -148,7 +148,7 @@ DLA EKSPORT DE:
 - Format: paczki w EN+DE labels
 
 ═══════════════════════════════════════════
-KRYTYCZNE: Najpierw wypełnij `proposals` (NAJWAŻNIEJSZE — to dla user clickable). Potem krótko diagnose i gaps. NIE marnuj tokens na długi opis kanału. Każda propozycja ma być wykorzystywalna jako przyszły launch.
+KRYTYCZNE: Najpierw wypełnij pole proposals (NAJWAŻNIEJSZE — to dla usera). Potem KRÓTKO diagnose i gaps. NIE marnuj tokens na długi opis kanału. Każda propozycja ma być wykorzystywalna jako przyszły launch.
 
 Wywołaj emit_proposals dokładnie raz.`;
 
