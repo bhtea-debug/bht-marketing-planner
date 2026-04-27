@@ -630,7 +630,7 @@ export default function LaunchesPage() {
                 {(reviewingPortfolio || loadingPortfolio) ? (
                   <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {loadingPortfolio ? 'Ładuję...' : 'Analizuję...'}</>
                 ) : (
-                  <><BarChart3 className="w-3.5 h-3.5" /> {hasSavedReview ? 'Strategia launchy' : 'Przeanalizuj strategię'}</>
+                  <><BarChart3 className="w-3.5 h-3.5" /> {hasSavedReview ? `Strategia launchy (${launches.filter(l => { const ch = getChannels(l); if (ch.length === 0) return true; return ch.includes('d2c') || ch.includes('allegro'); }).length} D2C)` : 'Przeanalizuj strategię'}</>
                 )}
               </button>
             )}

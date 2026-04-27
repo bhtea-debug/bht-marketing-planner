@@ -54,7 +54,15 @@ export async function POST(req: NextRequest) {
     let allLaunches: any[] = [];
     try { allLaunches = await db.select().from(product_launches); } catch {}
 
-    const activeLaunches = allLaunches.filter(l => !['launched', 'cancelled'].includes(l.status));
+    // Only D2C/Allegro launches enter marketing portfolio analysis (B2B/Rossmann/Eksport have separate processes)
+    const activeLaunches = allLaunches.filter(l => {
+      if (['launched', 'cancelled'].includes(l.status)) return false;
+      let chans: string[] = [];
+      try { chans = l.target_channels ? JSON.parse(l.target_channels) : []; } catch {}
+      // Legacy launches without target_channels: assume D2C-eligible (backwards compat)
+      if (chans.length === 0) return true;
+      return chans.includes('d2c') || chans.includes('allegro');
+    });
     if (activeLaunches.length < 2) {
       return NextResponse.json({ error: 'Potrzebujesz minimum 2 aktywnych launchy do analizy portfolio' }, { status: 400 });
     }
@@ -182,7 +190,7 @@ export async function POST(req: NextRequest) {
 
     const system = `Jesteś CHIEF PRODUCT STRATEGIST dla Brown House & Tea — polskiego premium e-commerce z herbatą.
 
-Dostajesz WSZYSTKIE aktywne launche (planowane, w rozwoju, gotowe) i pełny kontekst: katalog sklepu, kampanie, święta, brand profile. Twoja rola: PRZEANALIZOWAĆ CAŁE PORTFOLIO LAUNCHY RAZEM i zaproponować OPTYMALNY UKŁAD W CZASIE oraz NOWE PRODUKTY które wypełniają luki — KAŻDY z dopasowaniem do kanałów sprzedaży BHT.
+Dostajesz WSZYSTKIE aktywne launche (planowane, w rozwoju, gotowe) i pełny kontekst: katalog sklepu, kampanie, święta, brand profile. Twoja rola: PRZEANALIZOWAĆ PORTFOLIO LAUNCHY D2C/ALLEGRO RAZEM (tylko sklep i Allegro — Rossmann/B2B/Eksport mają własne procesy poza marketing plannerem) i zaproponować OPTYMALNY UKŁAD W CZASIE oraz NOWE PRODUKTY które wypełniają luki — KAŻDY z dopasowaniem do kanałów sprzedaży BHT.
 
 ═══════════════════════════════════════════
 DOPASOWANIE PRODUKT → KANAŁ SPRZEDAŻY (KAŻDA propozycja MUSI mieć target_channels)
