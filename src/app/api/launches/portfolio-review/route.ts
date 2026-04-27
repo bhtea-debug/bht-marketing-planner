@@ -8,13 +8,30 @@ import { buildWooSalesContext } from '@/lib/woo-api';
 import { getWooProducts } from '@/lib/woo-api';
 import { ensurePortfolioReviews } from '@/lib/ensure-tables';
 
-// GET /api/launches/portfolio-review — load latest saved review
+// GET /api/launches/portfolio-review — load latest saved review (auto-invalidates if pipeline changed by >2 launches)
 export async function GET() {
   try {
     await ensurePortfolioReviews();
     const rows = await db.select().from(portfolio_reviews).orderBy(desc(portfolio_reviews.updated_at)).limit(1);
     if (!rows.length) return NextResponse.json({ data: null });
     const row = rows[0];
+
+    // Auto-invalidate stale cache: if current D2C/Allegro pipeline differs significantly from cached count, return null
+    try {
+      const allLaunchesNow = await db.select().from(product_launches);
+      const currentD2C = allLaunchesNow.filter((l: any) => {
+        if (['launched', 'cancelled'].includes(l.status)) return false;
+        let chans: string[] = [];
+        try { chans = l.target_channels ? JSON.parse(l.target_channels) : []; } catch {}
+        if (chans.length === 0) return true;
+        return chans.includes('d2c') || chans.includes('allegro');
+      }).length;
+      if (Math.abs(currentD2C - (row.launch_count || 0)) >= 2) {
+        // Stale by 2+ launches — pretend no review so UI prompts regeneration
+        return NextResponse.json({ data: null, stale: true, cachedCount: row.launch_count, currentCount: currentD2C });
+      }
+    } catch {}
+
     let review = null;
     try { review = JSON.parse(row.review_json); } catch {}
     return NextResponse.json({
