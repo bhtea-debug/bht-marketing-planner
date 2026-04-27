@@ -3,7 +3,7 @@ export const maxDuration = 180;
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
-import { product_launches, brain_cache, brand_profile, planning_knowledge } from '@/db/schema';
+import { product_launches, brain_cache, brand_profile, planning_knowledge, marketing_trends } from '@/db/schema';
 import { getWooProducts } from '@/lib/woo-api';
 import { eq } from 'drizzle-orm';
 
@@ -87,6 +87,24 @@ export async function POST(req: Request) {
       wooCatalog = await getWooProducts().catch(() => []);
     } catch {}
 
+    // Market trends in tea/wellness category (live from trend scanner)
+    let marketTrends: any[] = [];
+    try {
+      const allTrends = await db.select().from(marketing_trends).where(eq(marketing_trends.active, 1));
+      marketTrends = allTrends
+        .filter((t: any) => ['market_polish', 'market_global', 'consumer_behavior', 'competitor_move', 'category_trend'].includes(t.kind) || ['market_polish', 'market_global'].includes(t.platform) || t.kind === 'category_trend')
+        .sort((a: any, b: any) => (b.relevance_score || 0) - (a.relevance_score || 0))
+        .slice(0, 12)
+        .map((t: any) => ({ kind: t.kind, platform: t.platform, title: t.title, description: t.description }));
+      // Fallback: also pull any high-relevance social trends if no category-specific ones yet
+      if (marketTrends.length === 0) {
+        marketTrends = allTrends
+          .sort((a: any, b: any) => (b.relevance_score || 0) - (a.relevance_score || 0))
+          .slice(0, 8)
+          .map((t: any) => ({ kind: t.kind, platform: t.platform, title: t.title, description: t.description }));
+      }
+    } catch {}
+
     const channelDef = CHANNEL_CONTEXT[channel];
 
     const system = `Jesteś PORTFOLIO ARCHITECT dla Brown House & Tea, fokus: kanał ${channel.toUpperCase()}.
@@ -100,9 +118,13 @@ ${channelDef}
 TWOJA ROBOTA
 ═══════════════════════════════════════════
 Zaproponuj DOKŁADNIE ${count} produktów / linii / zestawów które:
-1. PASUJĄ do tego kanału (jego klient, format, pricing, dystrybucja)
-2. WYPEŁNIAJĄ luki w obecnym portfolio kanału (zobacz launchesForThisChannel — co już mamy)
-3. SĄ STRATEGICZNIE ZGODNE z fundamentami z Brain (cele, persony, reguły decyzyjne)
+1. PASUJĄ do tego kanału (klient, format, pricing, dystrybucja, marża)
+2. WYPEŁNIAJĄ luki w portfolio kanału (zobacz launchesForThisChannel)
+3. SĄ STRATEGICZNIE ZGODNE z fundamentami Brain — KAŻDA propozycja MUSI cytować konkretną sekcję strategii kanału (np. "wpisuje się w priorytet P5 segmenty zawodowe", "wzmacnia nogę 1 portfolio Rossmann — matcha hero", "obsługuje persona Wellness Daily 35%")
+4. UWZGLĘDNIAJĄ trendy rynkowe TEA/WELLNESS z marketTrends (Polski rynek + globalny). Jeśli matcha rośnie +25% — wykorzystaj. Jeśli adaptogen tea trend — proponuj. Jeśli anti-coffee shift — pozycjonuj.
+5. UNIKAJĄ duplikatów z wooCatalog
+6. SĄ MOŻLIWE OPERACYJNIE (zob. REALIZM OPERACYJNY)
+7. UWZGLĘDNIAJĄ KALENDARZ HERBACIANY (World Tea Day 21.05 → krytyczne dla maja)
 4. KAŻDA propozycja ma DETALICZNE uzasadnienie:
    - dlaczego TEN kanał (vs inne)
    - dlaczego TERAZ (sezon / luka / sygnał z danych)
@@ -307,7 +329,7 @@ ${channelSections.length === 0 ? '(brak)' : channelSections.slice(0, 8).map((s: 
 ========== POZOSTAŁA STRATEGIA Z BRAIN (cele, persony, KPI, marże, fundamenty) ==========
 ${otherStrategySections.map((s: any) => '### ' + s.title + '\n' + (s.content || '').slice(0, 1500)).join('\n\n')}
 
-${knowledge.length > 0 ? '========== WNIOSKI Z PRZESZŁOŚCI (krytyczne — NIE łamać) ==========\n' + knowledge.map((k: any) => '[' + k.category + '] ' + k.content).join('\n') + '\n\n' : ''}${wooCatalog.length > 0 ? '========== AKTUALNY KATALOG SKLEPU WOOCOMMERCE (' + wooCatalog.length + ' produktów) ==========\nNIE proponuj produktów które już istnieją lub są bardzo podobne do tego co masz w katalogu:\n' + wooCatalog.slice(0, 60).map((p: any) => '- ' + p.name + (p.categories?.[0]?.name ? ' [' + p.categories[0].name + ']' : '') + (p.price ? ' (' + p.price + ' zł)' : '')).join('\n') + '\n\nPRZED kazdą propozycją SPRAWDŹ: czy produkt o podobnej nazwie/koncepcie już istnieje? Jeśli TAK — albo zmień koncept na coś INNEGO, albo wytłumacz w portfolio_synergy dlaczego to JEST inny produkt mimo podobieństwa.\n\n' : ''}${brandData ? '========== PROFIL MARKI ==========\n' + JSON.stringify({
+${knowledge.length > 0 ? '========== WNIOSKI Z PRZESZŁOŚCI (krytyczne — NIE łamać) ==========\n' + knowledge.map((k: any) => '[' + k.category + '] ' + k.content).join('\n') + '\n\n' : ''}${marketTrends.length > 0 ? '========== TRENDY RYNKOWE TEA/WELLNESS (PL + globalnie, ze skanu) ==========\n' + marketTrends.map((t: any) => '[' + t.platform + '/' + t.kind + '] ' + t.title + ' — ' + t.description).join('\n') + '\n\nPropozycje MUSZĄ wpisywać się w te ruchy rynkowe lub świadomie być im przeciwko (anti-trend).\n\n' : ''}${wooCatalog.length > 0 ? '========== AKTUALNY KATALOG SKLEPU WOOCOMMERCE (' + wooCatalog.length + ' produktów) ==========\nNIE proponuj produktów które już istnieją lub są bardzo podobne do tego co masz w katalogu:\n' + wooCatalog.slice(0, 60).map((p: any) => '- ' + p.name + (p.categories?.[0]?.name ? ' [' + p.categories[0].name + ']' : '') + (p.price ? ' (' + p.price + ' zł)' : '')).join('\n') + '\n\nPRZED kazdą propozycją SPRAWDŹ: czy produkt o podobnej nazwie/koncepcie już istnieje? Jeśli TAK — albo zmień koncept na coś INNEGO, albo wytłumacz w portfolio_synergy dlaczego to JEST inny produkt mimo podobieństwa.\n\n' : ''}${brandData ? '========== PROFIL MARKI ==========\n' + JSON.stringify({
   brand_voice: brandData.brand_voice,
   visual_mood: brandData.visual_mood,
   target_persona: brandData.target_persona,

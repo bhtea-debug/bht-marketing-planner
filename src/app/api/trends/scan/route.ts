@@ -26,15 +26,29 @@ export async function POST(req: NextRequest) {
 
 Twoje zadanie: ZWERYFIKUJ przez web_search co AKTUALNIE działa na TikToku, Instagramie i Facebooku. Skup się na okresie ostatnich 4-8 tygodni. Kalibracja: ${focus === 'tea' ? 'fokus na food/beverage/lifestyle/tea/coffee niche' : focus === 'food' ? 'fokus na food/cooking creators' : 'ogólnie'}.
 
-CO WYSZUKAĆ (rób minimum 5-8 web_search calli, najlepiej więcej):
-1. Aktualne **viral sounds** na TikToku w PL i EN (ostatnie 2-4 tyg) — szukaj fraz "TikTok trends April 2026", "TikTok viral sounds this week", "TikTok trend report"
-2. **Format trends** — Tier rankings, POV variants, storytime patterns, stitch trends, niche humor formats, talking-head trends
-3. **Hook patterns** — co działa na pierwsze 1-3 sek (np. "Wait wait wait", "POV your...", "Tell me without telling me", liczby na ekranie)
-4. **Instagram Reels 2026 reality** — co działa, co nie działa, jak Meta zmienia algorytm, długości, captions
-5. **Facebook 2026** — kto dziś używa, jakie posty, demografia, formaty
-6. **Polish-specific TikTok trends** — polskie formaty memowe, polskie sounds, polskie creators na #teatok #matcha #herbata #aesthetic
-7. **Tea/Matcha trends** — co viral z #matcha, #teatok, #matchatok ostatnio
-8. **Anti-trends / "stop doing this"** — co już cringe, co algorytm karze, co działało rok temu a teraz nie
+CO WYSZUKAĆ (rób minimum 8-12 web_search calli):
+
+═══════ A) SOCIAL MEDIA TRENDS ═══════
+1. **Viral sounds TikTok PL/EN** (ostatnie 2-4 tyg) — "TikTok trends April 2026", "viral sounds this week"
+2. **Format trends** — POV, storytime, stitch, ranking, niche humor, talking-head
+3. **Hook patterns** — co działa na 1-3 sek
+4. **Instagram Reels 2026 reality**
+5. **Facebook 2026**
+6. **Polish-specific TT trends** — polskie format-memy, sounds, creators
+
+═══════ B) TEA/HERBACIANE TRENDS RYNKOWE (KRYTYCZNE) ═══════
+7. **Tea trends 2026 globally** — szukaj "tea industry trends 2026", "matcha market growth", "wellness tea trends", "specialty tea consumer behavior 2026"
+8. **Polskie trendy herbaciane** — szukaj "polski rynek herbaty 2026", "polskie marki herbat trendy", "konsumpcja herbaty Polska 2026", "specialty tea Polska", "matcha Polska trend"
+9. **Wellness/functional tea** — adaptogen tea, mushroom tea, gut-health tea, sleep tea, focus tea — co viral, co rośnie
+10. **Anti-coffee / coffee replacement** — czy ludzie przechodzą z kawy na herbatę, jakie segmenty, jak komunikować
+11. **DTC tea brands case studies** — co robi Magic Hour, Bellocq, Smith Tea, polskie: Imbryk Story, Dilmah PL — formaty, packaging, cena, audience
+12. **HoReCa specialty tea** — co barysta robi nowego z herbatą, kawiarnie specialty rosną z tea menu, hotele butikowe i tea pairing
+
+═══════ C) META INSIGHTY ═══════
+13. **Anti-trends** — co już cringe w 2026, co algorytm karze
+14. **Polish-specific tea events** — Międzynarodowy Dzień Herbaty 21.05, lokalne festiwale, tea expo Polska
+
+ZWRACAJ konkrety: liczby (X% growth), nazwy brandów, daty, źródła. Nie ogólniki.
 
 ZASADY:
 - BAZUJ na konkretach. NIE wymyślaj. Każdy trend musi mieć źródło z web_search.
@@ -49,7 +63,7 @@ OUTPUT: po sekwencji web_search calli wywołaj emit_trends DOKŁADNIE RAZ z komp
       {
         type: 'web_search_20250305',
         name: 'web_search',
-        max_uses: 12,
+        max_uses: 16,
       },
       {
         name: 'emit_trends',
@@ -66,8 +80,8 @@ OUTPUT: po sekwencji web_search calli wywołaj emit_trends DOKŁADNIE RAZ z komp
                 type: 'object',
                 required: ['platform', 'kind', 'title', 'description', 'relevance_score'],
                 properties: {
-                  platform: { type: 'string', enum: ['tiktok', 'instagram', 'facebook', 'cross', 'polish_specific'] },
-                  kind: { type: 'string', enum: ['viral_sound', 'format', 'hook_pattern', 'avoid', 'audience_shift', 'algorithm_change', 'general'] },
+                  platform: { type: 'string', enum: ['tiktok', 'instagram', 'facebook', 'cross', 'polish_specific', 'market_global', 'market_polish'] },
+                  kind: { type: 'string', enum: ['viral_sound', 'format', 'hook_pattern', 'avoid', 'audience_shift', 'algorithm_change', 'category_trend', 'competitor_move', 'consumer_behavior', 'general'] },
                   title: { type: 'string', description: 'Krótki tytuł (max 8 słów)' },
                   description: { type: 'string', description: '1-3 zdania konkretu — co to jest, jak wygląda, gdzie widziałeś' },
                   example: { type: 'string', description: 'Opcjonalnie: konkretny przykład / cytat / format text overlay' },
