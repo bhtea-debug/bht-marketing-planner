@@ -176,11 +176,11 @@ export async function POST(req: NextRequest) {
       alreadyLaunchedThisYear: allLaunches
         .filter(l => l.status === 'launched')
         .map(l => ({ name: l.name, category: l.category, date: l.planned_launch_date })),
-      upcomingCampaigns: upcomingCampaigns.slice(0, 15).map(c => ({
+      upcomingCampaigns: upcomingCampaigns.slice(0, 8).map(c => ({
         name: c.name, start: c.start_date, end: c.end_date,
       })),
       holidays,
-      existingCatalog: fullCatalog.slice(0, 50).map((p: any) => ({
+      existingCatalog: fullCatalog.slice(0, 10).map((p: any) => ({
         name: p.name,
         category: p.categories?.[0]?.name || 'uncategorized',
         price: p.price,
@@ -191,10 +191,10 @@ export async function POST(req: NextRequest) {
         target_audience: brandData.target_audience,
         unique_selling_points: brandData.unique_selling_points,
       } : null,
-      knowledgeEntries: knowledgeEntries.slice(0, 20).map(k => ({
+      knowledgeEntries: knowledgeEntries.slice(0, 8).map(k => ({
         category: k.category, content: k.content,
       })),
-      brainStrategy: brainSections.slice(0, 25).map((s: any) => ({
+      brainStrategy: brainSections.slice(0, 10).map((s: any) => ({
         module: s.module_slug,
         title: s.title,
         category: s.category || null,
@@ -360,8 +360,14 @@ Przeanalizuj całe portfolio launchy Brown House & Tea i zaproponuj optymalny uk
 AKTYWNE LAUNCHE DO PRZEANALIZOWANIA:
 ${JSON.stringify(context.activeLaunches, null, 2)}
 
-PEŁNY KONTEKST:
-${JSON.stringify(context, null, 2)}
+POMOCNICZY KONTEKST (skrócony):
+- Już wystartowane: ${context.alreadyLaunchedThisYear.length} launchów w tym roku
+- Nadchodzące kampanie: ${context.upcomingCampaigns.length}
+- Święta w obrocie: ${(context.holidays || []).slice(0, 8).map((h: any) => h.name + ' ' + h.date).join(', ')}
+- Katalog Woo (sample): ${(context.existingCatalog || []).slice(0, 15).map((p: any) => p.name).join(', ')}
+- Brand voice: ${(context.brandProfile?.tone_of_voice || '').slice(0, 200)}
+- Knowledge: ${(context.knowledgeEntries || []).slice(0, 5).map((k: any) => '[' + k.category + '] ' + k.content.slice(0, 150)).join(' / ')}
+- Brain strategy: ${(context.brainStrategy || []).slice(0, 5).map((s: any) => s.title + ': ' + (s.excerpt || '').slice(0, 200)).join(' || ')}
 
 Patrz na CAŁOŚĆ — nie na każdy launch osobno. Zaproponuj reshuffl jeśli trzeba. Zwróć JSON.`;
 
