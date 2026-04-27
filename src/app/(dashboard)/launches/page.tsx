@@ -192,6 +192,28 @@ export default function LaunchesPage() {
     }
   }
 
+  const [feedbackProposal, setFeedbackProposal] = useState<any>(null);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+
+  async function submitFeedback() {
+    if (!feedbackProposal || !feedbackText.trim()) return;
+    setFeedbackSubmitting(true);
+    try {
+      const r = await fetch('/api/launches/proposal-feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ proposal: feedbackProposal, channel: proposeChannel, critique: feedbackText, category: 'lesson' }),
+      });
+      if (r.ok) {
+        setFeedbackText('');
+        setFeedbackProposal(null);
+      }
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  }
+
   async function adoptProposal(p: any) {
     try {
       const r = await fetch('/api/launches', {
@@ -1430,7 +1452,40 @@ export default function LaunchesPage() {
 
       {/* Create modal */}
 
-      {/* Per-channel proposals modal */}
+      {/* Critique modal — train the AI */}
+      {feedbackProposal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={() => !feedbackSubmitting && setFeedbackProposal(null)}>
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="px-5 py-4 border-b border-slate-100 bg-gradient-to-br from-rose-50/60 to-white">
+              <h3 className="text-[15px] font-semibold text-slate-900">Krytyka propozycji — naucz AI</h3>
+              <p className="text-[12px] text-slate-500 mt-0.5">Twoja uwaga zostanie zapisana jako trwała wiedza modelu. Nie powtórzy błędu w kolejnych generacjach.</p>
+            </div>
+            <div className="p-5 space-y-3">
+              <div className="bg-slate-50 rounded-lg p-3 text-[12px] text-slate-700">
+                <div className="font-semibold text-slate-900 mb-0.5">{feedbackProposal.name}</div>
+                {feedbackProposal.short_pitch}
+              </div>
+              <textarea
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                placeholder="Co tu nie pasuje? Czego AI musi unikać następnym razem? Konkrety: 'pielęgniarka edition za wąskie okno', 'kabusencha trudno do pozyskania', 'cena 89zł nie pasuje do drogerii', etc."
+                rows={5}
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-[13px] resize-none focus:outline-none focus:ring-2 focus:ring-rose-500/30"
+                autoFocus
+              />
+            </div>
+            <div className="flex gap-2.5 px-5 py-4 border-t border-slate-100 bg-slate-50/60">
+              <button onClick={() => setFeedbackProposal(null)} disabled={feedbackSubmitting} className="flex-1 px-3 py-2.5 text-[13px] font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg disabled:opacity-50">Anuluj</button>
+              <button onClick={submitFeedback} disabled={feedbackSubmitting || !feedbackText.trim()} className="flex-1 px-3 py-2.5 text-[13px] font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-lg disabled:opacity-50">
+                {feedbackSubmitting ? 'Zapisuję...' : 'Zapisz lekcję'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+            {/* Per-channel proposals modal */}
       {proposeChannel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => !proposeLoading && setProposeChannel(null)}>
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
@@ -1508,12 +1563,21 @@ export default function LaunchesPage() {
                     </div>
                   </div>
                   {p.risk && <div className="mt-2 text-[11px] text-amber-800 bg-amber-50/60 rounded px-2 py-1.5"><b>⚠ Ryzyko:</b> {p.risk}</div>}
-                  <button
-                    onClick={() => adoptProposal(p)}
-                    className="mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-[13px] font-semibold shadow-md hover:shadow-lg transition-all"
-                  >
-                    <Plus className="w-4 h-4" /> Dodaj do pipeline launchów
-                  </button>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => adoptProposal(p)}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-[13px] font-semibold shadow-md hover:shadow-lg transition-all"
+                    >
+                      <Plus className="w-4 h-4" /> Dodaj do pipeline
+                    </button>
+                    <button
+                      onClick={() => { setFeedbackProposal(p); setFeedbackText(''); }}
+                      className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-lg text-[12px] font-semibold transition-colors"
+                      title="Krytyka — naucz AI co poszło nie tak"
+                    >
+                      ✕ Krytyka
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

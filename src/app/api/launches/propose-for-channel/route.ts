@@ -3,7 +3,7 @@ export const maxDuration = 180;
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
-import { product_launches, brain_cache, brand_profile } from '@/db/schema';
+import { product_launches, brain_cache, brand_profile, planning_knowledge } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 /**
@@ -72,6 +72,12 @@ export async function POST(req: Request) {
     try {
       const bpRows = await db.select().from(brand_profile).where(eq(brand_profile.id, 1)).limit(1);
       brandData = bpRows[0] || null;
+    } catch {}
+
+    // Planning knowledge — owner-curated insights and lessons (CRITICAL for realism)
+    let knowledge: any[] = [];
+    try {
+      knowledge = await db.select().from(planning_knowledge).where(eq(planning_knowledge.active, 1));
     } catch {}
 
     const channelDef = CHANNEL_CONTEXT[channel];
@@ -148,6 +154,36 @@ DLA EKSPORT DE:
 - Format: paczki w EN+DE labels
 
 ═══════════════════════════════════════════
+REALIZM OPERACYJNY (TWARDA ZASADA)
+═══════════════════════════════════════════
+TWOJE PROPOZYCJE MUSZĄ BYĆ MOŻLIWE DO ZREALIZOWANIA przez BHT. NIE proponuj:
+
+1. **Hyper-niche surowców** których BHT może nie mieć dostawcy:
+   - "First flush 2026" / "Single-plantation Shizuoka 2026" / "Yamamoto Reserve" / "Kabusencha" — TO TRUDNE do pozyskania w Polsce, BHT może tego NIE MIEĆ
+   - Bezpieczne: "sencha japońska premium" / "matcha japońska" / "blend wellness" — kategorie które już są w obrocie BHT
+   - Jeśli proponujesz konkretny single-origin / region / typ pierwszego zbioru — DODAJ flag "wymaga walidacji dostawcy"
+
+2. **Edycji pod jeden zawód jako głównego targetu** (np. "Pielęgniarka Edition", "Strażak Edition"):
+   - Zbyt wąskie okno czasowe (jeden Dzień Zawodu w roku) = mała sprzedaż przy dużym wysiłku
+   - LEPIEJ: szeroki segment potrzeb obejmujący KILKA zawodów. Nazwa: "Shift Worker Focus" / "Late Hours Energy" / "Przepracowani — bądźcie OK"
+   - Targetuj POTRZEBĘ (zmęczenie, koncentracja w nocy, regeneracja po stresie), NIE konkretny zawód
+
+3. **Naturalnych aromatów na poziomie 95%+ z owoców** jako standard:
+   - Drogie, trudno dostępne, wymagają specjalnego dostawcy
+   - Bezpieczne: "premium aromat naturalny" bez liczbowego procentu
+   - Jeśli proponujesz "100% z owoców" — uznaj że pricing musi to zaakceptować (+20-30% vs standard) i zaznacz w risk
+
+4. **Limitowanych edycji jako głównej strategii**:
+   - 1000 szt × 79 zł = 79k zł brutto, marża ~30%, czyli ~24k zł netto za 4-6 tyg pracy zespołu (label, foto, copy, kupon, mailing)
+   - To MAŁO. Limitki OK, ale max 1-2 SKU rocznie. Reszta MUSI być produkty stałe / subskrypcje / zestawy uniwersalne (passive revenue)
+
+5. **Wymagań niemożliwych logistycznie**:
+   - Sezonowych produktów których surowiec wymaga zamówienia 6+ miesięcy wcześniej
+   - Custom packagingu który wymaga dostawcy spoza obecnego portfela BHT
+
+PREFERUJ propozycje SKALOWALNE które mogą być w sprzedaży 12 miesięcy w roku.
+
+═══════════════════════════════════════════
 KRYTYCZNE: Najpierw wypełnij pole proposals (NAJWAŻNIEJSZE — to dla usera). Potem KRÓTKO diagnose i gaps. NIE marnuj tokens na długi opis kanału. Każda propozycja ma być wykorzystywalna jako przyszły launch.
 
 Wywołaj emit_proposals dokładnie raz.`;
@@ -197,7 +233,7 @@ ${channelSections.length === 0 ? '(brak)' : channelSections.slice(0, 8).map((s: 
 ========== POZOSTAŁA STRATEGIA Z BRAIN (cele, persony, KPI, marże, fundamenty) ==========
 ${otherStrategySections.map((s: any) => '### ' + s.title + '\n' + (s.content || '').slice(0, 1500)).join('\n\n')}
 
-${brandData ? '========== PROFIL MARKI ==========\n' + JSON.stringify({
+${knowledge.length > 0 ? '========== WNIOSKI Z PRZESZŁOŚCI (krytyczne — NIE łamać) ==========\n' + knowledge.map((k: any) => '[' + k.category + '] ' + k.content).join('\n') + '\n\n' : ''}${brandData ? '========== PROFIL MARKI ==========\n' + JSON.stringify({
   brand_voice: brandData.brand_voice,
   visual_mood: brandData.visual_mood,
   target_persona: brandData.target_persona,
