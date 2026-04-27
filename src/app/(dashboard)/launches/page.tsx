@@ -632,7 +632,7 @@ export default function LaunchesPage() {
                 {(reviewingPortfolio || loadingPortfolio) ? (
                   <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {loadingPortfolio ? 'Ładuję...' : 'Analizuję...'}</>
                 ) : (
-                  <><BarChart3 className="w-3.5 h-3.5" /> {hasSavedReview ? `Strategia launchy (${launches.filter(l => { const ch = getChannels(l); if (ch.length === 0) return true; return ch.includes('d2c') || ch.includes('allegro'); }).length} D2C)` : 'Przeanalizuj strategię'}</>
+                  <><BarChart3 className="w-3.5 h-3.5" /> {hasSavedReview ? `Strategia premier w sklepie (${launches.filter(l => { const ch = getChannels(l); if (ch.length === 0) return true; return ch.includes('d2c'); }).length} szt)` : 'Przeanalizuj strategię premier w sklepie'}</>
                 )}
               </button>
             )}
@@ -1022,7 +1022,7 @@ export default function LaunchesPage() {
               )}
               {/* Staleness warning */}
               {portfolioReview && (() => {
-                const currentActiveCount = launches.filter(l => { const ch = getChannels(l); if (ch.length === 0) return true; return ch.includes('d2c') || ch.includes('allegro'); }).length;
+                const currentActiveCount = launches.filter(l => { const ch = getChannels(l); if (ch.length === 0) return true; return ch.includes('d2c'); }).length;
                 const stale = cachedLaunchCount > 0 && Math.abs(currentActiveCount - cachedLaunchCount) > 0;
                 if (!stale) return null;
                 return (
