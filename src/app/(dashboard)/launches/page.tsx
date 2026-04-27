@@ -171,8 +171,10 @@ export default function LaunchesPage() {
   const [proposeData, setProposeData] = useState<any>(null);
   const [proposeLoading, setProposeLoading] = useState(false);
   const [proposeUserPrompt, setProposeUserPrompt] = useState('');
+  const [proposeCountTarget, setProposeCountTarget] = useState<number>(8);
 
-  async function runProposeForChannel(channel: string, userPrompt: string = '') {
+  async function runProposeForChannel(channel: string, userPrompt: string = '', count?: number) {
+    if (count) setProposeCountTarget(count);
     setProposeLoading(true);
     setProposeChannel(channel);
     setProposeData(null);
@@ -180,7 +182,7 @@ export default function LaunchesPage() {
       const r = await fetch('/api/launches/propose-for-channel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel, count: 4, userPrompt }),
+        body: JSON.stringify({ channel, count: proposeCountTarget, userPrompt }),
       });
       const j = await r.json();
       if (j.ok) setProposeData(j);
@@ -1582,19 +1584,29 @@ export default function LaunchesPage() {
               ))}
             </div>
             {!proposeLoading && proposeData && !proposeData.error && (
-              <div className="border-t border-slate-100 px-5 py-3 bg-slate-50/60 flex items-center gap-2">
+              <div className="border-t border-slate-100 px-5 py-3 bg-slate-50/60 flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] text-slate-500 font-semibold">Liczba:</span>
+                {[4, 6, 8, 10, 12].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setProposeCountTarget(n)}
+                    className={`text-[11px] px-2 py-1 rounded font-semibold transition-colors ${proposeCountTarget === n ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:border-indigo-300'}`}
+                  >
+                    {n}
+                  </button>
+                ))}
                 <input
                   type="text"
                   value={proposeUserPrompt}
                   onChange={(e) => setProposeUserPrompt(e.target.value)}
-                  placeholder="Dodaj uwagi (np. 'fokus na zimę', 'budżet do 50zł') i wygeneruj nowe..."
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                  placeholder="Uwagi: 'fokus na zimę', 'budżet 50zł', 'tylko year-round'..."
+                  className="flex-1 min-w-[200px] px-3 py-2 border border-slate-200 rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
                 />
                 <button
-                  onClick={() => runProposeForChannel(proposeChannel, proposeUserPrompt)}
+                  onClick={() => runProposeForChannel(proposeChannel, proposeUserPrompt, proposeCountTarget)}
                   className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[12px] font-semibold"
                 >
-                  ↻ Przelicz
+                  ↻ Przelicz {proposeCountTarget}
                 </button>
               </div>
             )}

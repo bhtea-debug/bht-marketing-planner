@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     if (!apiKey) return NextResponse.json({ error: 'no API key' }, { status: 500 });
     const body = await req.json();
     const channel = String(body.channel || '');
-    const count = Math.min(Math.max(Number(body.count || 4), 2), 6);
+    const count = Math.min(Math.max(Number(body.count || 8), 2), 12);
     const userPrompt = body.userPrompt || '';
 
     if (!CHANNEL_CONTEXT[channel]) {
@@ -368,7 +368,7 @@ Zaproponuj ${count} produktów dla kanału ${channel}.`;
     const client = new Anthropic({ apiKey });
     const r = await client.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 6000,
+      max_tokens: 8000,
       tools,
       tool_choice: { type: 'tool', name: 'emit_proposals' },
       system,
