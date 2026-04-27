@@ -461,8 +461,8 @@ Właściciel dał Ci feedback do poprzedniej analizy. UWZGLĘDNIJ te uwagi w now
     };
 
     const r = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 12000,
+      model: 'claude-sonnet-4-5',
+      max_tokens: 8000,
       tools: [portfolioTool],
       tool_choice: { type: 'tool', name: 'emit_portfolio_review' },
       system,
@@ -473,10 +473,30 @@ Właściciel dał Ci feedback do poprzedniej analizy. UWZGLĘDNIJ te uwagi w now
       return NextResponse.json({ error: 'AI nie zwrócił tool_use', stop: r.stop_reason }, { status: 502 });
     }
     let parsed: any = { ...tu.input };
-    // Normalize stringified arrays (Sonnet sometimes does this for complex arrays)
-    for (const key of ['current_issues', 'proposed_timeline', 'global_recommendations', 'risks', 'calendar_gaps', 'suggested_products']) {
-      if (typeof parsed[key] === 'string') {
-        try { parsed[key] = JSON.parse(parsed[key]); } catch {}
+    // Normalize stringified arrays — multi-strategy parse
+    const arrayKeys = ['current_issues', 'proposed_timeline', 'global_recommendations', 'risks', 'calendar_gaps', 'suggested_products'];
+    for (const key of arrayKeys) {
+      const v = parsed[key];
+      if (typeof v === 'string') {
+        // Try direct parse
+        try { parsed[key] = JSON.parse(v); continue; } catch {}
+        // Try cleaning trailing commas, single quotes
+        try {
+          const cleaned = v.replace(/,(\s*[\]}])/g, '$1').replace(/'/g, '"');
+          parsed[key] = JSON.parse(cleaned);
+          continue;
+        } catch {}
+        // Try extracting array from anywhere in string
+        try {
+          const m = v.match(/\[[\s\S]*\]/);
+          if (m) {
+            parsed[key] = JSON.parse(m[0]);
+            continue;
+          }
+        } catch {}
+        // Fallback: if can't parse, log and set empty array
+        console.warn('[portfolio-review] could not parse string for key:', key, 'preview:', v.slice(0, 200));
+        parsed[key] = [];
       }
     }
 
