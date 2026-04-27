@@ -167,6 +167,60 @@ export default function LaunchesPage() {
   const [channelFilter, setChannelFilter] = useState<string>('all');
   const [assigningChannels, setAssigningChannels] = useState(false);
   const [assignResult, setAssignResult] = useState<string | null>(null);
+  const [proposeChannel, setProposeChannel] = useState<string | null>(null);
+  const [proposeData, setProposeData] = useState<any>(null);
+  const [proposeLoading, setProposeLoading] = useState(false);
+  const [proposeUserPrompt, setProposeUserPrompt] = useState('');
+
+  async function runProposeForChannel(channel: string, userPrompt: string = '') {
+    setProposeLoading(true);
+    setProposeChannel(channel);
+    setProposeData(null);
+    try {
+      const r = await fetch('/api/launches/propose-for-channel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel, count: 4, userPrompt }),
+      });
+      const j = await r.json();
+      if (j.ok) setProposeData(j);
+      else setProposeData({ error: j.error || 'Błąd' });
+    } catch (e: any) {
+      setProposeData({ error: e.message });
+    } finally {
+      setProposeLoading(false);
+    }
+  }
+
+  async function adoptProposal(p: any) {
+    try {
+      const r = await fetch('/api/launches', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          launch_type: p.category && p.category.includes('linia') ? 'product_line' : 'single',
+          name: p.name,
+          short_pitch: p.short_pitch,
+          category: p.category,
+          price_pln: p.estimated_price_pln,
+          status: 'idea',
+          ai_suggested_date: p.suggested_month ? p.suggested_month + '-15' : null,
+          ai_suggestion_notes: [
+            'Z propozycji per-kanał (' + (proposeChannel || '') + '):',
+            'Why this channel: ' + (p.why_this_channel || ''),
+            'Why now: ' + (p.why_now || ''),
+            'Synergy: ' + (p.portfolio_synergy || ''),
+            'Risk: ' + (p.risk || ''),
+          ].join('\n'),
+          target_channels: Array.isArray(p.target_channels) && p.target_channels.length > 0 ? p.target_channels : [proposeChannel],
+          channel_rationale: p.why_this_channel,
+        }),
+      });
+      if (r.ok) {
+        await load();
+      }
+    } catch {}
+  }
 
   async function assignChannels(force: boolean = false) {
     setAssigningChannels(true); setAssignResult(null);
@@ -591,14 +645,31 @@ export default function LaunchesPage() {
               <h3 className="text-[13px] font-semibold text-slate-900">Pipeline po kanałach sprzedaży</h3>
               <p className="text-[11px] text-slate-500 mt-0.5">{launches.length} aktywnych launchów</p>
             </div>
-            <button
-              onClick={() => assignChannels(false)}
-              disabled={assigningChannels}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-br from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-lg text-[11.5px] font-semibold disabled:opacity-50 shadow-sm"
-              title="AI przypisze kanały do launchów które ich nie mają"
-            >
-              {assigningChannels ? '⏳ AI przypisuje (60-90s)...' : '✨ Przypisz kanały AI'}
-            </button>
+            <div className="flex items-center gap-2">
+              <select
+                value=""
+                onChange={(e) => { if (e.target.value) { setProposeUserPrompt(''); runProposeForChannel(e.target.value); } e.target.value = ''; }}
+                className="px-3 py-1.5 text-[11.5px] font-semibold bg-white border border-slate-200 hover:border-indigo-300 rounded-lg cursor-pointer text-slate-700 hover:text-indigo-700"
+                title="AI proponuje produkty SPECYFICZNIE dla wybranego kanału"
+              >
+                <option value="">✨ Propozycje per kanał…</option>
+                <option value="d2c">D2C sklep</option>
+                <option value="rossmann_full">Rossmann pełna</option>
+                <option value="b2b_premium">B2B Premium (HoReCa)</option>
+                <option value="export">Eksport DE/EU</option>
+                <option value="other_chains">Inne sieci PL</option>
+                <option value="rossmann_amoya">Amo'ya (private label)</option>
+                <option value="allegro">Allegro</option>
+              </select>
+              <button
+                onClick={() => assignChannels(false)}
+                disabled={assigningChannels}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-br from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-lg text-[11.5px] font-semibold disabled:opacity-50 shadow-sm"
+                title="AI przypisze kanały do launchów które ich nie mają"
+              >
+                {assigningChannels ? '⏳ AI przypisuje (60-90s)...' : '✨ Przypisz kanały AI'}
+              </button>
+            </div>
           </div>
           {assignResult && (
             <div className="px-5 py-2 bg-emerald-50 border-b border-emerald-100 text-[12px] text-emerald-800">{assignResult}</div>
@@ -626,9 +697,17 @@ export default function LaunchesPage() {
                   </div>
                   {Object.entries(CHANNEL_LABEL).map(([key, meta]) => (
                     counts[key] > 0 && (
-                      <div key={key} className="rounded-lg p-3 border" style={{ backgroundColor: `${meta.color}10`, borderColor: `${meta.color}30` }}>
+                      <div key={key} className="rounded-lg p-3 border flex flex-col" style={{ backgroundColor: `${meta.color}10`, borderColor: `${meta.color}30` }}>
                         <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: meta.color }}>{meta.label}</div>
                         <div className="text-[20px] font-bold mt-0.5" style={{ color: meta.color }}>{counts[key]}</div>
+                        <button
+                          onClick={() => { setProposeUserPrompt(''); runProposeForChannel(key); }}
+                          className="text-[10px] font-semibold mt-2 px-2 py-1 rounded bg-white/70 hover:bg-white border transition-colors"
+                          style={{ color: meta.color, borderColor: `${meta.color}40` }}
+                          title={`AI propozycje produktów dla kanału: ${meta.label}`}
+                        >
+                          ✨ AI propozycje
+                        </button>
                       </div>
                     )
                   ))}
@@ -1350,6 +1429,112 @@ export default function LaunchesPage() {
       )}
 
       {/* Create modal */}
+
+      {/* Per-channel proposals modal */}
+      {proposeChannel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => !proposeLoading && setProposeChannel(null)}>
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[88vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-slate-100 bg-gradient-to-br from-indigo-50/80 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-[15px] font-semibold text-slate-900">Propozycje produktów dla kanału: <span className="text-indigo-700">{CHANNEL_LABEL[proposeChannel]?.label || proposeChannel}</span></h3>
+                  <p className="text-[11.5px] text-slate-500">AI używa pełnej wiedzy z Brain (strategia, KPI, persony, marże, reguły kanału)</p>
+                </div>
+              </div>
+              <button onClick={() => !proposeLoading && setProposeChannel(null)} disabled={proposeLoading} className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-50">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              {proposeLoading && (
+                <div className="text-center py-12">
+                  <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mx-auto mb-3" />
+                  <p className="text-[13px] text-slate-700">AI pracuje... (60-90s)</p>
+                  <p className="text-[11px] text-slate-500 mt-1">Czyta Brain, analizuje obecny pipeline kanału, projektuje propozycje</p>
+                </div>
+              )}
+              {proposeData?.error && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-[13px] text-red-800">{proposeData.error}</div>
+              )}
+              {proposeData?.channel_diagnosis && (
+                <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-4">
+                  <div className="text-[10px] uppercase tracking-wider font-bold text-indigo-700 mb-1">Diagnoza kanału</div>
+                  <p className="text-[13px] text-slate-800 leading-relaxed">{proposeData.channel_diagnosis}</p>
+                  {Array.isArray(proposeData.gap_analysis) && proposeData.gap_analysis.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-indigo-100">
+                      <div className="text-[10px] uppercase tracking-wider font-bold text-indigo-700 mb-1.5">Luki</div>
+                      <ul className="space-y-1">
+                        {proposeData.gap_analysis.map((g: string, i: number) => (
+                          <li key={i} className="text-[12px] text-slate-700 flex gap-2"><span className="text-indigo-500">▸</span><span>{g}</span></li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+              {Array.isArray(proposeData?.proposals) && proposeData.proposals.map((p: any, i: number) => (
+                <div key={i} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4">
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={'text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ' + (p.priority === 'must_have' ? 'bg-rose-100 text-rose-800' : p.priority === 'nice_to_have' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600')}>{p.priority}</span>
+                        {p.category && <span className="text-[10px] text-slate-500">{p.category}</span>}
+                        {p.suggested_month && <span className="text-[10px] text-slate-500">📅 {p.suggested_month}</span>}
+                        {p.estimated_price_pln && <span className="text-[10px] text-slate-500">💰 {p.estimated_price_pln} PLN</span>}
+                      </div>
+                      <h4 className="text-[14.5px] font-bold text-slate-900">{p.name}</h4>
+                      <p className="text-[12.5px] text-slate-700 mt-1">{p.short_pitch}</p>
+                    </div>
+                    <button onClick={() => adoptProposal(p)} className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-[11px] font-semibold shadow-sm">
+                      <Plus className="w-3 h-3" /> Dodaj do pipeline
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11.5px] mt-3">
+                    <div className="bg-indigo-50/60 rounded-lg p-2">
+                      <div className="text-[9.5px] uppercase tracking-wider font-bold text-indigo-700 mb-0.5">Dlaczego TEN kanał</div>
+                      <div className="text-slate-700">{p.why_this_channel}</div>
+                    </div>
+                    <div className="bg-emerald-50/60 rounded-lg p-2">
+                      <div className="text-[9.5px] uppercase tracking-wider font-bold text-emerald-700 mb-0.5">Dlaczego TERAZ</div>
+                      <div className="text-slate-700">{p.why_now}</div>
+                    </div>
+                    <div className="bg-violet-50/60 rounded-lg p-2">
+                      <div className="text-[9.5px] uppercase tracking-wider font-bold text-violet-700 mb-0.5">Synergia</div>
+                      <div className="text-slate-700">{p.portfolio_synergy}</div>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-2">
+                      <div className="text-[9.5px] uppercase tracking-wider font-bold text-slate-600 mb-0.5">NIE pasuje gdzie indziej</div>
+                      <div className="text-slate-700">{p.why_not_other_channels}</div>
+                    </div>
+                  </div>
+                  {p.risk && <div className="mt-2 text-[11px] text-amber-800 bg-amber-50/60 rounded px-2 py-1.5"><b>⚠ Ryzyko:</b> {p.risk}</div>}
+                </div>
+              ))}
+            </div>
+            {!proposeLoading && proposeData && !proposeData.error && (
+              <div className="border-t border-slate-100 px-5 py-3 bg-slate-50/60 flex items-center gap-2">
+                <input
+                  type="text"
+                  value={proposeUserPrompt}
+                  onChange={(e) => setProposeUserPrompt(e.target.value)}
+                  placeholder="Dodaj uwagi (np. 'fokus na zimę', 'budżet do 50zł') i wygeneruj nowe..."
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-[12px] focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                />
+                <button
+                  onClick={() => runProposeForChannel(proposeChannel, proposeUserPrompt)}
+                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[12px] font-semibold"
+                >
+                  ↻ Przelicz
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {showCreate && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
