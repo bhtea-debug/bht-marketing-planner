@@ -399,30 +399,18 @@ Porównaj swoją nową propozycję z poprzednią i wyraźnie opisz CO SIĘ ZMIEN
     }
 
     const r = await client.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 8000,
+      model: 'claude-haiku-4-5',
+      max_tokens: 6000,
       system,
       messages: [{ role: 'user', content: userPrompt }],
     });
-
     const text = r.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n');
     let parsed: any = null;
     try {
       parsed = JSON.parse(extractJson(text));
     } catch (e: any) {
-      // Retry with shorter output
-      try {
-        const r2 = await client.messages.create({
-          model: 'claude-sonnet-4-5',
-          max_tokens: 8000,
-          system: system + '\n\nUWAGA: poprzednia próba się nie sparsowała. Skróć global_recommendations i risks do max 3 pozycji każdy. TYLKO VALID JSON.',
-          messages: [{ role: 'user', content: userPrompt + '\n\nZwięźle — max 3 items per array. Tylko JSON.' }],
-        });
-        const text2 = r2.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n');
-        parsed = JSON.parse(extractJson(text2));
-      } catch (e2: any) {
-        return NextResponse.json({ error: 'AI nie zwrócił poprawnego JSON', raw: text.slice(0, 3000) }, { status: 502 });
-      }
+      // No retry — return error fast instead of doubling total time
+      return NextResponse.json({ error: 'AI nie zwrócił poprawnego JSON', raw: text.slice(0, 2000) }, { status: 502 });
     }
 
     // Save to DB — find existing or create new
