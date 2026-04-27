@@ -674,15 +674,10 @@ export default function LaunchesPage() {
                 value=""
                 onChange={(e) => { if (e.target.value) { setProposeUserPrompt(''); runProposeForChannel(e.target.value); } e.target.value = ''; }}
                 className="px-3 py-1.5 text-[11.5px] font-semibold bg-white border border-slate-200 hover:border-indigo-300 rounded-lg cursor-pointer text-slate-700 hover:text-indigo-700"
-                title="AI proponuje produkty SPECYFICZNIE dla wybranego kanału"
+                title="AI proponuje produkty SPECYFICZNIE dla D2C / Allegro. Inne kanały (Rossmann, B2B, Eksport) mają własne procesy poza marketing plannerem."
               >
-                <option value="">✨ Propozycje per kanał…</option>
-                <option value="d2c">D2C sklep</option>
-                <option value="rossmann_full">Rossmann pełna</option>
-                <option value="b2b_premium">B2B Premium (HoReCa)</option>
-                <option value="export">Eksport DE/EU</option>
-                <option value="other_chains">Inne sieci PL</option>
-                <option value="rossmann_amoya">Amo'ya (private label)</option>
+                <option value="">✨ Propozycje launchów (D2C/Allegro)…</option>
+                <option value="d2c">D2C sklep brownhouseandtea.pl</option>
                 <option value="allegro">Allegro</option>
               </select>
               <button
@@ -724,14 +719,20 @@ export default function LaunchesPage() {
                       <div key={key} className="rounded-lg p-3 border flex flex-col" style={{ backgroundColor: `${meta.color}10`, borderColor: `${meta.color}30` }}>
                         <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: meta.color }}>{meta.label}</div>
                         <div className="text-[20px] font-bold mt-0.5" style={{ color: meta.color }}>{counts[key]}</div>
-                        <button
-                          onClick={() => { setProposeUserPrompt(''); runProposeForChannel(key); }}
-                          className="text-[10px] font-semibold mt-2 px-2 py-1 rounded bg-white/70 hover:bg-white border transition-colors"
-                          style={{ color: meta.color, borderColor: `${meta.color}40` }}
-                          title={`AI propozycje produktów dla kanału: ${meta.label}`}
-                        >
-                          ✨ AI propozycje
-                        </button>
+                        {(key === 'd2c' || key === 'allegro') ? (
+                          <button
+                            onClick={() => { setProposeUserPrompt(''); runProposeForChannel(key); }}
+                            className="text-[10px] font-semibold mt-2 px-2 py-1 rounded bg-white/70 hover:bg-white border transition-colors"
+                            style={{ color: meta.color, borderColor: `${meta.color}40` }}
+                            title={`AI propozycje produktów dla kanału: ${meta.label}`}
+                          >
+                            ✨ AI propozycje
+                          </button>
+                        ) : (
+                          <span className="text-[9px] mt-2 italic opacity-70" style={{ color: meta.color }} title="Ten kanał ma własny proces (Rossmann: Monia, B2B: Specjalista Sales, Eksport: Michał) — poza marketing plannerem">
+                            poza marketingiem
+                          </span>
+                        )}
                       </div>
                     )
                   ))}
