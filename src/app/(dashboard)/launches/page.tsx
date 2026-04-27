@@ -1478,20 +1478,16 @@ export default function LaunchesPage() {
               )}
               {Array.isArray(proposeData?.proposals) && proposeData.proposals.map((p: any, i: number) => (
                 <div key={i} className="bg-white rounded-2xl border border-slate-200/80 shadow-sm p-4">
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={'text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ' + (p.priority === 'must_have' ? 'bg-rose-100 text-rose-800' : p.priority === 'nice_to_have' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600')}>{p.priority}</span>
-                        {p.category && <span className="text-[10px] text-slate-500">{p.category}</span>}
-                        {p.suggested_month && <span className="text-[10px] text-slate-500">📅 {p.suggested_month}</span>}
-                        {p.estimated_price_pln && <span className="text-[10px] text-slate-500">💰 {p.estimated_price_pln} PLN</span>}
-                      </div>
-                      <h4 className="text-[14.5px] font-bold text-slate-900">{p.name}</h4>
-                      <p className="text-[12.5px] text-slate-700 mt-1">{p.short_pitch}</p>
+                  <div className="mb-3">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                      <span className={'text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ' + (p.priority === 'must_have' ? 'bg-rose-100 text-rose-800' : p.priority === 'nice_to_have' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600')}>{p.priority}</span>
+                      {p.category && <span className="text-[10px] text-slate-500 px-1.5 py-0.5 bg-slate-100 rounded">{p.category}</span>}
+                      {p.format_grams && <span className="text-[10px] font-mono text-violet-700 px-1.5 py-0.5 bg-violet-50 rounded">{p.format_grams}</span>}
+                      {p.suggested_month && <span className="text-[10px] text-slate-500">📅 {p.suggested_month}</span>}
+                      {p.estimated_price_pln && <span className="text-[10px] font-bold text-slate-700">💰 {p.estimated_price_pln} PLN</span>}
                     </div>
-                    <button onClick={() => adoptProposal(p)} className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-1.5 bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-[11px] font-semibold shadow-sm">
-                      <Plus className="w-3 h-3" /> Dodaj do pipeline
-                    </button>
+                    <h4 className="text-[15px] font-bold text-slate-900">{p.name}</h4>
+                    <p className="text-[12.5px] text-slate-700 mt-1.5 leading-relaxed">{p.short_pitch}</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11.5px] mt-3">
                     <div className="bg-indigo-50/60 rounded-lg p-2">
@@ -1512,6 +1508,12 @@ export default function LaunchesPage() {
                     </div>
                   </div>
                   {p.risk && <div className="mt-2 text-[11px] text-amber-800 bg-amber-50/60 rounded px-2 py-1.5"><b>⚠ Ryzyko:</b> {p.risk}</div>}
+                  <button
+                    onClick={() => adoptProposal(p)}
+                    className="mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-lg text-[13px] font-semibold shadow-md hover:shadow-lg transition-all"
+                  >
+                    <Plus className="w-4 h-4" /> Dodaj do pipeline launchów
+                  </button>
                 </div>
               ))}
             </div>

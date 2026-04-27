@@ -97,8 +97,57 @@ Zaproponuj DOKŁADNIE ${count} produktów / linii / zestawów które:
    - dlaczego NIE pasuje do innych kanałów (anty-uzasadnienie)
    - jakie ryzyko / co może pójść nie tak
 
-Pisz po polsku. KONKRET, nie ogólniki ("premium herbata na święta" → ŹLE; "Earl Grey Reserve - single origin Sri Lanka, 80g, 89zł, edycja 1500 szt z dec/jan launchem dla VIP D2C" → DOBRZE).
+═══════════════════════════════════════════
+KONKRETNOŚĆ — NIE NEGOCJUJEMY
+═══════════════════════════════════════════
+KAŻDA propozycja MUSI być KONKRETNA. NIE wolno pisać:
+- "premium herbata zimowa" — to nie jest produkt, to kategoria
+- "blend funkcyjny" — co to konkretnie?
+- "matcha o nowym smaku" — JAKI smak, jaki gram, jaka cena
+- "limitowana edycja" — JAKIEJ edycji, ile sztuk, jaka cena, kiedy
 
+DOBRA propozycja MUSI mieć:
+1. NAZWA: konkretna, premium, gotowa na półkę (np. "Earl Grey Royal Reserve" NIE "Premium Earl Grey")
+2. SHORT_PITCH: format + gram + dwie cechy + dla kogo, np. "Single-origin Earl Grey z plantacji Nuwara Eliya (Sri Lanka), 80g w aluminium pouch, esencja bergamotki we Włoszech (NIE syntetyk). Format: 80g loose-leaf. Dla connoiseurów Earl Grey z D2C, którzy szukają czegoś lepszego niż supermarket Twinings."
+3. CATEGORY z listy
+4. ESTIMATED_PRICE_PLN: konkretna kwota (nie zakres)
+5. SUGGESTED_MONTH: YYYY-MM
+6. WHY_THIS_CHANNEL: dlaczego ten klient kanału kupi (z odniesieniem do persony, sytuacji zakupowej)
+7. WHY_NOW: konkretny sygnał (sezon X, luka portfolio Y, sygnał z danych Z, brak konkurenta W)
+8. PORTFOLIO_SYNERGY: które EXISTING produkty z którymi tworzą parę / cross-sell / story arc
+9. WHY_NOT_OTHER_CHANNELS: co dyskwalifikuje z Rossmanna/B2B/Eksport (KONKRET: niche, pricing, format, demand)
+10. RISK: konkretne ryzyko (kanibalizacja produktu X / pricing wyżej niż Y / popyt niepewny bo Z)
+
+DLA D2C SPECIFIC:
+- Klient D2C zna markę, szuka GŁĘBI oferty
+- 4 persony: Tea Connoisseur (29% — single-origin, edukacja), Wellness Daily (35% — abonament, regularne), Gift Giver (25% — zestawy, opakowania), Discount Hunter (25% — flash sales)
+- D2C ma być KURATOROWANY — niedostępny gdzie indziej
+- Format zwykle 50-100g, czasem 25g sample, czasem 200g+ rolne
+- Cena retail premium 39-159zł z reguły, akcesoria 89-289zł
+- Cele 2026: 420tys obrotu (+50%), priorytety: VIP program (506 osób), Iced Tea (lato), 3 segmenty zawodowe (pielęgniarka/student/biuro), Matcha Ritual Box
+
+DLA ROSSMANN PEŁNA:
+- 1820 sklepów, 47% obrotu BHT 2028 = 5.8M
+- 3 nogi: matcha hero (Premium Japan, Lattea, Focus, Crazy Good) + funkcyjne wellness (Hydration, ZERO) + smakowe premium (Strawberry Lemonade, Caramel Pear, Raspberry Rose)
+- Klient: świadomy kupujący, drogeria, kupuje pojedyncze SKU
+- Format STANDARD 50g/100g w aluminium z window
+- Cena ROSSMANN: 19-39zł (NIE premium niche 89zł — to nie ten klient)
+- NIE wchodzi: gyokuro/single-origin (zbyt niche), akcesoria (drogeria nie sprzeda), limited prestige
+
+DLA B2B HoReCa:
+- Klient: kawiarnie specialty, hotele butikowe, sklepy prezentowe
+- Format: kg+ packaging (250g, 500g, 1kg)
+- Cena B2B 60-70% retail
+- Pasuje: Matcha Lattea ZERO, iced lines, premium single-origin, akcesoria pro (chasen, chawan), zestawy prezentowe
+- NIE pasuje: limited single SKU dla konsumenta
+
+DLA EKSPORT DE:
+- Pilotaż 2026, DE = największy specialty tea EU
+- Klient: dystrybutor specialty, sklep online DE
+- Najmocniejsze: Matcha Premium Japan, single-origin (Darjeeling, Assam), polish-origin storytelling
+- Format: paczki w EN+DE labels
+
+═══════════════════════════════════════════
 Wywołaj emit_proposals dokładnie raz.`;
 
     const tools = [{
@@ -115,11 +164,12 @@ Wywołaj emit_proposals dokładnie raz.`;
             description: `${count} propozycji produktów dla tego kanału`,
             items: {
               type: 'object',
-              required: ['name', 'category', 'short_pitch', 'why_this_channel', 'why_now', 'portfolio_synergy', 'why_not_other_channels', 'risk', 'priority', 'estimated_price_pln', 'suggested_month'],
+              required: ['name', 'category', 'short_pitch', 'format_grams', 'why_this_channel', 'why_now', 'portfolio_synergy', 'why_not_other_channels', 'risk', 'priority', 'estimated_price_pln', 'suggested_month'],
               properties: {
-                name: { type: 'string' },
+                name: { type: 'string', description: 'Konkretna, premium nazwa gotowa na półkę. NIE generic ("Premium Matcha"). Konkret ("Matcha Yamamoto Reserve" / "Hydration Hero Iced Lemon").' },
                 category: { type: 'string', description: 'matcha | herbata_owocowa | herbata_czarna | herbata_zielona | cold_brew | akcesoria | herbata_funkcjonalna | zestaw | limitowana_edycja' },
-                short_pitch: { type: 'string', description: '1-2 zdania: co to, dla kogo, czym się wyróżnia. KONKRET (gramatura, smak, pochodzenie).' },
+                short_pitch: { type: 'string', description: 'OBOWIĄZKOWO konkret: nazwa + gram + 1-2 cechy odróżniające + dla kogo. Min 30 słów, max 60. Przykład OK: "Single-origin Sencha Sakura z plantacji Shizuoka, 60g loose leaf w aluminium pouch z handmade label. Subtelne nuty kwiatów wiśni, naturalne (NIE aromat), edycja tylko wiosna 2026 (limit 800 szt). Dla Tea Connoisseur D2C który czeka na sezonowy single-origin." Przykład ZŁY: "Premium herbata wiosenna" (NIC nie znaczy).' },
+                format_grams: { type: 'string', description: 'Konkretny format opakowania, np. "60g loose leaf alu pouch", "100g tin can", "20 sashetek × 2g", "kg blok B2B", "zestaw 3×50g + chasen". Bez tego propozycja jest kompletna jak ulotka reklamowa.' },
                 why_this_channel: { type: 'string', description: 'KLUCZOWE — dlaczego TEN kanał. Klient kanału, format, pricing fit, distribution fit.' },
                 why_now: { type: 'string', description: 'Sezon / luka w pipeline / sygnał z danych / event' },
                 portfolio_synergy: { type: 'string', description: 'Co wzmacnia w obecnym portfolio kanału. Z czym tworzy parę.' },
