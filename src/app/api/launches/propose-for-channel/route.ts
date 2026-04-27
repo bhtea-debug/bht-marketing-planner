@@ -118,10 +118,11 @@ TWOJA ROBOTA
 ═══════════════════════════════════════════
 Zaproponuj DOKŁADNIE ${count} produktów / linii / zestawów. KRYTYCZNY ROZKŁAD:
 
-═══ ROZKŁAD ${count} PROPOZYCJI (TWARDA REGUŁA — NIE łam) ═══
-- MIN 75% (${count >= 4 ? 'minimum 3 z 4' : 'minimum 2 z 3'}) MUSI być **YEAR-ROUND** (stały produkt, sprzedawany 12 miesięcy w roku, re-orderable)
-- MAX 25% (${count >= 4 ? 'max 1 z 4' : 'max 1 z 3'}) może być limitka / zestaw okazjonalny / event-driven
-- Owner BHT preferuje SKALOWALNE: silnik biznesu = stałe SKU, NIE niekończąca się seria limitek
+═══ ZASADA NA TERAZ (TWARDA — NIE łam) ═══
+- 100% propozycji MUSI być YEAR-ROUND. ZERO limitek. ZERO zestawów okazjonalnych.
+- Owner powiedział: "olejmy limitki na ten moment" — fokus na silnik biznesu.
+- Jeśli AI zaproponuje LIMITKĘ / ZESTAW OKAZJONALNY / GIFT BOX / ADVENT / EDYCJĘ POD ŚWIĘTO — propozycja zostanie odrzucona przez user-a.
+- Year-round produkt MOŻE wykorzystać event jako "why_now" (np. "World Tea Day to dobry moment na uruchomienie tego stałego produktu"), ale SAM PRODUKT musi być year-round.
 
 ═══ TYPY YEAR-ROUND PRODUKTÓW (z których MUSISZ wybierać 75% propozycji) ═══
 - **Signature blend stały** — nowy hero produkt na półkę, sprzedaje się każdego dnia
@@ -132,16 +133,17 @@ Zaproponuj DOKŁADNIE ${count} produktów / linii / zestawów. KRYTYCZNY ROZKŁA
 - **Single-origin stały** (BEZ first-flush — second flush, autumnal flush, premium grade)
 - **Functional blend stały** — adaptogen / focus / sleep / immune (pasuje do ringu trends)
 
-═══ CO LICZY SIĘ JAKO LIMITKA/ZESTAW (max 1) ═══
-- Edycja okazjonalna pod święto/event (Dzień Mamy, World Tea Day, advent)
+═══ ZAKAZANE TYPY (zero w propozycjach) ═══
+- Edycja okazjonalna pod święto/event (Dzień Mamy Edition, World Tea Day Edition, Advent)
 - Zestaw prezentowy okolicznościowy
 - Gift box pod konkretną okazję
-- Limited drop pod narrative event (np. współpraca z artystą)
+- Limited drop / współpraca / kolaboracja
+- Ekskluzywne edycje VIP-only
 
 ═══ PRZED finalizacją sprawdź siebie ═══
-1. Policz ile z propozycji to limitki/zestawy. Jeśli >25% → wymień nadmiar na year-round.
-2. Każda propozycja musi mieć w short_pitch wyraźny sygnał czy to year-round czy event-driven.
-3. Field "category" wskazuje "limitowana_edycja" / "zestaw" — TYLKO dla 1 z 4 max.
+1. Czy WSZYSTKIE propozycje są year-round? Jeśli choć jedna jest limitką → WYMIEŃ na year-round.
+2. Każda propozycja w short_pitch ma być oznaczona jako stała (np. "produkt stały w D2C, dostępny 12-msc").
+3. Field "category" NIE ma być "limitowana_edycja" ani "zestaw".
 
 KAŻDA propozycja MUSI:
 1. PASOWAĆ do kanału (klient, format, pricing, dystrybucja, marża)
@@ -325,7 +327,7 @@ Wywołaj emit_proposals dokładnie raz.`;
               required: ['name', 'category', 'short_pitch', 'format_grams', 'why_this_channel', 'why_now', 'portfolio_synergy', 'why_not_other_channels', 'risk', 'priority', 'estimated_price_pln', 'suggested_month'],
               properties: {
                 name: { type: 'string', description: 'Konkretna, premium nazwa gotowa na półkę. NIE generic ("Premium Matcha"). Konkret ("Matcha Yamamoto Reserve" / "Hydration Hero Iced Lemon").' },
-                category: { type: 'string', description: 'matcha | herbata_owocowa | herbata_czarna | herbata_zielona | cold_brew | akcesoria | herbata_funkcjonalna | zestaw | limitowana_edycja' },
+                category: { type: 'string', description: 'matcha | herbata_owocowa | herbata_czarna | herbata_zielona | cold_brew | akcesoria | herbata_funkcjonalna. NIE wybieraj "zestaw" ani "limitowana_edycja" — owner olał limitki na ten moment, każdy produkt musi być year-round.' },
                 short_pitch: { type: 'string', description: 'OBOWIĄZKOWO konkret: nazwa + gram + 1-2 cechy odróżniające + dla kogo. Min 30 słów, max 60. Przykład OK: "Single-origin Sencha Sakura z plantacji Shizuoka, 60g loose leaf w aluminium pouch z handmade label. Subtelne nuty kwiatów wiśni, naturalne (NIE aromat), edycja tylko wiosna 2026 (limit 800 szt). Dla Tea Connoisseur D2C który czeka na sezonowy single-origin." Przykład ZŁY: "Premium herbata wiosenna" (NIC nie znaczy).' },
                 format_grams: { type: 'string', description: 'Konkretny format opakowania, np. "60g loose leaf alu pouch", "100g tin can", "20 sashetek × 2g", "kg blok B2B", "zestaw 3×50g + chasen". Bez tego propozycja jest kompletna jak ulotka reklamowa.' },
                 why_this_channel: { type: 'string', description: 'KLUCZOWE — dlaczego TEN kanał. Klient kanału, format, pricing fit, distribution fit.' },
