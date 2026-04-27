@@ -165,6 +165,27 @@ export default function LaunchesPage() {
   const [hasSavedReview, setHasSavedReview] = useState(false);
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'status'>('date');
   const [channelFilter, setChannelFilter] = useState<string>('all');
+  const [assigningChannels, setAssigningChannels] = useState(false);
+  const [assignResult, setAssignResult] = useState<string | null>(null);
+
+  async function assignChannels(force: boolean = false) {
+    setAssigningChannels(true); setAssignResult(null);
+    try {
+      const r = await fetch('/api/launches/assign-channels', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ force }) });
+      const j = await r.json();
+      if (j.ok) {
+        setAssignResult(`✓ AI przypisała kanały do ${j.processed} launchów`);
+        await load();
+      } else {
+        setAssignResult(`Błąd: ${j.error || 'unknown'}`);
+      }
+    } catch (e: any) {
+      setAssignResult(`Błąd: ${e.message}`);
+    } finally {
+      setAssigningChannels(false);
+      setTimeout(() => setAssignResult(null), 6000);
+    }
+  }
   const [selectedSuggestions, setSelectedSuggestions] = useState<Set<number>>(new Set());
   const [addingSuggestions, setAddingSuggestions] = useState(false);
   const [applyingDate, setApplyingDate] = useState<Record<number, 'applying' | 'refreshing' | 'done' | null>>({});
@@ -563,6 +584,66 @@ export default function LaunchesPage() {
         />
       ) : (
         <>
+        {/* Pipeline po kanałach summary */}
+        <div className="mb-4 bg-white rounded-2xl border border-slate-200/60 shadow-[0_1px_3px_rgba(0,0,0,0.04)] overflow-hidden">
+          <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-slate-100">
+            <div>
+              <h3 className="text-[13px] font-semibold text-slate-900">Pipeline po kanałach sprzedaży</h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">{launches.length} aktywnych launchów</p>
+            </div>
+            <button
+              onClick={() => assignChannels(false)}
+              disabled={assigningChannels}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-br from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-lg text-[11.5px] font-semibold disabled:opacity-50 shadow-sm"
+              title="AI przypisze kanały do launchów które ich nie mają"
+            >
+              {assigningChannels ? '⏳ AI przypisuje (60-90s)...' : '✨ Przypisz kanały AI'}
+            </button>
+          </div>
+          {assignResult && (
+            <div className="px-5 py-2 bg-emerald-50 border-b border-emerald-100 text-[12px] text-emerald-800">{assignResult}</div>
+          )}
+          <div className="p-4">
+            {(() => {
+              const counts: Record<string, number> = {};
+              const unassigned: any[] = [];
+              for (const l of launches) {
+                const ch = getChannels(l);
+                if (ch.length === 0) { unassigned.push(l); continue; }
+                for (const c of ch) counts[c] = (counts[c] || 0) + 1;
+              }
+              const inMarketing = launches.filter((l: any) => {
+                const ch = getChannels(l);
+                if (ch.length === 0) return false;
+                return ch.includes('d2c') || ch.includes('allegro');
+              }).length;
+              return (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="bg-indigo-50/80 rounded-lg p-3 border border-indigo-100">
+                    <div className="text-[10px] uppercase tracking-wider font-bold text-indigo-700">w marketingu</div>
+                    <div className="text-[20px] font-bold text-indigo-900 mt-0.5">{inMarketing}</div>
+                    <div className="text-[10.5px] text-indigo-700/80">D2C / Allegro</div>
+                  </div>
+                  {Object.entries(CHANNEL_LABEL).map(([key, meta]) => (
+                    counts[key] > 0 && (
+                      <div key={key} className="rounded-lg p-3 border" style={{ backgroundColor: `${meta.color}10`, borderColor: `${meta.color}30` }}>
+                        <div className="text-[10px] uppercase tracking-wider font-bold" style={{ color: meta.color }}>{meta.label}</div>
+                        <div className="text-[20px] font-bold mt-0.5" style={{ color: meta.color }}>{counts[key]}</div>
+                      </div>
+                    )
+                  ))}
+                  {unassigned.length > 0 && (
+                    <div className="bg-amber-50/80 rounded-lg p-3 border border-amber-200">
+                      <div className="text-[10px] uppercase tracking-wider font-bold text-amber-800">bez przypisania</div>
+                      <div className="text-[20px] font-bold text-amber-900 mt-0.5">{unassigned.length}</div>
+                      <div className="text-[10.5px] text-amber-700/80">kliknij ✨ powyżej</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
         {(conflicts.length > 0 || undatedList.length > 0) && (
           <div className={`mb-4 rounded-xl border ${conflicts.some((c:any)=>c.severity==='warning') ? 'bg-amber-50 border-amber-200' : 'bg-sky-50 border-sky-200'}`}>
             <button
