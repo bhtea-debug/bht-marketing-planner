@@ -398,19 +398,80 @@ Porównaj swoją nową propozycję z poprzednią i wyraźnie opisz CO SIĘ ZMIEN
       return s;
     }
 
+    // Use tool_use API for robust structured output (no JSON parsing issues)
+    const portfolioTool = {
+      name: 'emit_portfolio_review',
+      description: 'Emit portfolio analysis results',
+      input_schema: {
+        type: 'object',
+        required: ['portfolio_summary', 'year_narrative', 'current_issues', 'proposed_timeline', 'global_recommendations'],
+        properties: {
+          portfolio_summary: { type: 'string' },
+          year_narrative: { type: 'string' },
+          current_issues: { type: 'array', items: { type: 'string' } },
+          proposed_timeline: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['launch_id', 'launch_name', 'current_date', 'proposed_date', 'change', 'order_in_sequence', 'rationale'],
+              properties: {
+                launch_id: { type: 'integer' },
+                launch_name: { type: 'string' },
+                current_date: { type: 'string' },
+                proposed_date: { type: 'string' },
+                change: { type: 'string', enum: ['keep', 'move_earlier', 'move_later', 'new_date'] },
+                order_in_sequence: { type: 'integer' },
+                rationale: { type: 'string' },
+                synergies: { type: 'string' },
+              },
+            },
+          },
+          launch_sequence_rationale: { type: 'string' },
+          global_recommendations: { type: 'array', items: { type: 'string' } },
+          team_load_analysis: { type: 'string' },
+          risks: { type: 'array', items: { type: 'string' } },
+          calendar_gaps: { type: 'array', items: { type: 'string' } },
+          suggested_products: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['name', 'category', 'short_pitch', 'suggested_month', 'priority'],
+              properties: {
+                name: { type: 'string' },
+                category: { type: 'string' },
+                short_pitch: { type: 'string' },
+                suggested_month: { type: 'string' },
+                month_rationale: { type: 'string' },
+                portfolio_fit: { type: 'string' },
+                priority: { type: 'string', enum: ['must_have', 'nice_to_have', 'future'] },
+                estimated_price_range_pln: { type: 'array', items: { type: 'number' } },
+                target_channels: { type: 'array', items: { type: 'string' } },
+                channel_rationale: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    };
+
     const r = await client.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 6000,
+      model: 'claude-sonnet-4-5',
+      max_tokens: 8000,
+      tools: [portfolioTool],
+      tool_choice: { type: 'tool', name: 'emit_portfolio_review' },
       system,
       messages: [{ role: 'user', content: userPrompt }],
     });
-    const text = r.content.filter((b: any) => b.type === 'text').map((b: any) => b.text).join('\n');
-    let parsed: any = null;
-    try {
-      parsed = JSON.parse(extractJson(text));
-    } catch (e: any) {
-      // No retry — return error fast instead of doubling total time
-      return NextResponse.json({ error: 'AI nie zwrócił poprawnego JSON', raw: text.slice(0, 2000) }, { status: 502 });
+    const tu = r.content.find((c: any) => c.type === 'tool_use' && c.name === 'emit_portfolio_review');
+    if (!tu) {
+      return NextResponse.json({ error: 'AI nie zwrócił tool_use', stop: r.stop_reason }, { status: 502 });
+    }
+    let parsed: any = { ...tu.input };
+    // Normalize stringified arrays (Sonnet sometimes does this for complex arrays)
+    for (const key of ['current_issues', 'proposed_timeline', 'global_recommendations', 'risks', 'calendar_gaps', 'suggested_products']) {
+      if (typeof parsed[key] === 'string') {
+        try { parsed[key] = JSON.parse(parsed[key]); } catch {}
+      }
     }
 
     // Save to DB — find existing or create new
