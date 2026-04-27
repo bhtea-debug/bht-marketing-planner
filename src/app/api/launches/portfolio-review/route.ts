@@ -382,10 +382,16 @@ Właściciel dał Ci feedback do poprzedniej analizy. UWZGLĘDNIJ te uwagi w now
     }
 
     if (previousReview && userComments.trim()) {
-      userPrompt += `\n\nPOPRZEDNIA ANALIZA (do porównania):
-${JSON.stringify(previousReview, null, 2)}
-
-Porównaj swoją nową propozycję z poprzednią i wyraźnie opisz CO SIĘ ZMIENIŁO i DLACZEGO.`;
+      // Trim previousReview to essentials — full JSON makes prompt 2x bigger
+      const trimmedPrev = {
+        portfolio_summary: previousReview.portfolio_summary?.slice(0, 500),
+        year_narrative: previousReview.year_narrative?.slice(0, 500),
+        current_issues: previousReview.current_issues?.slice(0, 5),
+        proposed_timeline: (previousReview.proposed_timeline || []).slice(0, 10).map((t: any) => ({
+          launch_id: t.launch_id, launch_name: t.launch_name, proposed_date: t.proposed_date, change: t.change,
+        })),
+      };
+      userPrompt += `\n\nPOPRZEDNIA ANALIZA (skrócona, do porównania):\n${JSON.stringify(trimmedPrev, null, 2)}\n\nPorównaj swoją nową propozycję z poprzednią — wskaż CO ZMIENIŁEŚ i dlaczego na podstawie uwag użytkownika.`;
     }
 
     const client = new Anthropic({ apiKey });
@@ -456,7 +462,7 @@ Porównaj swoją nową propozycję z poprzednią i wyraźnie opisz CO SIĘ ZMIEN
 
     const r = await client.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 8000,
+      max_tokens: 12000,
       tools: [portfolioTool],
       tool_choice: { type: 'tool', name: 'emit_portfolio_review' },
       system,
