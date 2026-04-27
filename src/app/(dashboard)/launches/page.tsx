@@ -1020,6 +1020,25 @@ export default function LaunchesPage() {
                   <p className="text-gray-500">{loadingPortfolio ? 'Ładuję zapisaną analizę...' : 'AI analizuje portfolio launchy...'}</p>
                 </div>
               )}
+              {/* Staleness warning */}
+              {portfolioReview && (() => {
+                const currentActiveCount = launches.filter(l => { const ch = getChannels(l); if (ch.length === 0) return true; return ch.includes('d2c') || ch.includes('allegro'); }).length;
+                const stale = cachedLaunchCount > 0 && Math.abs(currentActiveCount - cachedLaunchCount) > 0;
+                if (!stale) return null;
+                return (
+                  <div className="bg-amber-50 border border-amber-300 rounded-xl p-4 flex items-start gap-3">
+                    <span className="text-amber-600 text-lg flex-shrink-0">⚠</span>
+                    <div className="flex-1">
+                      <div className="text-[13px] font-bold text-amber-900">Pipeline zmienił się od ostatniej analizy</div>
+                      <p className="text-[12px] text-amber-800 mt-0.5">Analiza była uruchomiona dla <b>{cachedLaunchCount}</b> launchów. Teraz w pipeline D2C jest <b>{currentActiveCount}</b>. Wygeneruj świeżą analizę żeby uwzględniała aktualne produkty.</p>
+                      <button onClick={() => runPortfolioReview(false)} className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[12px] font-semibold shadow-sm">
+                        ↻ Wygeneruj świeżą analizę ({currentActiveCount} launchów)
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Summary */}
               {portfolioReview?.portfolio_summary && (
                 <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
