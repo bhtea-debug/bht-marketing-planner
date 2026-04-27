@@ -1,5 +1,5 @@
 // @ts-nocheck
-export const maxDuration = 180;
+export const maxDuration = 300;
 import { NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { db } from '@/db';
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
     const otherStrategySections = allBrain.filter((s: any) => {
       const t = (s.title || '').toLowerCase();
       return /strategia|cele|kpi|finanse|marża|launchów|pipeline|konkurencja|persona|reguły|fundamenty|priorytety/.test(t);
-    }).slice(0, 15);
+    }).slice(0, 8);
 
     // Existing launches (with target_channels)
     const launches = await db.select().from(product_launches);
@@ -94,8 +94,7 @@ export async function POST(req: Request) {
       marketTrends = allTrends
         .filter((t: any) => ['market_polish', 'market_global', 'consumer_behavior', 'competitor_move', 'category_trend'].includes(t.kind) || ['market_polish', 'market_global'].includes(t.platform) || t.kind === 'category_trend')
         .sort((a: any, b: any) => (b.relevance_score || 0) - (a.relevance_score || 0))
-        .slice(0, 12)
-        .map((t: any) => ({ kind: t.kind, platform: t.platform, title: t.title, description: t.description }));
+        .slice(0, 8).map((t: any) => ({ kind: t.kind, platform: t.platform, title: t.title, description: t.description }));
       // Fallback: also pull any high-relevance social trends if no category-specific ones yet
       if (marketTrends.length === 0) {
         marketTrends = allTrends
@@ -324,12 +323,12 @@ Wywołaj emit_proposals dokładnie raz.`;
 ${launchesForThisChannel.length === 0 ? '(brak — kanał pusty, oferta TYLKO z istniejącego katalogu)' : launchesForThisChannel.map((l: any) => '- ' + l.name + (l.category ? ' [' + l.category + ']' : '') + (l.price_pln ? ' (' + l.price_pln + ' PLN)' : '') + (l.short_pitch ? ' — ' + l.short_pitch : '')).join('\n')}
 
 ========== STRATEGIA KANAŁU Z BRAIN (priorytet) ==========
-${channelSections.length === 0 ? '(brak)' : channelSections.slice(0, 8).map((s: any) => '### ' + s.title + '\n' + (s.content || '').slice(0, 1800)).join('\n\n')}
+${channelSections.length === 0 ? '(brak)' : channelSections.slice(0, 5).map((s: any) => '### ' + s.title + '\n' + (s.content || '').slice(0, 1200)).join('\n\n')}
 
 ========== POZOSTAŁA STRATEGIA Z BRAIN (cele, persony, KPI, marże, fundamenty) ==========
-${otherStrategySections.map((s: any) => '### ' + s.title + '\n' + (s.content || '').slice(0, 1500)).join('\n\n')}
+${otherStrategySections.map((s: any) => '### ' + s.title + '\n' + (s.content || '').slice(0, 900)).join('\n\n')}
 
-${knowledge.length > 0 ? '========== WNIOSKI Z PRZESZŁOŚCI (krytyczne — NIE łamać) ==========\n' + knowledge.map((k: any) => '[' + k.category + '] ' + k.content).join('\n') + '\n\n' : ''}${marketTrends.length > 0 ? '========== TRENDY RYNKOWE TEA/WELLNESS (PL + globalnie, ze skanu) ==========\n' + marketTrends.map((t: any) => '[' + t.platform + '/' + t.kind + '] ' + t.title + ' — ' + t.description).join('\n') + '\n\nPropozycje MUSZĄ wpisywać się w te ruchy rynkowe lub świadomie być im przeciwko (anti-trend).\n\n' : ''}${wooCatalog.length > 0 ? '========== AKTUALNY KATALOG SKLEPU WOOCOMMERCE (' + wooCatalog.length + ' produktów) ==========\nNIE proponuj produktów które już istnieją lub są bardzo podobne do tego co masz w katalogu:\n' + wooCatalog.slice(0, 60).map((p: any) => '- ' + p.name + (p.categories?.[0]?.name ? ' [' + p.categories[0].name + ']' : '') + (p.price ? ' (' + p.price + ' zł)' : '')).join('\n') + '\n\nPRZED kazdą propozycją SPRAWDŹ: czy produkt o podobnej nazwie/koncepcie już istnieje? Jeśli TAK — albo zmień koncept na coś INNEGO, albo wytłumacz w portfolio_synergy dlaczego to JEST inny produkt mimo podobieństwa.\n\n' : ''}${brandData ? '========== PROFIL MARKI ==========\n' + JSON.stringify({
+${knowledge.length > 0 ? '========== WNIOSKI Z PRZESZŁOŚCI (krytyczne — NIE łamać) ==========\n' + knowledge.map((k: any) => '[' + k.category + '] ' + k.content).join('\n') + '\n\n' : ''}${marketTrends.length > 0 ? '========== TRENDY RYNKOWE TEA/WELLNESS (PL + globalnie, ze skanu) ==========\n' + marketTrends.map((t: any) => '[' + t.platform + '/' + t.kind + '] ' + t.title + ' — ' + t.description).join('\n') + '\n\nPropozycje MUSZĄ wpisywać się w te ruchy rynkowe lub świadomie być im przeciwko (anti-trend).\n\n' : ''}${wooCatalog.length > 0 ? '========== AKTUALNY KATALOG SKLEPU WOOCOMMERCE (' + wooCatalog.length + ' produktów) ==========\nNIE proponuj produktów które już istnieją lub są bardzo podobne do tego co masz w katalogu:\n' + wooCatalog.slice(0, 35).map((p: any) => '- ' + p.name + (p.categories?.[0]?.name ? ' [' + p.categories[0].name + ']' : '') + (p.price ? ' (' + p.price + ' zł)' : '')).join('\n') + '\n\nPRZED kazdą propozycją SPRAWDŹ: czy produkt o podobnej nazwie/koncepcie już istnieje? Jeśli TAK — albo zmień koncept na coś INNEGO, albo wytłumacz w portfolio_synergy dlaczego to JEST inny produkt mimo podobieństwa.\n\n' : ''}${brandData ? '========== PROFIL MARKI ==========\n' + JSON.stringify({
   brand_voice: brandData.brand_voice,
   visual_mood: brandData.visual_mood,
   target_persona: brandData.target_persona,
@@ -342,7 +341,7 @@ Zaproponuj ${count} produktów dla kanału ${channel}.`;
     const client = new Anthropic({ apiKey });
     const r = await client.messages.create({
       model: 'claude-sonnet-4-5',
-      max_tokens: 8000,
+      max_tokens: 6000,
       tools,
       tool_choice: { type: 'tool', name: 'emit_proposals' },
       system,
