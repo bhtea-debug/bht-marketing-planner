@@ -482,10 +482,19 @@ ZAKRES TEJ CZĘŚCI
 OUTPUT: użyj tool emit_recommendations.
 
 ═══════════════════════════════════════════
-⚠️ KRYTYCZNE: FORMAT TABLIC
+⚠️ KRYTYCZNE: FORMAT TABLIC + KOLEJNOŚĆ
 ═══════════════════════════════════════════
 suggested_products, global_recommendations, risks, calendar_gaps MUSZĄ być rzeczywistymi tablicami JSON, NIE stringami.
-Każda propozycja produktu to osobny obiekt — nie pakuj nic do stringa.`;
+Każda propozycja produktu to osobny obiekt — nie pakuj nic do stringa.
+
+PRIORYTET WYPEŁNIANIA (KAŻDE pole MUSI być wypełnione):
+1. suggested_products (2-5 nowych propozycji) — NAJWAŻNIEJSZE, emituj NAJPIERW
+2. team_load_analysis (1-2 zdania)
+3. risks (3-6 pozycji, krótko)
+4. calendar_gaps (3-6 pozycji, krótko)
+5. global_recommendations (4-8 pozycji, krótko)
+
+Bądź ZWIĘZŁY — krótkie zdania, max 100 znaków na issue/risk/gap/rec. Skup się na konkretach.`;
 
     // Compact analysis context for Call B (no full timeline content, just key facts)
     const compactTimeline = (Array.isArray(analysis.proposed_timeline) ? analysis.proposed_timeline : []).map((t: any) => ({
@@ -551,7 +560,7 @@ KONTEKST UZUPEŁNIAJĄCY:
 
     const rB = await client.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 6000,
+      max_tokens: 8000,
       tools: [recsTool],
       tool_choice: { type: 'tool', name: 'emit_recommendations' },
       system: systemB,
