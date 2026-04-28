@@ -238,32 +238,71 @@ export async function POST(req: NextRequest) {
     }
 
     // ----- Brain strategy (READ-ONLY from nudge-brain via brain_cache) -----
+    // PRIORITIZE sections matching upcoming launch product names — when a launch
+    // is in the marketing window (e.g. Gyokuro Powder), Brain sections about that
+    // product MUST be visible to the AI even if 100+ other sections exist.
     let brainStrategy: any[] = [];
     try {
       const brainSections = await db
         .select()
         .from(brain_cache)
         .where(eq(brain_cache.kind, 'section'));
-      brainStrategy = brainSections
+
+      // Build product keyword set from D2C launches in the marketing window
+      const productKeywords = new Set<string>();
+      for (const l of launches) {
+        const name = (l.name || '').toLowerCase();
+        if (!name) continue;
+        // Split into meaningful tokens (>=4 chars), strip punctuation
+        for (const tok of name.split(/[\s\-—,()/]+/).filter(t => t.length >= 4)) {
+          productKeywords.add(tok.replace(/[^a-zżźćńółęąś0-9]/g, ''));
+        }
+      }
+      // Always-relevant generic product keywords (BHT signature line)
+      // Don't add these — only launch-specific so we don't pollute the boost.
+
+      const all = brainSections
         .map((c: any) => { try { return JSON.parse(c.payload_json); } catch { return null; } })
         .filter(Boolean)
         // EXCLUDE channel-specific personas/sales for OTHER channels — marketing plan is D2C only
         .filter((s: any) => {
           const slug = (s.module_slug || '').toLowerCase();
           const cat = (s.category || '').toLowerCase();
-          // Drop sections explicitly tagged for non-D2C channels
           if (/channel-personas-(rossmann|b2b|export|allegro|other_chains)/.test(slug)) return false;
           if (/channel-personas-(rossmann|b2b|export|allegro|other_chains)/.test(cat)) return false;
           if (/(rossmann|b2b|export)-(personas|sales|portfolio)/.test(slug)) return false;
           return true;
-        })
-        .map((s: any) => ({
-          module: s.module_slug,
-          title: s.title,
-          category: s.category || null,
-          excerpt: typeof s.content === 'string' ? s.content.slice(0, 1500) : '',
-        }))
-        .slice(0, 30);
+        });
+
+      // Score each section: launch-keyword matches in title get +5, in content get +1.
+      // Broad strategy keywords (persona, kpi, finanse, marża, fundamenty, priorytety, brand, misja) get +2.
+      const scored = all.map((s: any) => {
+        const title = (s.title || '').toLowerCase();
+        const content = typeof s.content === 'string' ? s.content.toLowerCase() : '';
+        let score = 0;
+        for (const kw of productKeywords) {
+          if (kw.length < 4) continue;
+          if (title.includes(kw)) score += 5;
+          if (content.includes(kw)) score += 1;
+        }
+        if (/persona|kpi|finanse|marża|fundamenty|priorytety|brand|misja|wizja|d2c|sklep|brownhouseandtea/i.test(title)) score += 2;
+        return { s, score };
+      });
+
+      // Sort by score DESC; ties keep original order
+      scored.sort((a, b) => b.score - a.score);
+
+      // ALWAYS include all sections with score >= 5 (direct launch match in title) + fill to 30
+      const directMatches = scored.filter(x => x.score >= 5).map(x => x.s);
+      const remainder = scored.filter(x => x.score < 5).map(x => x.s);
+      const combined = [...directMatches, ...remainder];
+
+      brainStrategy = combined.slice(0, 30).map((s: any) => ({
+        module: s.module_slug,
+        title: s.title,
+        category: s.category || null,
+        excerpt: typeof s.content === 'string' ? s.content.slice(0, 1500) : '',
+      }));
     } catch (e) {
       console.warn('[plan-context] brain fetch failed', e);
     }
