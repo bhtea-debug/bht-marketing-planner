@@ -102,6 +102,20 @@ export async function POST(req: NextRequest) {
 
     const system = `Pomagasz 2-3 osobowemu zespołowi marketingowemu Brown House & Tea (polska premium herbata + matcha) zaplanować jeden tydzień.
 
+═══════════════════════════════════════════
+ZAKRES: TYLKO SKLEP D2C (brownhouseandtea.pl)
+═══════════════════════════════════════════
+Ten plan to MARKETING SKLEPU INTERNETOWEGO. NIE Allegro, NIE Rossmann, NIE B2B, NIE eksport.
+ZAKAZANE w treści tygodnia:
+- ❌ "klienci Allegro" / "Allegro Smart" / "value for money na Allegro"
+- ❌ "X% obrotu w Rossmannie" / "Rossmann hero" / "drogeria"
+- ❌ "B2B HoReCa" / "kawiarnie" / "hurt"
+- ❌ "eksport DE" / "dystrybutorzy"
+
+WSZYSTKO co mówisz odnosi się do KLIENTA SKLEPU D2C: 4 persony D2C (Tea Connoisseur, Wellness Daily, Gift Giver, Discount Hunter). Persony Rossmann (Magda/Kasia/Ola/Joanna) są dla INNEGO planu — NIE używaj ich tutaj.
+
+Jeśli launch jest też na Allegro / Rossmann / B2B — to jest INFORMACJA o produkcie, NIE część strategii tygodnia. Skup się tylko na "jak to sprzedaje sklep D2C".
+
 REALIA ZESPOŁU:
 - Zespół to maks 3 osoby (designer/grafik, copy/ops, Michał oversight).
 - Każda piękna rzecz wymaga czasu — lepsze 1 perfekcyjnie wykonane niż 5 średnich.

@@ -181,11 +181,12 @@ export async function POST(req: NextRequest) {
         };
       };
       launchesAllChannels = inWindow.map(fmt);
-      // Marketing plan only cares about D2C/Allegro launches.
-      // If target_channels is unset (legacy), assume D2C-eligible for backwards compat.
+      // Marketing plan = TYLKO D2C (sklep brownhouseandtea.pl).
+      // Allegro/Rossmann/B2B/Eksport mają własne pipeline'y poza tym planem.
+      // Legacy launche bez target_channels = traktuj jako D2C-eligible (backwards compat).
       launches = launchesAllChannels.filter((x: any) => {
         if (!x.target_channels || x.target_channels.length === 0) return true;
-        return x.target_channels.includes('d2c') || x.target_channels.includes('allegro');
+        return x.target_channels.includes('d2c');
       });
     } catch {}
 
@@ -246,13 +247,23 @@ export async function POST(req: NextRequest) {
       brainStrategy = brainSections
         .map((c: any) => { try { return JSON.parse(c.payload_json); } catch { return null; } })
         .filter(Boolean)
+        // EXCLUDE channel-specific personas/sales for OTHER channels — marketing plan is D2C only
+        .filter((s: any) => {
+          const slug = (s.module_slug || '').toLowerCase();
+          const cat = (s.category || '').toLowerCase();
+          // Drop sections explicitly tagged for non-D2C channels
+          if (/channel-personas-(rossmann|b2b|export|allegro|other_chains)/.test(slug)) return false;
+          if (/channel-personas-(rossmann|b2b|export|allegro|other_chains)/.test(cat)) return false;
+          if (/(rossmann|b2b|export)-(personas|sales|portfolio)/.test(slug)) return false;
+          return true;
+        })
         .map((s: any) => ({
           module: s.module_slug,
           title: s.title,
           category: s.category || null,
           excerpt: typeof s.content === 'string' ? s.content.slice(0, 1500) : '',
         }))
-        .slice(0, 30); // cap for token budget
+        .slice(0, 30);
     } catch (e) {
       console.warn('[plan-context] brain fetch failed', e);
     }

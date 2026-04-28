@@ -250,9 +250,11 @@ export async function POST(req: NextRequest) {
           const d = l.planned_launch_date || l.ai_suggested_date;
           if (!d) return false;
           if (l.status === 'launched' || l.status === 'cancelled') return false;
+          // D2C-ONLY: marketing plan jest tylko dla sklepu. Allegro/Rossmann/B2B mają własne procesy.
+          let chans: string[] = [];
+          try { chans = l.target_channels ? JSON.parse(l.target_channels) : []; } catch {}
+          if (chans.length > 0 && !chans.includes('d2c')) return false;
           const dd = new Date(d);
-          // launches whose pre-launch window (-14d) overlaps this month or
-          // whose actual date falls in this month
           const preStart = new Date(dd);
           preStart.setUTCDate(dd.getUTCDate() - 14);
           return preStart <= monthEnd && dd >= monthStart;
