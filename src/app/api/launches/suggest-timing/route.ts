@@ -58,20 +58,64 @@ export async function POST(req: NextRequest) {
       brandData = bpRows[0] || null;
     } catch {}
 
-    // Brain channel-strategy sections — channel/product fit knowledge
+    // Brain sections — channel/product fit knowledge
+    // PRIORITY 1: sections matching THIS launch's product keywords (name + short_pitch tokens)
+    // PRIORITY 2: channel/strategy sections (D2C, Rossmann, etc.)
     let channelStrategy: any[] = [];
     try {
       const sec = await db.select().from(brain_cache).where(eq(brain_cache.kind, 'section'));
-      channelStrategy = sec
+      const allBrain = sec
         .map((c: any) => { try { return JSON.parse(c.payload_json); } catch { return null; } })
-        .filter(Boolean)
-        .filter((s: any) => {
-          const t = (s.title || '').toLowerCase();
-          // Pull only sections about channels (definition, strategy per channel, mapping)
-          return /1\.5|kana[lł]|d2c|rossmann|b2b|hurt|horeca|amo'?ya|allegro|pipeline launch|priorytety/.test(t);
-        })
-        .map((s: any) => ({ title: s.title, content: typeof s.content === 'string' ? s.content.slice(0, 1500) : '' }))
-        .slice(0, 12);
+        .filter(Boolean);
+
+      // Build product keyword set from THIS launch
+      const productKeywords = new Set<string>();
+      const tokenize = (str: string) => {
+        return (str || '').toLowerCase()
+          .split(/[\s\-—,()/]+/)
+          .filter(t => t.length >= 4)
+          .map(t => t.replace(/[^a-zżźćńółęąś0-9]/g, ''))
+          .filter(t => t.length >= 4);
+      };
+      for (const tok of tokenize(body.name || '')) productKeywords.add(tok);
+      for (const tok of tokenize(body.short_pitch || '')) productKeywords.add(tok);
+
+      const reChannel = /1\.5|kana[lł]|d2c|rossmann|b2b|hurt|horeca|amo'?ya|allegro|pipeline launch|priorytety/;
+
+      // Score sections: title kw match +5, content kw match +1, channel/strategy kw +2
+      const scored = allBrain.map((s: any) => {
+        const title = (s.title || '').toLowerCase();
+        const content = typeof s.content === 'string' ? s.content.toLowerCase() : '';
+        let score = 0;
+        for (const kw of productKeywords) {
+          if (kw.length < 4) continue;
+          if (title.includes(kw)) score += 5;
+          if (content.includes(kw)) score += 1;
+        }
+        if (reChannel.test(title)) score += 2;
+        return { s, score };
+      });
+
+      // Always include score >= 5 (direct title match) + fill from channel/strategy
+      scored.sort((a, b) => b.score - a.score);
+      const directProductMatch = scored.filter(x => x.score >= 5).map(x => x.s);
+      const channelMatch = scored
+        .filter(x => x.score < 5 && reChannel.test((x.s.title || '').toLowerCase()))
+        .map(x => x.s);
+      const combined: any[] = [];
+      const seen = new Set<string>();
+      for (const s of [...directProductMatch, ...channelMatch]) {
+        const key = (s.module_slug || '') + '::' + (s.title || '');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        combined.push(s);
+        if (combined.length >= 14) break;
+      }
+
+      channelStrategy = combined.map((s: any) => ({
+        title: s.title,
+        content: typeof s.content === 'string' ? s.content.slice(0, 1500) : '',
+      }));
     } catch {}
 
     // Planning knowledge base — accumulated AI insights
