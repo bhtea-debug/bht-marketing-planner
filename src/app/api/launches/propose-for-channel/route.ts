@@ -55,7 +55,15 @@ export async function POST(req: Request) {
     };
 
     const re = channelKeywords[channel];
-    const channelSections = allBrain.filter((s: any) => re.test((s.title || '') + ' ' + (s.content || '').slice(0, 500)));
+    const channelSections = allBrain.filter((s: any) => {
+      const slugMatch = (s.module_slug || '').includes(`channel-personas-${channel}`) ||
+                        (s.module_slug || '').includes(`channel-${channel}`) ||
+                        (s.module_slug || '').includes(`${channel}-personas`) ||
+                        (s.module_slug || '').includes(`${channel}-sales`) ||
+                        (s.module_slug || '').includes(`${channel}-portfolio`);
+      if (slugMatch) return true;
+      return re.test((s.title || '') + ' ' + (s.content || '').slice(0, 800));
+    });
     const otherStrategySections = allBrain.filter((s: any) => {
       const t = (s.title || '').toLowerCase();
       return /strategia|cele|kpi|finanse|marża|launchów|pipeline|konkurencja|persona|reguły|fundamenty|priorytety/.test(t);

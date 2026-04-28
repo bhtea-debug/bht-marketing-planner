@@ -121,10 +121,16 @@ export async function POST(req: NextRequest) {
       other_chains: /spar|intermarche|super-pharm|bio planet|sieci|inne polskie/i,
     };
     const reBrain = channelBrainKeywords[channel] || /./;
-    // Score: channel-relevant sections come first
-    const channelRelevant = allBrainSections.filter((s: any) =>
-      reBrain.test(((s.title || '') + ' ' + (s.content || '').slice(0, 800)))
-    );
+    // Channel-relevant sections: match against module_slug (highest priority), title, and content excerpt
+    const channelRelevant = allBrainSections.filter((s: any) => {
+      const slugMatch = (s.module_slug || '').includes(`channel-personas-${channel}`) ||
+                        (s.module_slug || '').includes(`channel-${channel}`) ||
+                        (s.module_slug || '').includes(`${channel}-personas`) ||
+                        (s.module_slug || '').includes(`${channel}-sales`) ||
+                        (s.module_slug || '').includes(`${channel}-portfolio`);
+      if (slugMatch) return true;
+      return reBrain.test(((s.title || '') + ' ' + (s.content || '').slice(0, 1000)));
+    });
     // Always include broad strategy sections (persona, KPI, finanse, fundamenty, ekspozycja itp.)
     const broadStrategy = allBrainSections.filter((s: any) => {
       const t = (s.title || '').toLowerCase();
