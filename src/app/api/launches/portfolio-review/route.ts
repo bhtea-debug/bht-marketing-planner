@@ -226,7 +226,14 @@ REALIZM OPERACYJNY (twardy):
 
 UWZGLĘDNIJ uwagi właściciela (jeśli są) — to PRIORYTET NAJWYŻSZY.
 
-OUTPUT: użyj tool emit_analysis. Każdy aktywny launch musi być w proposed_timeline.`;
+OUTPUT: użyj tool emit_analysis. Każdy aktywny launch musi być w proposed_timeline.
+
+═══════════════════════════════════════════
+⚠️ KRYTYCZNE: FORMAT TABLIC
+═══════════════════════════════════════════
+proposed_timeline i current_issues MUSZĄ być rzeczywistymi tablicami JSON ([{...}, {...}]), NIE stringami zawierającymi JSON ("[{...}]").
+Każdy obiekt timeline ma osobne pola — nie pakuj nic do stringa.
+Nie owijaj tablic w cudzysłowy. Nie escapuj cudzysłowów wewnątrz pól. Tylko czyste tablice.`;
 
     let userPromptA = `DZIŚ JEST ${todayIso}.
 
@@ -293,7 +300,7 @@ KONTEKST:
 
     const rA = await client.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 6000,
+      max_tokens: 8000,
       tools: [analysisTool],
       tool_choice: { type: 'tool', name: 'emit_analysis' },
       system: systemA,
@@ -304,16 +311,53 @@ KONTEKST:
       return NextResponse.json({ error: 'AI nie zwrócił analizy (Call A)', stop: rA.stop_reason }, { status: 502 });
     }
     let analysis: any = { ...tuA.input };
-    // Normalize stringified arrays
+    // Normalize stringified arrays — multi-strategy parse
+    function parseArrayString(v: string): any[] {
+      if (typeof v !== 'string') return [];
+      // Strategy 1: direct parse
+      try { const p = JSON.parse(v); return Array.isArray(p) ? p : []; } catch {}
+      // Strategy 2: clean trailing commas + single quotes
+      try { const cleaned = v.replace(/,(\s*[\]}])/g, '$1').replace(/'/g, '"'); const p = JSON.parse(cleaned); return Array.isArray(p) ? p : []; } catch {}
+      // Strategy 3: regex extract [..]
+      try { const m = v.match(/\[[\s\S]*\]/); if (m) { const p = JSON.parse(m[0]); return Array.isArray(p) ? p : []; } } catch {}
+      // Strategy 4: progressive truncate-and-close — find each balanced object, build array
+      try {
+        const start = v.indexOf('[');
+        if (start >= 0) {
+          let depth = 0, inStr = false, esc = false, objStart = -1;
+          const items: any[] = [];
+          for (let i = start; i < v.length; i++) {
+            const c = v[i];
+            if (esc) { esc = false; continue; }
+            if (c === '\\') { esc = true; continue; }
+            if (c === '"') { inStr = !inStr; continue; }
+            if (inStr) continue;
+            if (c === '{') { if (depth === 0) objStart = i; depth++; }
+            else if (c === '}') {
+              depth--;
+              if (depth === 0 && objStart >= 0) {
+                const objStr = v.slice(objStart, i + 1);
+                try { items.push(JSON.parse(objStr)); } catch {}
+                objStart = -1;
+              }
+            }
+          }
+          if (items.length) return items;
+        }
+      } catch {}
+      // Strategy 5: try closing unterminated array — append ]
+      try {
+        const fix = v.trim().replace(/,\s*$/, '') + ']';
+        const p = JSON.parse(fix);
+        return Array.isArray(p) ? p : [];
+      } catch {}
+      console.warn('[portfolio-review] ALL parse strategies failed for array (first 200ch):', v.slice(0, 200));
+      return [];
+    }
     const arrayKeysA = ['current_issues', 'proposed_timeline'];
     for (const key of arrayKeysA) {
       const v = analysis[key];
-      if (typeof v === 'string') {
-        try { analysis[key] = JSON.parse(v); continue; } catch {}
-        try { const cleaned = v.replace(/,(\s*[\]}])/g, '$1').replace(/'/g, '"'); analysis[key] = JSON.parse(cleaned); continue; } catch {}
-        try { const m = v.match(/\[[\s\S]*\]/); if (m) { analysis[key] = JSON.parse(m[0]); continue; } } catch {}
-        analysis[key] = [];
-      }
+      if (typeof v === 'string') analysis[key] = parseArrayString(v);
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -358,7 +402,13 @@ ZAKRES TEJ CZĘŚCI
 - calendar_gaps: miesiące bez launchów + czy warto wypełnić
 - suggested_products: 2-5 NOWYCH propozycji z full metadata
 
-OUTPUT: użyj tool emit_recommendations.`;
+OUTPUT: użyj tool emit_recommendations.
+
+═══════════════════════════════════════════
+⚠️ KRYTYCZNE: FORMAT TABLIC
+═══════════════════════════════════════════
+suggested_products, global_recommendations, risks, calendar_gaps MUSZĄ być rzeczywistymi tablicami JSON, NIE stringami.
+Każda propozycja produktu to osobny obiekt — nie pakuj nic do stringa.`;
 
     // Compact analysis context for Call B (no full timeline content, just key facts)
     const compactTimeline = (Array.isArray(analysis.proposed_timeline) ? analysis.proposed_timeline : []).map((t: any) => ({
@@ -424,7 +474,7 @@ KONTEKST UZUPEŁNIAJĄCY:
 
     const rB = await client.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 4000,
+      max_tokens: 6000,
       tools: [recsTool],
       tool_choice: { type: 'tool', name: 'emit_recommendations' },
       system: systemB,
@@ -439,12 +489,7 @@ KONTEKST UZUPEŁNIAJĄCY:
     const arrayKeysB = ['global_recommendations', 'risks', 'calendar_gaps', 'suggested_products'];
     for (const key of arrayKeysB) {
       const v = recs[key];
-      if (typeof v === 'string') {
-        try { recs[key] = JSON.parse(v); continue; } catch {}
-        try { const cleaned = v.replace(/,(\s*[\]}])/g, '$1').replace(/'/g, '"'); recs[key] = JSON.parse(cleaned); continue; } catch {}
-        try { const m = v.match(/\[[\s\S]*\]/); if (m) { recs[key] = JSON.parse(m[0]); continue; } } catch {}
-        recs[key] = [];
-      }
+      if (typeof v === 'string') recs[key] = parseArrayString(v);
     }
 
     // ════════════════════════════════════════════════════════════════
