@@ -102,11 +102,44 @@ export async function POST(req: NextRequest) {
     } catch {}
     let knowledgeEntries: any[] = [];
     try { knowledgeEntries = await db.select().from(planning_knowledge).where(eq(planning_knowledge.active, 1)); } catch {}
-    let brainSections: any[] = [];
+    // Brain — load all sections, then filter by channel relevance
+    let allBrainSections: any[] = [];
     try {
       const cached = await db.select().from(brain_cache).where(eq(brain_cache.kind, 'section'));
-      brainSections = cached.map((c: any) => { try { return JSON.parse(c.payload_json); } catch { return null; } }).filter(Boolean);
+      allBrainSections = cached.map((c: any) => { try { return JSON.parse(c.payload_json); } catch { return null; } }).filter(Boolean);
     } catch {}
+
+    // Channel-specific Brain section keywords (matches against title + content excerpt)
+    const channelBrainKeywords: Record<string, RegExp> = {
+      d2c: /d2c|sklep|brownhouseandtea|persona|priorytety|reguły decyzyjne dla d2c|kpi d2c/i,
+      allegro: /d2c|sklep|allegro|smart|allegro days|black week/i,
+      rossmann_full: /rossmann|drogeria|nogi portfolio|listingowe|window/i,
+      rossmann_test: /rossmann|test|pilot/i,
+      rossmann_amoya: /amo'?ya|private label/i,
+      b2b_premium: /b2b|hurt|horeca|kawiarni|hotel|sklep prezentowy|menu/i,
+      export: /eksport|export|\bDE\b|niemcy|niemc|\bEU\b|dystryb/i,
+      other_chains: /spar|intermarche|super-pharm|bio planet|sieci|inne polskie/i,
+    };
+    const reBrain = channelBrainKeywords[channel] || /./;
+    // Score: channel-relevant sections come first
+    const channelRelevant = allBrainSections.filter((s: any) =>
+      reBrain.test(((s.title || '') + ' ' + (s.content || '').slice(0, 800)))
+    );
+    // Always include broad strategy sections (persona, KPI, finanse, fundamenty, ekspozycja itp.)
+    const broadStrategy = allBrainSections.filter((s: any) => {
+      const t = (s.title || '').toLowerCase();
+      return /strategia|cele|kpi|finanse|marża|pipeline|konkurencja|persona|reguły|fundamenty|priorytety|brain|misja|wizja/.test(t);
+    });
+    // Dedupe: channel-relevant first, then broad strategy not already included
+    const seen = new Set<string>();
+    const brainSections: any[] = [];
+    for (const sec of [...channelRelevant, ...broadStrategy]) {
+      const key = (sec.module_slug || '') + '::' + (sec.title || '');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      brainSections.push(sec);
+      if (brainSections.length >= 14) break;
+    }
     let fullCatalog: any[] = [];
     try { fullCatalog = await getWooProducts().catch(() => []); } catch {}
     let previousReview: any = null;
@@ -172,7 +205,7 @@ export async function POST(req: NextRequest) {
         unique_selling_points: brandData.unique_selling_points,
       } : null,
       knowledgeEntries: knowledgeEntries.slice(0, 8).map(k => ({ category: k.category, content: k.content })),
-      brainStrategy: brainSections.slice(0, 10).map((s: any) => ({
+      brainStrategy: brainSections.slice(0, 14).map((s: any) => ({
         module: s.module_slug,
         title: s.title,
         category: s.category || null,
