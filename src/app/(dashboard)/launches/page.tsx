@@ -243,6 +243,7 @@ export default function LaunchesPage() {
   const [resuggesting, setResuggesting] = useState(false);
   const [applying, setApplying] = useState(false);
   const [portfolioReview, setPortfolioReview] = useState<any>(null);
+  const [reviewChannel, setReviewChannel] = useState<string>('d2c');
   const [reviewingPortfolio, setReviewingPortfolio] = useState(false);
   const [showPortfolioReview, setShowPortfolioReview] = useState(false);
   const [portfolioComments, setPortfolioComments] = useState("");
@@ -503,10 +504,12 @@ export default function LaunchesPage() {
     }
   }
 
-  async function loadSavedReview() {
+  async function loadSavedReview(channel: string = 'd2c') {
     setLoadingPortfolio(true);
+    setPortfolioReview(null);
+    setHasSavedReview(false);
     try {
-      const res = await fetch("/api/launches/portfolio-review");
+      const res = await fetch(`/api/launches/portfolio-review?channel=${encodeURIComponent(channel)}`);
       const json = await res.json();
       if (json.data?.review) {
         setPortfolioReview(json.data.review);
@@ -522,11 +525,10 @@ export default function LaunchesPage() {
     finally { setLoadingPortfolio(false); }
   }
 
-  async function openPortfolioReview() {
+  async function openPortfolioReview(channel: string = 'd2c') {
+    setReviewChannel(channel);
     setShowPortfolioReview(true);
-    if (!portfolioReview) {
-      await loadSavedReview();
-    }
+    await loadSavedReview(channel);
   }
 
   async function runPortfolioReview(withComments?: boolean) {
@@ -537,6 +539,7 @@ export default function LaunchesPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           user_comments: withComments ? portfolioComments : '',
+          channel: reviewChannel,
         }),
       });
       const json = await res.json();
@@ -647,9 +650,9 @@ export default function LaunchesPage() {
     setApplyingAll(false);
   }
 
-  // Check for saved review on mount
+  // Check for saved review on mount (default to D2C)
   useEffect(() => {
-    fetch("/api/launches/portfolio-review").then(r => r.json()).then(json => {
+    fetch("/api/launches/portfolio-review?channel=d2c").then(r => r.json()).then(json => {
       if (json.data?.review) setHasSavedReview(true);
     }).catch(() => {});
   }, []);
@@ -712,7 +715,7 @@ export default function LaunchesPage() {
           <>
             {launches.filter(l => !['launched','cancelled'].includes(l.status)).length >= 2 && (
               <button
-                onClick={openPortfolioReview}
+                onClick={() => openPortfolioReview('d2c')}
                 disabled={reviewingPortfolio || loadingPortfolio}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-50 text-white px-3.5 py-2 rounded-lg text-[12.5px] font-semibold shadow-sm"
               >
@@ -942,6 +945,14 @@ export default function LaunchesPage() {
                         style={{ color: activeColor, borderColor: `${activeColor}40` }}
                       >
                         ✨ Propozycje AI dla {activeTab.label}
+                      </button>
+                      <button
+                        onClick={() => openPortfolioReview(activeTab.key)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-white hover:bg-white border transition-colors"
+                        style={{ color: activeColor, borderColor: `${activeColor}40` }}
+                        title={`Analiza strategiczna portfolio dla kanału ${activeTab.label}`}
+                      >
+                        📊 Analizuj strategię {activeTab.label}
                       </button>
                       {(activeTab.key === 'b2b_premium' || activeTab.key === 'export') && (
                         <span className="text-[10.5px] italic text-slate-500">
@@ -1241,9 +1252,9 @@ export default function LaunchesPage() {
               <div>
                 <h2 className="text-lg font-semibold flex items-center gap-2">
                   <BarChart3 className="w-5 h-5 text-indigo-600" />
-                  Strategia portfolio launchy
+                  Strategia portfolio — kanał: <span className="text-indigo-700">{reviewChannel}</span>
                 </h2>
-                <p className="text-xs text-gray-500 mt-1">AI przeanalizował wszystkie launche razem i proponuje optymalny układ</p>
+                <p className="text-xs text-gray-500 mt-1">AI przeanalizował launche kanału <b>{reviewChannel}</b> i proponuje optymalny układ czasu, ryzyka, rekomendacje, nowe produkty</p>
               </div>
               <button onClick={() => setShowPortfolioReview(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />

@@ -281,10 +281,11 @@ export type PlanningKnowledge = typeof planning_knowledge.$inferSelect;
 // Stores the full review JSON, user comments for re-analysis, and version history.
 export const portfolio_reviews = sqliteTable('portfolio_reviews', {
   id: integer('id').primaryKey({ autoIncrement: true }),
-  review_json: text('review_json').notNull(),         // Full AI review JSON
-  user_comments: text('user_comments'),                // User feedback for next re-analysis
-  launch_count: integer('launch_count').default(0),    // How many launches were analyzed
-  version: integer('version').notNull().default(1),    // Increments on re-analysis
+  review_json: text('review_json').notNull(),
+  user_comments: text('user_comments'),
+  launch_count: integer('launch_count').default(0),
+  version: integer('version').notNull().default(1),
+  channel: text('channel').notNull().default('d2c'),   // Which channel was analyzed (d2c/allegro/rossmann_full/...)
   created_at: text('created_at').notNull().default(sql`CURRENT_TIMESTAMP`),
   updated_at: text('updated_at').notNull().default(sql`CURRENT_TIMESTAMP`),
 });

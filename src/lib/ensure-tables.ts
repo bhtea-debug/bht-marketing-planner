@@ -78,9 +78,14 @@ export async function ensurePortfolioReviews() {
     user_comments TEXT,
     launch_count INTEGER DEFAULT 0,
     version INTEGER NOT NULL DEFAULT 1,
+    channel TEXT NOT NULL DEFAULT 'd2c',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`);
+  // Migration: add channel column to existing tables
+  try {
+    await db.run(sql`ALTER TABLE portfolio_reviews ADD COLUMN channel TEXT NOT NULL DEFAULT 'd2c'`);
+  } catch {}
 }
 
 export async function ensureB2bCampaigns() {
