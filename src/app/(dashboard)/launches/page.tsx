@@ -142,6 +142,93 @@ function SuggestionView({ s }: { s: any }) {
   );
 }
 
+function EditableText({
+  value,
+  onSave,
+  multiline = false,
+  placeholder = 'Kliknij aby dodać…',
+  className = '',
+  inputClassName = '',
+  saving = false,
+  saved = false,
+  rows = 3,
+}: {
+  value: string;
+  onSave: (newValue: string) => void;
+  multiline?: boolean;
+  placeholder?: string;
+  className?: string;
+  inputClassName?: string;
+  saving?: boolean;
+  saved?: boolean;
+  rows?: number;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draftValue, setDraftValue] = useState(value);
+  useEffect(() => { setDraftValue(value); }, [value]);
+
+  const commit = () => {
+    setEditing(false);
+    if (draftValue !== value) onSave(draftValue);
+  };
+  const cancel = () => {
+    setDraftValue(value);
+    setEditing(false);
+  };
+
+  if (editing) {
+    if (multiline) {
+      return (
+        <div onClick={(e) => e.stopPropagation()}>
+          <textarea
+            autoFocus
+            value={draftValue}
+            onChange={(e) => setDraftValue(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') cancel();
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) commit();
+            }}
+            rows={rows}
+            placeholder={placeholder}
+            className={`w-full px-2 py-1.5 rounded-md border-2 border-indigo-300 focus:border-indigo-500 focus:outline-none bg-white text-sm ${inputClassName}`}
+          />
+          <div className="text-[10px] text-gray-400 mt-0.5">⌘/Ctrl+Enter aby zapisać · Esc anuluje</div>
+        </div>
+      );
+    }
+    return (
+      <input
+        autoFocus
+        type="text"
+        value={draftValue}
+        onChange={(e) => setDraftValue(e.target.value)}
+        onBlur={commit}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') cancel();
+          if (e.key === 'Enter') commit();
+        }}
+        onClick={(e) => e.stopPropagation()}
+        placeholder={placeholder}
+        className={`px-2 py-0.5 rounded-md border-2 border-indigo-300 focus:border-indigo-500 focus:outline-none bg-white ${inputClassName}`}
+      />
+    );
+  }
+
+  return (
+    <span
+      onClick={(e) => { e.stopPropagation(); setEditing(true); }}
+      className={`cursor-text hover:bg-indigo-50/60 hover:outline hover:outline-1 hover:outline-indigo-200 rounded px-1 -mx-1 transition-colors group/edit ${className}`}
+      title="Kliknij aby edytować"
+    >
+      {value || <span className="italic text-gray-400">{placeholder}</span>}
+      <span className="opacity-0 group-hover/edit:opacity-50 ml-1 text-[10px]">✎</span>
+      {saving && <Loader2 className="inline-block w-3 h-3 ml-1 animate-spin text-indigo-600" />}
+      {saved && <span className="ml-1 text-emerald-600 text-[10px] font-semibold">✓</span>}
+    </span>
+  );
+}
+
 export default function LaunchesPage() {
   const [launches, setLaunches] = useState<Launch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -849,7 +936,16 @@ export default function LaunchesPage() {
             >
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-1 flex-wrap">
-                  <h3 className="font-semibold text-gray-900">{l.name}</h3>
+                  <h3 className="font-semibold text-gray-900">
+                    <EditableText
+                      value={l.name || ''}
+                      onSave={(v) => patchLaunch(l.id, { name: v })}
+                      placeholder="Nazwa produktu…"
+                      saving={savingField?.id === l.id && savingField.field === 'name'}
+                      saved={savedField?.id === l.id && savedField.field === 'name'}
+                      inputClassName="font-semibold text-gray-900 text-base"
+                    />
+                  </h3>
                   {conflicts.some((c: any) => Array.isArray(c.launch_ids) && c.launch_ids.includes(l.id)) && (
                     <span
                       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200"
@@ -904,7 +1000,18 @@ export default function LaunchesPage() {
                     );
                   })()}
                 </div>
-                {l.short_pitch && <p className="text-sm text-gray-600 mb-2">{l.short_pitch}</p>}
+                <p className="text-sm text-gray-600 mb-2">
+                  <EditableText
+                    value={l.short_pitch || ''}
+                    onSave={(v) => patchLaunch(l.id, { short_pitch: v })}
+                    multiline
+                    rows={2}
+                    placeholder="Krótki pitch (1-2 zdania)…"
+                    saving={savingField?.id === l.id && savingField.field === 'short_pitch'}
+                    saved={savedField?.id === l.id && savedField.field === 'short_pitch'}
+                    inputClassName="text-sm text-gray-700"
+                  />
+                </p>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
                   {/* Inline date editor */}
                   <div className="inline-flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -1399,10 +1506,36 @@ export default function LaunchesPage() {
               </button>
             </div>
             <div className="p-6 space-y-4">
-              {openLaunch.short_pitch && <p className="text-sm text-gray-700">{openLaunch.short_pitch}</p>}
-              {openLaunch.description && (
-                <div className="text-sm text-gray-600 whitespace-pre-wrap">{openLaunch.description}</div>
-              )}
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Krótki pitch</label>
+                <div className="text-sm text-gray-700">
+                  <EditableText
+                    value={openLaunch.short_pitch || ''}
+                    onSave={(v) => { patchLaunch(openLaunch.id, { short_pitch: v }); setOpenLaunch({ ...openLaunch, short_pitch: v }); }}
+                    multiline
+                    rows={2}
+                    placeholder="Kliknij aby dodać krótki pitch…"
+                    saving={savingField?.id === openLaunch.id && savingField.field === 'short_pitch'}
+                    saved={savedField?.id === openLaunch.id && savedField.field === 'short_pitch'}
+                    inputClassName="text-sm text-gray-700"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Pełny opis</label>
+                <div className="text-sm text-gray-600 whitespace-pre-wrap">
+                  <EditableText
+                    value={openLaunch.description || ''}
+                    onSave={(v) => { patchLaunch(openLaunch.id, { description: v }); setOpenLaunch({ ...openLaunch, description: v }); }}
+                    multiline
+                    rows={5}
+                    placeholder="Kliknij aby dodać pełny opis produktu (skład, USP, target, story)…"
+                    saving={savingField?.id === openLaunch.id && savingField.field === 'description'}
+                    saved={savedField?.id === openLaunch.id && savedField.field === 'description'}
+                    inputClassName="text-sm text-gray-700"
+                  />
+                </div>
+              </div>
 
               {openSuggestion ? (
                 <SuggestionView s={openSuggestion} />
