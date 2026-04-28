@@ -890,18 +890,76 @@ export default function LaunchesPage() {
             )}
           </div>
         )}
-        <div className="flex items-center gap-2 mb-2 flex-wrap">
-          <span className="text-xs text-gray-500">Kanał:</span>
-          {([['all', 'Wszystkie'], ['marketing', '🎯 Marketing plan'], ['d2c', 'D2C'], ['allegro', 'Allegro'], ['rossmann_full', 'Rossmann'], ['rossmann_test', 'Rossmann test'], ['rossmann_amoya', 'Amo\'ya'], ['b2b_premium', 'B2B'], ['export', 'Eksport'], ['other_chains', 'Sieci PL']] as const).map(([key, label]) => (
-            <button
-              key={key}
-              onClick={() => setChannelFilter(key)}
-              className={`text-xs px-2 py-1 rounded ${channelFilter === key ? 'bg-indigo-100 text-indigo-700 font-semibold ring-1 ring-indigo-200' : 'text-gray-500 hover:bg-gray-100'}`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        {(() => {
+          const tabs = [
+            { key: 'all', label: 'Wszystkie', emoji: '📋', desc: 'Wszystkie kanały razem (D2C + pozostałe rozdzielone wizualnie).' },
+            { key: 'd2c', label: 'D2C sklep', emoji: '🛍️', desc: 'Główny kanał komunikacyjny BHT. Tu robimy CAŁY plan marketingowy. Sekcja budżetu bierze pod uwagę te launche.', color: '#6366f1' },
+            { key: 'allegro', label: 'Allegro', emoji: '🟠', desc: 'Komplementarny do D2C. Własne propozycje AI; produkty z D2C oznaczone jako "też na Allegro" pojawiają się też tutaj.', color: '#f97316' },
+            { key: 'rossmann_full', label: 'Rossmann full', emoji: '🔴', desc: '1820 sklepów. 2 OKNA listingowe rocznie (wiosna decyzje X-XI / jesień decyzje V; 2026 jesień +1m). Można zaznaczyć "też w sklepie" — wtedy launch pojawi się też w D2C.', color: '#dc2626' },
+            { key: 'rossmann_test', label: 'Rossmann test', emoji: '🟥', desc: 'Test 100-200 sklepów dla nowych SKU przed pełną dystrybucją.', color: '#ef4444' },
+            { key: 'rossmann_amoya', label: "Amo'ya", emoji: '🟫', desc: 'Private label Amo\'ya — wydzielony pipeline.', color: '#a16207' },
+            { key: 'b2b_premium', label: 'B2B Premium', emoji: '🏢', desc: 'Hurt + HoReCa (kawiarnie, hotele, sklepy prezentowe). Można wybierać produkty z DC2 + Allegro + Rossmann test (NIE z Rossmann pełnej dystrybucji).', color: '#0891b2' },
+            { key: 'export', label: 'Eksport DE/EU', emoji: '🌍', desc: 'Dystrybutorzy DE/EU. Można wybierać z D2C + Allegro + Rossmann test (jak B2B).', color: '#7c3aed' },
+            { key: 'other_chains', label: 'Inne sieci PL', emoji: '🛒', desc: 'Spar, Intermarche, Super-Pharm, Bio Planet — noga 2 dywersyfikacji.', color: '#059669' },
+          ] as const;
+          const activeTab = tabs.find(t => t.key === channelFilter) || tabs[0];
+          const activeColor = (activeTab as any).color || '#6366f1';
+          return (
+            <>
+              <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                {tabs.map(t => {
+                  const isActive = channelFilter === t.key;
+                  const tColor = (t as any).color || '#6366f1';
+                  return (
+                    <button
+                      key={t.key}
+                      onClick={() => setChannelFilter(t.key)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all border ${isActive ? 'shadow-sm ring-1' : 'opacity-70 hover:opacity-100'}`}
+                      style={isActive ? { backgroundColor: `${tColor}15`, color: tColor, borderColor: `${tColor}40` } : { backgroundColor: '#f8fafc', color: '#475569', borderColor: '#e2e8f0' }}
+                    >
+                      <span>{t.emoji}</span>
+                      <span>{t.label}</span>
+                      {(() => {
+                        if (t.key === 'all') return <span className="text-[10px] opacity-60">({launches.length})</span>;
+                        const cnt = launches.filter((l: any) => getChannels(l).includes(t.key)).length;
+                        if (cnt > 0) return <span className="text-[10px] opacity-70">({cnt})</span>;
+                        return null;
+                      })()}
+                    </button>
+                  );
+                })}
+              </div>
+              {activeTab.key !== 'all' && (
+                <div className="rounded-lg border p-3 mb-3 text-[12px] flex items-start gap-2.5" style={{ backgroundColor: `${activeColor}08`, borderColor: `${activeColor}25` }}>
+                  <span className="text-[16px] leading-none mt-0.5">{activeTab.emoji}</span>
+                  <div className="flex-1">
+                    <div className="font-bold mb-0.5" style={{ color: activeColor }}>{activeTab.label}</div>
+                    <div className="text-slate-700 leading-relaxed">{activeTab.desc}</div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <button
+                        onClick={() => { setProposeUserPrompt(''); runProposeForChannel(activeTab.key); }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-white hover:bg-white border transition-colors"
+                        style={{ color: activeColor, borderColor: `${activeColor}40` }}
+                      >
+                        ✨ Propozycje AI dla {activeTab.label}
+                      </button>
+                      {(activeTab.key === 'b2b_premium' || activeTab.key === 'export') && (
+                        <span className="text-[10.5px] italic text-slate-500">
+                          💡 Pool źródłowy: produkty z D2C, Allegro, Rossmann test (oznaczone jako dostępne w {activeTab.label})
+                        </span>
+                      )}
+                      {activeTab.key === 'rossmann_full' && (
+                        <span className="text-[10.5px] italic text-slate-500">
+                          📅 AI uwzględnia okna listingowe (wiosna / jesień)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
         <div className="flex items-center gap-2 mb-3">
           <ArrowUpDown className="w-3.5 h-3.5 text-gray-400" />
           <span className="text-xs text-gray-500">Sortuj:</span>
@@ -997,10 +1055,19 @@ export default function LaunchesPage() {
                     {TYPE_LABEL[l.launch_type || "single"]}
                   </span>
                   {l.category && <span className="text-xs text-gray-500">{l.category}</span>}
-                  {/* Channel badges */}
+                  {/* Channel badges — clickable toggles for cross-listing */}
                   {(() => {
                     const channels = getChannels(l);
+                    const allChannelKeys = ['d2c', 'allegro', 'rossmann_full', 'rossmann_test', 'rossmann_amoya', 'b2b_premium', 'export', 'other_chains'];
                     const isMarketingPlan = channels.length === 0 || channels.includes('d2c') || channels.includes('allegro');
+                    // B2B/Eksport need at least one source pool checked (d2c/allegro/rossmann_test)
+                    const hasSourcePool = channels.includes('d2c') || channels.includes('allegro') || channels.includes('rossmann_test');
+                    const toggleChannel = (ch: string, e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      const isOn = channels.includes(ch);
+                      const next = isOn ? channels.filter(c => c !== ch) : [...channels, ch];
+                      patchLaunch(l.id, { target_channels: next });
+                    };
                     return (
                       <>
                         {isMarketingPlan && (
@@ -1008,13 +1075,31 @@ export default function LaunchesPage() {
                             <span className="w-1 h-1 rounded-full bg-indigo-500" /> w marketingu
                           </span>
                         )}
-                        {channels.map((ch) => {
+                        {allChannelKeys.map((ch) => {
                           const meta = CHANNEL_LABEL[ch];
-                          if (!meta) return <span key={ch} className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">{ch}</span>;
+                          if (!meta) return null;
+                          const isOn = channels.includes(ch);
+                          const isPickerChannel = ch === 'b2b_premium' || ch === 'export';
+                          const disabled = isPickerChannel && !hasSourcePool && !isOn;
+                          const baseStyle = isOn
+                            ? { backgroundColor: `${meta.color}15`, color: meta.color, border: `1px solid ${meta.color}40` }
+                            : { backgroundColor: '#f8fafc', color: '#94a3b8', border: '1px dashed #cbd5e1' };
+                          const title = disabled
+                            ? `${meta.label} wymaga zaznaczenia D2C lub Allegro lub Rossmann test (pool źródłowy)`
+                            : (isOn ? `Kliknij aby usunąć z ${meta.label}` : `Kliknij aby dodać do ${meta.label}`);
                           return (
-                            <span key={ch} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold" style={{ backgroundColor: `${meta.color}15`, color: meta.color, border: `1px solid ${meta.color}30` }}>
-                              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: meta.color }} /> {meta.label}
-                            </span>
+                            <button
+                              key={ch}
+                              onClick={(e) => { if (!disabled) toggleChannel(ch, e); }}
+                              disabled={disabled}
+                              title={title}
+                              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold transition-all ${disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}
+                              style={baseStyle}
+                            >
+                              <span className="w-1 h-1 rounded-full" style={{ backgroundColor: isOn ? meta.color : '#cbd5e1' }} />
+                              {!isOn && <span className="opacity-60">+</span>}
+                              {meta.label}
+                            </button>
                           );
                         })}
                       </>
