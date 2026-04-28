@@ -105,6 +105,61 @@ export async function POST(req: Request) {
     } catch {}
 
     const channelDef = CHANNEL_CONTEXT[channel];
+    const todayIso = new Date().toISOString().slice(0, 10);
+
+    // Compute Rossmann listing window context (for rossmann_* channels only)
+    let rossmannWindowBlock = '';
+    if (channel === 'rossmann_full' || channel === 'rossmann_test' || channel === 'rossmann_amoya') {
+      const today = new Date(todayIso);
+      const m = today.getUTCMonth() + 1; // 1-12
+      const y = today.getUTCFullYear();
+      const PL_M = ['','sty','lut','mar','kwi','maj','cze','lip','sie','wrz','paź','lis','gru'];
+      const phaseLines: string[] = [];
+      // Spring window — decisions Oct-Nov of prev year
+      if (m >= 10) {
+        phaseLines.push(`- WIOSNA ${y+1}: jesteś W OKNIE DECYZYJNYM (paź-lis ${y}). Dostawa styczeń ${y+1}. Półki od marca ${y+1}. PRIORYTET — finalizuj propozycje TERAZ.`);
+      } else if (m <= 2) {
+        phaseLines.push(`- WIOSNA ${y}: w fazie produkcji (dostawa styczeń ${y}, półki marzec ${y}). Za późno na nowe propozycje wiosenne. Patrz na jesień.`);
+      } else if (m === 3) {
+        phaseLines.push(`- WIOSNA ${y}: właśnie wystartowała (półki od marca). Już za późno na nowe propozycje wiosenne.`);
+      } else {
+        phaseLines.push(`- WIOSNA ${y+1}: decyzje paź-lis ${y} (za ${10 - m}-${11 - m} mies.). Buduj listę propozycji już teraz.`);
+      }
+      // Autumn window — 2026 has +1 month shift
+      const autumnDecisionMonth = (y === 2026) ? 6 : 5;
+      const autumnShipMonth = (y === 2026) ? 8 : 7;
+      const autumnShelfMonth = (y === 2026) ? 10 : 9;
+      const shiftNote = y === 2026 ? ' (WYJĄTKOWY +1m SHIFT 2026)' : '';
+      if (m < autumnDecisionMonth) {
+        phaseLines.push(`- JESIEŃ ${y}${shiftNote}: decyzje ${PL_M[autumnDecisionMonth]} ${y} (za ${autumnDecisionMonth - m} mies.). Wysyłka II poł. ${PL_M[autumnShipMonth]}, półki od 1.${String(autumnShelfMonth).padStart(2,'0')}.${y}. PRIORYTET — propozycje gotowe DO ${PL_M[autumnDecisionMonth]} ${y}.`);
+      } else if (m === autumnDecisionMonth) {
+        phaseLines.push(`- JESIEŃ ${y}${shiftNote}: WŁAŚNIE TRWAJĄ DECYZJE LISTINGOWE. Propozycje muszą być finalizowane W TYM MIESIĄCU. Wysyłka II poł. ${PL_M[autumnShipMonth]}. Półki od 1.${String(autumnShelfMonth).padStart(2,'0')}.${y}.`);
+      } else if (m < autumnShipMonth) {
+        phaseLines.push(`- JESIEŃ ${y}: decyzje już zapadły (${PL_M[autumnDecisionMonth]} ${y}). W fazie produkcji do wysyłki w II poł. ${PL_M[autumnShipMonth]}. Patrz wiosna ${y+1}.`);
+      }
+      rossmannWindowBlock = `
+
+═══════════════════════════════════════════
+ROSSMANN — KALENDARZ OKIEN LISTINGOWYCH (KRYTYCZNE)
+═══════════════════════════════════════════
+Rossmann ma 2 OKNA listingowe rocznie. KAŻDA propozycja MUSI być przypisana do okna i fitować się w jego deadline'y.
+
+🌸 OKNO WIOSENNE:
+- Decyzje listingowe: PAŹDZIERNIK–LISTOPAD (rok przed wprowadzeniem)
+- Dostawa do Rossmanna: STYCZEŃ
+- Półki: od MARCA
+
+🍂 OKNO JESIENNE:
+- Propozycje/decyzje: MAJ
+- Wysyłka: II POŁOWA LIPCA
+- Półki: od 1 WRZEŚNIA
+- ⚠ 2026 WYJĄTEK: jesienne okno przesuwa się o 1 MIESIĄC do przodu (decyzje czerwiec, wysyłka II połowa sierpnia, półki od 1 października).
+
+📅 DZIŚ: ${todayIso}. Co to oznacza:
+${phaseLines.join('\n')}
+
+KAŻDA propozycja MUSI w 'why_now' wskazać do KTÓREGO OKNA jest kierowana (wiosna ${y+1} / jesień ${y}) i jakie deadline'y musi spełnić.`;
+    }
 
     const system = `Jesteś PORTFOLIO ARCHITECT dla Brown House & Tea, fokus: kanał ${channel.toUpperCase()}.
 
@@ -114,6 +169,7 @@ KANAŁ ${channel.toUpperCase()} — DEFINICJA STRATEGICZNA
 ${channelDef}
 
 ${(channel === 'rossmann_full' || channel === 'rossmann_test' || channel === 'rossmann_amoya' || channel === 'other_chains') ? '⛔ TWARDY ZAKAZ LIMITEK W TYM KANALE — drogeria/sieć fizyczna NIE robi event-driven products. Półka stała = year-round SKU. Jeśli zaproponujesz \'Edycja Dzień Matki\' / \'Zestaw świąteczny\' / \'Limited drop\' / \'Edycja World Tea Day\' — propozycja JEST NIEWAŻNA. Akceptowalne TYLKO stałe SKU które sprzedają się 12 miesięcy.' : ''}
+${rossmannWindowBlock}
 ${channel === 'b2b_premium' ? '⚠ B2B HoReCa preferuje year-round (kawiarnia chce stałego SKU w menu). Max 1 sezonowa linia (np. iced w lato). Bez gift boxów dla B2B HoReCa.' : ''}
 ${channel === 'd2c' || channel === 'allegro' ? '⚠ NA TERAZ (kwiecień 2026): owner powiedział \'olejmy limitki\' — 100% year-round, zero limitek/zestawów okazjonalnych nawet w D2C/Allegro.' : ''}
 ${channel === 'export' ? '⚠ Eksport DE — year-round, klasyka premium herbaty japońskiej (Matcha Premium Japan, single-origin sencha/gyokuro). Bez first-flush, bez limitek.' : ''}

@@ -763,11 +763,21 @@ export default function LaunchesPage() {
                 value=""
                 onChange={(e) => { if (e.target.value) { setProposeUserPrompt(''); runProposeForChannel(e.target.value); } e.target.value = ''; }}
                 className="px-3 py-1.5 text-[11.5px] font-semibold bg-white border border-slate-200 hover:border-indigo-300 rounded-lg cursor-pointer text-slate-700 hover:text-indigo-700"
-                title="AI proponuje produkty SPECYFICZNIE dla D2C / Allegro. Inne kanały (Rossmann, B2B, Eksport) mają własne procesy poza marketing plannerem."
+                title="AI proponuje produkty per kanał. D2C/Allegro = główny plan marketingowy. Pozostałe (Rossmann/B2B/Eksport/Sieci) = OSOBNE pipeline'y."
               >
-                <option value="">✨ Propozycje launchów (D2C/Allegro)…</option>
-                <option value="d2c">D2C sklep brownhouseandtea.pl</option>
-                <option value="allegro">Allegro</option>
+                <option value="">✨ Propozycje launchów per kanał…</option>
+                <optgroup label="🛍️ Plan marketingowy (sklep)">
+                  <option value="d2c">D2C sklep brownhouseandtea.pl</option>
+                  <option value="allegro">Allegro</option>
+                </optgroup>
+                <optgroup label="📦 Pozostałe kanały (osobno)">
+                  <option value="rossmann_full">Rossmann full (1820 sklepów)</option>
+                  <option value="rossmann_test">Rossmann test</option>
+                  <option value="rossmann_amoya">Amo'ya (private label)</option>
+                  <option value="b2b_premium">B2B Premium / HoReCa</option>
+                  <option value="export">Eksport DE/EU</option>
+                  <option value="other_chains">Inne sieci PL (Spar, Intermarche…)</option>
+                </optgroup>
               </select>
               <button
                 onClick={() => assignChannels(false)}
@@ -905,30 +915,41 @@ export default function LaunchesPage() {
             </button>
           ))}
         </div>
-        <div className="grid gap-3">
-          {[...launches]
+        {(() => {
+          const filteredSorted = [...launches]
             .filter((l) => {
               if (channelFilter === 'all') return true;
               if (channelFilter === 'marketing') {
                 const ch = getChannels(l);
-                if (ch.length === 0) return true; // legacy = assume marketing
+                if (ch.length === 0) return true;
                 return ch.includes('d2c') || ch.includes('allegro');
               }
               return getChannels(l).includes(channelFilter);
             })
             .sort((a, b) => {
-            if (sortBy === 'date') {
-              const da = a.planned_launch_date || a.ai_suggested_date || '9999';
-              const db2 = b.planned_launch_date || b.ai_suggested_date || '9999';
-              return da.localeCompare(db2);
-            }
-            if (sortBy === 'name') return a.name.localeCompare(b.name, 'pl');
-            if (sortBy === 'status') {
-              const order: Record<string, number> = { idea: 0, in_development: 1, ready: 2, launched: 3, cancelled: 4 };
-              return (order[a.status] ?? 5) - (order[b.status] ?? 5);
-            }
-            return 0;
-          }).map((l) => (
+              if (sortBy === 'date') {
+                const da = a.planned_launch_date || a.ai_suggested_date || '9999';
+                const db2 = b.planned_launch_date || b.ai_suggested_date || '9999';
+                return da.localeCompare(db2);
+              }
+              if (sortBy === 'name') return a.name.localeCompare(b.name, 'pl');
+              if (sortBy === 'status') {
+                const order: Record<string, number> = { idea: 0, in_development: 1, ready: 2, launched: 3, cancelled: 4 };
+                return (order[a.status] ?? 5) - (order[b.status] ?? 5);
+              }
+              return 0;
+            });
+          // Partition: D2C marketing plan vs other channels (only when not filtered by specific channel)
+          const isMarketingLaunch = (l: any) => {
+            const ch = getChannels(l);
+            if (ch.length === 0) return true; // legacy = assume D2C
+            return ch.includes('d2c') || ch.includes('allegro');
+          };
+          const showSplit = channelFilter === 'all';
+          const marketingList = showSplit ? filteredSorted.filter(isMarketingLaunch) : filteredSorted;
+          const otherList = showSplit ? filteredSorted.filter((l: any) => !isMarketingLaunch(l)) : [];
+
+          const renderCard = (l: any) => (
             <div
               key={l.id}
               onClick={() => openDetail(l)}
@@ -1050,8 +1071,44 @@ export default function LaunchesPage() {
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>
-          ))}
-        </div>
+          );
+          return (
+            <>
+              {showSplit ? (
+                <>
+                  <div className="flex items-center gap-2 mt-1 mb-2">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-indigo-50 border border-indigo-200 text-[11px] font-bold uppercase tracking-wider text-indigo-700">
+                      🛍️ Plan marketingowy — sklep D2C
+                    </span>
+                    <span className="text-[11px] text-slate-500">{marketingList.length} {marketingList.length === 1 ? 'launch' : 'launchów'}</span>
+                  </div>
+                  <div className="grid gap-3">
+                    {marketingList.length === 0 ? (
+                      <div className="text-sm text-slate-400 italic px-3 py-2">Brak launchów w planie marketingowym D2C.</div>
+                    ) : marketingList.map(renderCard)}
+                  </div>
+                  {otherList.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-2 mt-6 mb-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                          📦 Pozostałe kanały — osobne pipeline'y
+                        </span>
+                        <span className="text-[11px] text-slate-500">{otherList.length} {otherList.length === 1 ? 'launch' : 'launchów'} (Rossmann / B2B / Eksport / Sieci)</span>
+                      </div>
+                      <div className="grid gap-3">
+                        {otherList.map(renderCard)}
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : (
+                <div className="grid gap-3">
+                  {filteredSorted.map(renderCard)}
+                </div>
+              )}
+            </>
+          );
+        })()}
         </>
       )}
 
