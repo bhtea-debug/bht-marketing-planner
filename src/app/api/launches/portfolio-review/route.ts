@@ -226,14 +226,13 @@ REALIZM OPERACYJNY (twardy):
 
 UWZGLĘDNIJ uwagi właściciela (jeśli są) — to PRIORYTET NAJWYŻSZY.
 
-OUTPUT: użyj tool emit_analysis. Każdy aktywny launch musi być w proposed_timeline.
+OUTPUT: użyj tool emit_analysis. Zwróć tylko: portfolio_summary (3-5 zdań), year_narrative (2-3 zdania), current_issues (5-8 problemów). Timeline będzie wygenerowany w kolejnym kroku — TUTAJ go nie generuj.
 
 ═══════════════════════════════════════════
 ⚠️ KRYTYCZNE: FORMAT TABLIC
 ═══════════════════════════════════════════
-proposed_timeline i current_issues MUSZĄ być rzeczywistymi tablicami JSON ([{...}, {...}]), NIE stringami zawierającymi JSON ("[{...}]").
-Każdy obiekt timeline ma osobne pola — nie pakuj nic do stringa.
-Nie owijaj tablic w cudzysłowy. Nie escapuj cudzysłowów wewnątrz pól. Tylko czyste tablice.`;
+current_issues MUSI być rzeczywistą tablicą JSON stringów (["issue 1", "issue 2"]), NIE stringiem zawierającym JSON.
+Nie owijaj tablicy w cudzysłowy. Tylko czysta tablica.`;
 
     let userPromptA = `DZIŚ JEST ${todayIso}.
 
@@ -268,39 +267,21 @@ KONTEKST:
 
     const analysisTool = {
       name: 'emit_analysis',
-      description: 'Emit portfolio analysis: summary, narrative, issues, timeline, sequence rationale',
+      description: 'Emit portfolio analysis: summary, narrative, issues',
       input_schema: {
         type: 'object',
-        required: ['portfolio_summary', 'year_narrative', 'current_issues', 'proposed_timeline', 'launch_sequence_rationale'],
+        required: ['portfolio_summary', 'year_narrative', 'current_issues'],
         properties: {
           portfolio_summary: { type: 'string' },
           year_narrative: { type: 'string' },
           current_issues: { type: 'array', items: { type: 'string' } },
-          proposed_timeline: {
-            type: 'array',
-            items: {
-              type: 'object',
-              required: ['launch_id', 'launch_name', 'current_date', 'proposed_date', 'change', 'order_in_sequence', 'rationale'],
-              properties: {
-                launch_id: { type: 'integer' },
-                launch_name: { type: 'string' },
-                current_date: { type: 'string' },
-                proposed_date: { type: 'string' },
-                change: { type: 'string', enum: ['keep', 'move_earlier', 'move_later', 'new_date'] },
-                order_in_sequence: { type: 'integer' },
-                rationale: { type: 'string' },
-                synergies: { type: 'string' },
-              },
-            },
-          },
-          launch_sequence_rationale: { type: 'string' },
         },
       },
     };
 
     const rA = await client.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 8000,
+      max_tokens: 4000,
       tools: [analysisTool],
       tool_choice: { type: 'tool', name: 'emit_analysis' },
       system: systemA,
@@ -354,11 +335,107 @@ KONTEKST:
       console.warn('[portfolio-review] ALL parse strategies failed for array (first 200ch):', v.slice(0, 200));
       return [];
     }
-    const arrayKeysA = ['current_issues', 'proposed_timeline'];
+    const arrayKeysA = ['current_issues'];
     for (const key of arrayKeysA) {
       const v = analysis[key];
       if (typeof v === 'string') analysis[key] = parseArrayString(v);
     }
+
+    // ════════════════════════════════════════════════════════════════
+    // CALL A2 — TIMELINE ONLY (proposed_timeline + launch_sequence_rationale)
+    // Heavy field gets dedicated 8000 tokens just for itself
+    // ════════════════════════════════════════════════════════════════
+    const systemA2 = `Jesteś CHIEF PRODUCT STRATEGIST Brown House & Tea. Otrzymałeś już analizę portfolio (summary, issues). Teraz wykonujesz JEDYNĄ ROBOTĘ: zaproponować OPTYMALNY UKŁAD W CZASIE dla wszystkich aktywnych launchów D2C w sklepie.
+
+KAŻDY z ${activeLaunches.length} aktywnych launchów MUSI być w proposed_timeline.
+
+ZAKRES: TYLKO sklep D2C. Allegro/Rossmann/B2B/Eksport pomijamy.
+
+REGUŁY TIMING'U:
+- MAX 2 launche / miesiąc
+- MIN 21 dni między launchami
+- Ta sama kategoria → min 6 tygodni
+- Lead time: min 2-3 tygodnie od dziś (${todayIso})
+- Nie wciskać launchu w tydzień z dużą kampanią
+
+REALIZM OPERACYJNY:
+- 100% year-round, ZERO limitek
+- Aromaty 95%+ to STANDARD BHT (USP)
+- Single-profession edition = ZAKAZANE
+- First flush wszystkiego = ZAKAZANE
+
+Dla KAŻDEGO launchu:
+- Optymalna data, change (keep|move_earlier|move_later|new_date)
+- Order_in_sequence (1-based)
+- Rationale: dlaczego ta data w kontekście CAŁEGO portfolio (krótko, max 2 zdania)
+- Synergies: co po czym wzmacnia (krótko)
+
+UWZGLĘDNIJ uwagi właściciela jeśli są — to PRIORYTET NAJWYŻSZY.
+
+OUTPUT: użyj tool emit_timeline. proposed_timeline MUSI być rzeczywistą tablicą JSON (array obiektów), NIE stringiem.`;
+
+    const compactIssues = (Array.isArray(analysis.current_issues) ? analysis.current_issues : []).slice(0, 5).join(' | ').slice(0, 800);
+    let userPromptA2 = `DZIŚ JEST ${todayIso}.
+
+AKTYWNE LAUNCHE D2C (${activeLaunches.length} szt — KAŻDA musi być w proposed_timeline):
+${JSON.stringify(activeLaunches.map(l => ({ id: l.id, name: l.name, category: l.category || '?', currentDate: l.planned_launch_date || l.ai_suggested_date || null, status: l.status, price_pln: l.price_pln })), null, 2)}
+
+KONTEKST KRÓTKI:
+- Issues z analizy: ${compactIssues}
+- Święta: ${(holidays || []).slice(0, 6).map((h: any) => h.name + ' ' + h.date).join(', ')}
+- Już wystartowane w roku: ${context.alreadyLaunchedThisYear.length}
+- Brain: ${(context.brainStrategy || []).slice(0, 3).map((s: any) => s.title).join(', ')}`;
+
+    if (userComments.trim()) {
+      userPromptA2 += `\n\nUWAGI WŁAŚCICIELA (PRIORYTET): ${userComments}`;
+    }
+    userPromptA2 += `\n\nZbuduj proposed_timeline + launch_sequence_rationale. Użyj tool emit_timeline.`;
+
+    const timelineTool = {
+      name: 'emit_timeline',
+      description: 'Emit proposed launch timeline + sequence rationale',
+      input_schema: {
+        type: 'object',
+        required: ['proposed_timeline', 'launch_sequence_rationale'],
+        properties: {
+          proposed_timeline: {
+            type: 'array',
+            items: {
+              type: 'object',
+              required: ['launch_id', 'launch_name', 'current_date', 'proposed_date', 'change', 'order_in_sequence', 'rationale'],
+              properties: {
+                launch_id: { type: 'integer' },
+                launch_name: { type: 'string' },
+                current_date: { type: 'string' },
+                proposed_date: { type: 'string' },
+                change: { type: 'string', enum: ['keep', 'move_earlier', 'move_later', 'new_date'] },
+                order_in_sequence: { type: 'integer' },
+                rationale: { type: 'string' },
+                synergies: { type: 'string' },
+              },
+            },
+          },
+          launch_sequence_rationale: { type: 'string' },
+        },
+      },
+    };
+
+    const rA2 = await client.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 8000,
+      tools: [timelineTool],
+      tool_choice: { type: 'tool', name: 'emit_timeline' },
+      system: systemA2,
+      messages: [{ role: 'user', content: userPromptA2 }],
+    });
+    const tuA2 = rA2.content.find((c: any) => c.type === 'tool_use' && c.name === 'emit_timeline');
+    let timelineData: any = tuA2 ? { ...tuA2.input } : { proposed_timeline: [], launch_sequence_rationale: '' };
+    if (typeof timelineData.proposed_timeline === 'string') timelineData.proposed_timeline = parseArrayString(timelineData.proposed_timeline);
+    if (!Array.isArray(timelineData.proposed_timeline)) timelineData.proposed_timeline = [];
+
+    // Merge timeline data into analysis
+    analysis.proposed_timeline = timelineData.proposed_timeline;
+    analysis.launch_sequence_rationale = timelineData.launch_sequence_rationale || '';
 
     // ════════════════════════════════════════════════════════════════
     // CALL B — RECOMMENDATIONS (team_load, global_recs, risks, gaps, suggested_products)
@@ -541,7 +618,7 @@ KONTEKST UZUPEŁNIAJĄCY:
         launchCount: activeLaunches.length,
         version,
         user_comments: userComments,
-        debug: { callA_stop: rA.stop_reason, callB_stop: rB.stop_reason, callB_ok: !!tuB },
+        debug: { callA_stop: rA.stop_reason, callA2_stop: rA2.stop_reason, callA2_ok: !!tuA2, timeline_len: analysis.proposed_timeline?.length, callB_stop: rB.stop_reason, callB_ok: !!tuB },
       },
     });
   } catch (e: any) {
