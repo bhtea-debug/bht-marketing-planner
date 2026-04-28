@@ -292,8 +292,8 @@ KONTEKST:
     };
 
     const rA = await client.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 8000,
+      model: 'claude-haiku-4-5',
+      max_tokens: 6000,
       tools: [analysisTool],
       tool_choice: { type: 'tool', name: 'emit_analysis' },
       system: systemA,
@@ -423,8 +423,8 @@ KONTEKST UZUPEŁNIAJĄCY:
     };
 
     const rB = await client.messages.create({
-      model: 'claude-sonnet-4-5',
-      max_tokens: 6000,
+      model: 'claude-haiku-4-5',
+      max_tokens: 4000,
       tools: [recsTool],
       tool_choice: { type: 'tool', name: 'emit_recommendations' },
       system: systemB,
