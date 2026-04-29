@@ -127,6 +127,89 @@ export default function LaunchPrint() {
         </>
       )}
 
+      {/* Zakres obowiązków zespołu — auto-derived */}
+      <h2>📋 Zakres obowiązków zespołu</h2>
+      <div className="grid-2">
+        <div className="col">
+          <b>Marketing / Brand owner</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            <li>Zatwierdzić finalną datę launchu i pricing.</li>
+            <li>Zatwierdzić tagline / pozycjonowanie strategiczne.</li>
+            {suggestion?.portfolio_analysis?.cannibalization_risk && <li>Monitorować ryzyko kanibalizacji w pierwszych 4-6 tyg po launchu.</li>}
+            {Array.isArray(channels) && channels.length > 1 && <li>Rewizja target_channels — czy lista kanałów jest aktualna.</li>}
+            <li>Ustawić KPI sukcesu launchu (sztuki/dzień, target obrotu).</li>
+          </ul>
+        </div>
+        <div className="col">
+          <b>Copywriter</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            <li>Long-form opis na stronę produktu (na bazie sekcji "Opis produktu").</li>
+            <li>5-10 hooków / taglinów do A/B testowania w reklamach.</li>
+            <li>FAQ (10 pytań) + meta title / description (SEO).</li>
+            <li>Sekwencja 5-8 emaili: pre-launch teaser → launch → post-purchase.</li>
+            {launch.user_notes && <li>Uwzględnić uwagi właściciela: "{launch.user_notes.slice(0, 80)}{launch.user_notes.length > 80 ? '…' : ''}"</li>}
+          </ul>
+        </div>
+        <div className="col">
+          <b>Designer</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            <li>Foto produktu: 4-6 zdjęć (front, scoop, lifestyle, comparison, macro).</li>
+            <li>Hero video 30-60s (proces produkcji + use case).</li>
+            <li>Comparison infographic (vs sąsiadująca kategoria).</li>
+            <li>Brewing / how-to-use infografika (5-step square 1080×1080).</li>
+            <li>Mockupy paczki + opakowanie GWP.</li>
+          </ul>
+        </div>
+        <div className="col">
+          <b>Operacje (WC sklep)</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            <li>Utworzyć produkt w WooCommerce (SKU, kategoria, tagi, schema.org).</li>
+            <li>Skonfigurować pre-sale (jeśli zaplanowany) z osobnym pricing.</li>
+            <li>Sprawdzić stock + ustawić in-stock alert &amp; refill flow.</li>
+            <li>Ustawić cross-sell / up-sell links na stronie produktu.</li>
+            <li>Test order flow (pre-sale + regular checkout) PRZED launchem.</li>
+          </ul>
+        </div>
+        <div className="col">
+          <b>Ads / Meta</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            <li>Kampanie: pre-launch (warm), launch day (broad), post-launch (retarget).</li>
+            <li>Audience: LAL z buyers podobnego SKU + interest tea/wellness PL.</li>
+            <li>Kreatywy: hero video + 3-5 carousel + 2-3 statyki.</li>
+            <li>Budżet zaplanować pod ROAS target — sprawdzić w strategii miesiąca.</li>
+            <li>Custom audience: email list (3k+), retarget /shop visitors 30d.</li>
+          </ul>
+        </div>
+        <div className="col">
+          <b>Content / Mia / Mama</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            <li>TikTok/Reels: face-to-cam storytime "POV: pierwsza w Polsce".</li>
+            <li>BTS unboxing pierwszej paczki + use case.</li>
+            <li>Stitch z viralami matcha / wellness PL z odpowiedzią.</li>
+            <li>IG Live podczas tygodnia launchu (Q&A + parzenie).</li>
+            <li>Email do mailing list: subject lines (5 wariantów).</li>
+          </ul>
+        </div>
+        <div className="col">
+          <b>Influencer / PR</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            <li>Lista 15-25 micro influencerek (3-50k followers, matcha/wellness PL).</li>
+            <li>Wysyłka discovery set 7-10 dni przed launchem.</li>
+            <li>Brief + unikatowe kody rabatowe (jeden per influencer).</li>
+            <li>Tracking publikacji + UGC content library.</li>
+          </ul>
+        </div>
+        <div className="col">
+          <b>Analytics / Reporting</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            <li>Setup tracking: GA4 events + Meta CAPI + email open rates.</li>
+            <li>Dashboard: revenue/dzień, AOV, conversion rate, attribution per kanał.</li>
+            <li>Cotygodniowe raportowanie postępu vs KPI.</li>
+            <li>Po 30 dniach: post-mortem launch (co zadziałało / co nie).</li>
+          </ul>
+        </div>
+      </div>
+
       {launch.ai_suggestion_notes && (
         <div className="footer">{launch.ai_suggestion_notes}</div>
       )}

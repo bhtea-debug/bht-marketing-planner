@@ -127,6 +127,86 @@ export default function WeekPrint() {
         </>
       )}
 
+      {/* Zakres obowiązków zespołu — auto-derived z danych tygodnia */}
+      <h2>📋 Zakres obowiązków zespołu — ten tydzień</h2>
+      <div className="grid-2">
+        <div className="col">
+          <b>Marketing / Brand owner</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            <li>Zatwierdzić motyw tygodnia: <strong>{week.theme || 'theme TBD'}</strong>.</li>
+            {week.weekly_budget_pln && <li>Zatwierdzić budżet: <strong>{week.weekly_budget_pln} PLN</strong>.</li>}
+            {week.promo && week.promo.type && week.promo.type !== 'none' && <li>Zatwierdzić promo: {week.promo.type} {week.promo.value || ''}.</li>}
+            {week.launch_context && <li>Synchronizacja z premierą: {week.launch_context.slice(0, 80)}…</li>}
+            <li>Daily check sprzedaż vs target tygodnia.</li>
+          </ul>
+        </div>
+        <div className="col">
+          <b>Copywriter</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            {Array.isArray(week.channels) && week.channels.map((ch: any, i: number) => (
+              <li key={i}>{ch.platform || ch.channel}: hook + body (gotowy: {ch.creative_hook ? '✓' : '✗'})</li>
+            ))}
+            {(!week.channels || week.channels.length === 0) && <li>Hooki + captions per kanał (TT/IG/Email).</li>}
+            <li>Email subject lines (3-5 wariantów).</li>
+            {Array.isArray(week.hero_products) && week.hero_products.length > 0 && <li>Punktory dla hero produktów: {week.hero_products.map((p: any) => p.name || p).join(', ')}.</li>}
+          </ul>
+        </div>
+        <div className="col">
+          <b>Designer</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            {Array.isArray(week.channels) && week.channels.map((ch: any, i: number) => (
+              <li key={i}>{ch.platform || ch.channel}: kreatywka {ch.format ? `(${ch.format})` : ''}</li>
+            ))}
+            {week.designer_summary && <li><em>Brief: {week.designer_summary.slice(0, 100)}…</em></li>}
+            {(!week.designer_summary && (!week.channels || week.channels.length === 0)) && <li>Hero foto, carousel, statyki ad — formats per kanał.</li>}
+            <li>Email header / hero image.</li>
+          </ul>
+        </div>
+        <div className="col">
+          <b>Operacje (WC sklep)</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            {week.promo && week.promo.type && week.promo.type !== 'none' && (
+              <>
+                <li>Skonfigurować mechanikę promo: <strong>{week.promo.type}</strong> {week.promo.code ? `(kod ${week.promo.code})` : ''}.</li>
+                {week.promo.duration && <li>Aktywacja na czas: {week.promo.duration}.</li>}
+              </>
+            )}
+            {Array.isArray(week.hero_products) && week.hero_products.length > 0 && <li>Sprawdzić stock hero produktów: {week.hero_products.map((p: any) => p.name || p).join(', ')}.</li>}
+            <li>Preview banner sklepu / strona główna.</li>
+            <li>Test koszyk + checkout (jeśli promo aktywne).</li>
+          </ul>
+        </div>
+        <div className="col">
+          <b>Ads / Meta</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            {Array.isArray(week.channels) && week.channels
+              .filter((ch: any) => /meta|fb|ig|instagram|facebook|tiktok|google|ads/i.test(ch.platform || ''))
+              .map((ch: any, i: number) => (
+                <li key={i}>{ch.platform}: budżet {ch.budget_pln || '?'} zł, audience {ch.audience || 'broad'}, cel {ch.objective || '?'}.</li>
+              ))}
+            {(!week.channels || !week.channels.some((c: any) => /meta|fb|ig|tiktok|ads/i.test(c.platform || ''))) && (
+              <li>Setup kampanii Meta (jeśli zaplanowane). Sprawdzić plan miesiąca.</li>
+            )}
+            <li>Daily monitoring CTR + CPC + ROAS.</li>
+            <li>Przelicz budżet jeśli ROAS odbiega od targetu &gt; 30%.</li>
+          </ul>
+        </div>
+        <div className="col">
+          <b>Content / Mia / Mama</b>
+          <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+            {Array.isArray(week.mia_tiktok_variants) && week.mia_tiktok_variants.length > 0 ? (
+              week.mia_tiktok_variants.map((v: any, i: number) => (
+                <li key={i}>Wariant: {v.title || `TT/Reel ${i+1}`}</li>
+              ))
+            ) : (
+              <li>1-2 TikTok/Reels w tygodniu (face-to-cam, BTS, stitch).</li>
+            )}
+            <li>IG Stories codziennie (3-5 slajdów / dzień).</li>
+            <li>Email blast(y) do bazy (subject + body z copywriterem).</li>
+          </ul>
+        </div>
+      </div>
+
       <div className="footer">
         Wydrukowano z BHT Marketing Planner · {new Date().toLocaleDateString('pl-PL', { dateStyle: 'long' })} · plan {draftMeta?.month} · tydzień ISO {week.isoWeek || isoWeek}
       </div>
