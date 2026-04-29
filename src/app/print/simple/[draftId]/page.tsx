@@ -5,19 +5,17 @@ import { useParams } from "next/navigation";
 
 const PL_MONTH = ['','styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
 
-// Mapowanie tygodnia → konkretne reelsy/grafiki/maile/sklep
+// Mapowanie tygodnia → konkretne reelsy/grafiki/karuzele/maile/sklep
 // Generowane semi-statycznie z istniejących danych draftu + planning_knowledge
 function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
   const heroNames = (week.hero_products || []).map((p: any) => p.name || p);
   const heroFirst = heroNames[0] || '';
 
-  // Mapowanie konkretnych reelsów per typ tygodnia (heuristic)
-  // Każdy reel: { tytuł, kto, scena/ujęcie, tekst-do-powiedzenia, tagline-on-screen }
   const w = week.isoWeek || (18 + weekIdx);
   let reels: any[] = [];
   let grafiki: any[] = [];
+  let karuzele: any[] = [];
 
-  // Zwróć z week.mia_tiktok_variants jeśli są, inaczej derive
   if (Array.isArray(week.mia_tiktok_variants) && week.mia_tiktok_variants.length > 0) {
     reels = week.mia_tiktok_variants.slice(0, 3).map((v: any) => ({
       tytul: v.title || 'Reel',
@@ -46,11 +44,26 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
           tagline: '47 paczek przed weekendem',
         },
       ],
+      karuzele: [
+        {
+          tytul: 'Spring Tea — 5 sposobów na majówkę',
+          format: 'IG carousel 6 slajdów (1080×1080)',
+          mood: 'Pastel zielony + cream tło, rustykalny mood, soft natural light, gałązki sosny',
+          slides: [
+            { headline: 'Spring Tea na majówkę', body: '5 sposobów żeby zrobić ją Twoją. Igły sosny + zielona herbata + cytryna. Pachnie jak las po deszczu.', visual: 'Foto Spring Tea w przezroczystym dzbanku, gałązki sosny w tle' },
+            { headline: '1. Cytryna + lód', body: 'Plasterek cytryny + 2 kostki lodu po 4 minutach parzenia. Świeżość bez słodzenia. Klasyk na ciepły dzień na balkonie.', visual: 'Szklanka z lodem, plasterki cytryny, mięta' },
+            { headline: '2. Świeża mięta', body: '3-4 listki mięty wrzuć do ciepłej herbaty. Ostudź, dodaj lód. Idealne na grilla z rodziną — rześkie, bez kalorii.', visual: 'Mięta świeża obok szklanki z herbatą' },
+            { headline: '3. Miód lipowy', body: 'Łyżeczka do ciepłej (nie wrzącej, bo niszczy enzymy) herbaty. Spring Tea + igły sosny + miód = pakiet na zmianę pogody.', visual: 'Łyżeczka miodu nad parującą szklanką' },
+            { headline: '4. Lód + tonic', body: 'Schłodź herbatę, wlej do szklanki z lodem, dolej tonic 50/50. Letni mocktail bez alkoholu — idealne na grilla.', visual: 'Wysoka szklanka z lodem, bąbelki, gałązka rozmarynu' },
+            { headline: 'W sklepie do 4.05', body: 'Spring Tea czeka — pakuj w plecak, parz na balkonie. Link w bio. Wysyłka 24h InPostem do paczkomatu.', visual: 'Foto puszki Spring Tea + CTA "Zamów"' },
+          ],
+        },
+      ],
       grafiki: [
         {
-          format: 'IG carousel 6 slajdów (1080×1080)',
-          opis: 'Slajd 1: foto Spring Tea w przezroczystym dzbanku, tło drewno + zielone gałązki, hasło "Herbata na majówkę". Slajd 2-5: 4 propozycje "co dodać do herbaty na balkonie" (cytryna, miód, świeża mięta, lód). Slajd 6: link do sklepu.',
-          format2: 'Pastel zielony + cream tło, rustykalny mood, soft natural light',
+          format: 'IG Story serial 4-slajdy (1080×1920)',
+          opis: 'Story 1: poranek — kubek z herbatą na parapecie. Story 2: w połowie dnia — szklanka z lodem na balkonie. Story 3: wieczór — herbata + książka. Story 4: CTA "Zamów Spring Tea".',
+          mood: 'Vertical, soft natural light, candid, lifestyle',
         },
       ],
     },
@@ -70,24 +83,39 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
           tekst: 'POV: czytasz Substack o herbacie i widzisz że gyokuro to nowe matcha. A potem zaglądasz do sklepu mamy i okazuje się że za tydzień otwieracie przedsprzedaż TEJ herbaty w Polsce. Jako pierwsi. Halo, mama, dlaczego mi nie powiedziałaś?',
           tagline: 'Pre-sale 12.05 → notify',
         },
+      ],
+      karuzele: [
         {
-          tytul: 'Carousel "Gyokuro vs Matcha — 5 różnic"',
-          kto: 'Static (designer)',
-          ujecie: 'Patrz Grafika nr 1.',
-          tekst: '(brak)',
-          tagline: 'Carousel edukacyjny',
+          tytul: 'Gyokuro vs Matcha — 5 różnic',
+          format: 'IG/TikTok carousel 6 slajdów (1080×1080)',
+          mood: 'Cream tło, deep matcha green akcenty, japońska estetyka, minimalistyczne ikony, czcionka serif na headlines',
+          slides: [
+            { headline: 'Gyokuro vs Matcha — 5 różnic których nikt Ci nie powiedział', body: 'Obie japońskie. Obie zielone. Obie sproszkowane. Ale to NIE to samo. Swipe →', visual: 'Dwie puszki obok siebie: matcha + gyokuro, na cream tle' },
+            { headline: '1. Te same kamienne młyny', body: 'Po zbiorze liście schną, a potem trafiają w te same tradycyjne japońskie kamienne młyny. To dlatego oba mają ten intensywny, świetlisty zielony kolor.', visual: 'Foto kamiennego młyna ishiusu, japońska manufaktura' },
+            { headline: '2. Inny liść = inny smak', body: 'Matcha = liść tencha (delikatny, lekko słodki). Gyokuro = liść gyokuro z nutą umami i głębszym profilem. To ta różnica która dzieli kawiarki na dwa obozy.', visual: 'Dwa liście obok siebie + ikony "tencha" i "gyokuro"' },
+            { headline: '3. Mniej znaczy więcej', body: 'Matcha potrzebuje 2-3g na chawan. Gyokuro Powder — 1.5g wystarczy. Jedna puszka 30g daje 20 porcji. Wystarcza na cały miesiąc codziennego picia.', visual: 'Łyżka miarowa nad chawanem + cyfra "1.5g"' },
+            { headline: '4. Niższa woda, więcej smaku', body: 'Matcha lubi 70-80°C. Gyokuro woli chłodniej — 50-70°C. Niższa temperatura wydobywa umami i unika goryczy. Termometr w kuchni? Tak, dziś.', visual: 'Termometr w wodzie + skala temperatury' },
+            { headline: 'Pre-sale 12 maja 18:00', body: 'Pierwsze 100 puszek po 69 zł zamiast 79. Premiera 19.05. Wysyłka tego samego dnia. Zapisz się na maila → link w bio.', visual: 'Foto puszki BHT Gyokuro + CTA + countdown "12.05 18:00"' },
+          ],
+        },
+        {
+          tytul: 'Skąd pochodzi nasze Gyokuro',
+          format: 'IG carousel 5 slajdów (1080×1080)',
+          mood: 'Stock photo Japan + minimal text overlay, cream tło, deep green',
+          slides: [
+            { headline: 'Hattori, Shizuoka', body: 'Małe gospodarstwo na zboczu góry, 320m n.p.m. Mgła z Pacyfiku, zacieniana plantacja. Tutaj rośnie Twoje gyokuro.', visual: 'Stock photo zacienianej plantacji w Japonii' },
+            { headline: '21 dni w cieniu', body: 'Trzy tygodnie przed zbiorem liście są zacieniane matami. To wymusza większą produkcję chlorofilu i L-teaniny — stąd umami i głęboki kolor.', visual: 'Maty na plantacji, light filtering' },
+            { headline: 'Ręczny zbiór', body: 'Tylko najmłodsze pąki + 2 listki. Po zbiorze blanszowanie parą i suszenie w ciągu 24h żeby zachować enzymy.', visual: 'Ręka zbierająca liście + tradycyjny koszyk' },
+            { headline: 'Mielenie na kamieniu', body: 'Ten sam młyn który robi matchę robi gyokuro. 30g zajmuje 1h pracy młyna. Drobny, jedwabisty proszek.', visual: 'Kamienny młyn w ruchu' },
+            { headline: '100kg w drodze do Polski', body: 'Zamówienie złożyliśmy w listopadzie. 100 kg = 3300 puszek. Pierwsza taka skala bezpośredniego importu Gyokuro Powder w Polsce.', visual: 'Mapa Japonia → Polska + foto puszki BHT' },
+          ],
         },
       ],
       grafiki: [
         {
-          format: 'IG/TikTok carousel 6 slajdów (1080×1080)',
-          opis: 'Slajd 1: tytuł "Gyokuro vs Matcha — 5 różnic". Slajd 2: produkcja (oba mielone w kamiennych młynach). Slajd 3: liście (matcha = tencha, gyokuro = liść Gyokuro z łodyżką → mocniejszy umami). Slajd 4: porcja (matcha 2-3g vs gyokuro 1.5g). Slajd 5: temperatura (70-80°C vs 50-70°C). Slajd 6: CTA "Pre-sale 12.05" + link.',
-          format2: 'Cream tło, deep matcha green akcenty, japońska estetyka, minimalistyczne ikony',
-        },
-        {
           format: 'IG Story 5-slajd serial (1080×1920)',
           opis: 'Story 1: zbliżenie liścia gyokuro. Story 2: zacieniana plantacja Hattori (stock JP). Story 3: kamienne młyny. Story 4: gotowy proszek w chawanie. Story 5: "Pre-sale 12.05 — zapisz się na maila".',
-          format2: 'Vertical, soft light, japoński mood',
+          mood: 'Vertical, soft light, japoński mood',
         },
       ],
     },
@@ -115,16 +143,30 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
           tagline: 'Influencer seeding 14-15.05',
         },
       ],
+      karuzele: [
+        {
+          tytul: 'Jak parzyć Gyokuro Powder — 4 kroki',
+          format: 'IG carousel 5 slajdów (1080×1080)',
+          mood: 'Cream tło, kroki 1-2-3-4, foto produktu na każdym slajdzie',
+          slides: [
+            { headline: 'Jak parzyć Gyokuro Powder', body: '4 kroki, 90 sekund, 1 chawan. Przepis który dostajesz w pudełku, ale tutaj raz jeszcze — bo warto.', visual: 'Foto pełnego chawanu zielonej piany na cream tle' },
+            { headline: 'Krok 1: 1.5g proszku', body: 'Łyżka miarowa BHT (jest w pudełku) lub czubata pół-łyżeczka. Mniej niż matcha, ale dużo bardziej skoncentrowane w smaku.', visual: 'Łyżka miarowa nad chawanem' },
+            { headline: 'Krok 2: 60ml wody 60°C', body: 'Termometr lub gotowanie + 4 minuty czekania. Niższa temperatura = więcej umami, mniej goryczy. To NIE to samo co matcha.', visual: 'Termometr + woda nad chawanem' },
+            { headline: 'Krok 3: Ubij chasenem', body: '15-20 sekund w "M" zigzag. Piana lekka, kremowa, jasnozielona. Jeśli nie masz chasenu — w naszym Premium Gift jest.', visual: 'Ręka z chasenem nad chawanem, piana się tworzy' },
+            { headline: 'Krok 4: Pij od razu', body: 'Pij małymi łykami przez 2-3 minuty. Bez cukru, bez mleka — gyokuro to inny rytuał niż matcha latte. Premiera 19.05 — link w bio.', visual: 'Pełen chawan + napis "Premiera 19.05"' },
+          ],
+        },
+      ],
       grafiki: [
         {
           format: 'Email hero (600×300)',
           opis: 'Foto puszki BHT Gyokuro Powder 30g, na cream tle, obok zielona piana w chawanie po ubiciu. Subject: "🍵 Pre-sale Gyokuro Powder otwarty (-13% first 100 puszek)". CTA "Zamów teraz".',
-          format2: 'Email-friendly, minimal text, focus na produkt',
+          mood: 'Email-friendly, minimal text, focus na produkt',
         },
         {
           format: 'IG Story countdown 7-dni (1080×1920)',
           opis: '7 storiek codziennie 12-18.05: każda z licznikiem "Pre-sale -7d", "-6d"... + cytat z Mamy/influencerek. Cream tło, zielony akcent.',
-          format2: 'Vertical, urgency mood',
+          mood: 'Vertical, urgency mood',
         },
       ],
     },
@@ -150,6 +192,21 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
           ujecie: 'Kuchnia, dwa chawan, dwa zestawy. Mama parzy, Mia komentuje.',
           tekst: 'Scenariusz Q&A: jak parzyć / jaka temperatura / vs matcha / czy mogę pić wieczorem / dla kogo. Plus link do sklepu w opisie.',
           tagline: '21.05 11:00 IG Live',
+        },
+      ],
+      karuzele: [
+        {
+          tytul: 'Twoje 3 paki na Dzień Herbaty (2+1)',
+          format: 'IG carousel 6 slajdów (1080×1080)',
+          mood: 'Kolorowe, każdy slajd inna paleta zgodnie z heroes, czytelne ceny',
+          slides: [
+            { headline: 'Dzień Herbaty 21 maja', body: '2+1 najtańsza GRATIS na cały katalog. Wybierz 3 dowolne, najtańsza schodzi z koszyka. Aktywne 21-25.05 23:59.', visual: 'Foto 3 puszek różnych kolorów, układ trójkąt' },
+            { headline: 'Pak "Matcha codziennie"', body: 'Matcha Lattea + Matcha Crazy Good + Matcha Strawberry Lemonade. Wartość 180 zł — płacisz 130. Strawberry najtańsza idzie GRATIS.', visual: 'Trzy puszki matcha + cena przekreślona 180 → 130' },
+            { headline: 'Pak "Owocowo na lato"', body: 'Strawberry Lemonade + Caramel Pear + Mojito Tea. Wartość 145 zł — płacisz 100. Mojito najtańsze GRATIS.', visual: 'Trzy puszki owocowe + cena 145 → 100' },
+            { headline: 'Pak "Pierwsze gyokuro"', body: 'Gyokuro Powder + Matcha Lattea + Spring Tea. Wartość 195 zł — płacisz 140. Spring Tea najtańsza GRATIS — premium tester.', visual: 'Trzy puszki + Gyokuro w środku + cena 195 → 140' },
+            { headline: 'Pak "Prezent dla mamy"', body: 'Gyokuro + Lattea + Caramel Pear. Wartość 200 zł — płacisz 145. Pakowanie prezentowe za darmo do każdego pakietu Mother\'s Day.', visual: 'Trzy puszki ze wstążką + cena 200 → 145' },
+            { headline: 'Wybierz swoje 3', body: 'Cały katalog dostępny — nie ma wykluczeń. Aktywne 5 dni do 25.05 23:59. Po przeklik linka kod aktywuje się sam. Link w bio.', visual: 'Smartfon ze sklepem BHT + CTA "Zacznij koszyk"' },
+          ],
         },
       ],
       grafiki: [
@@ -184,6 +241,20 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
           tagline: '⏳ 25.05 do 23:59 ostatnie godziny 2+1',
         },
       ],
+      karuzele: [
+        {
+          tytul: 'Premium Gift dla Mamy — co w środku',
+          format: 'IG carousel 5 slajdów (1080×1080)',
+          mood: 'Pastel pink + cream + deep green, rustykalne, kwiaty wiśni w tle',
+          slides: [
+            { headline: 'Premium Gift dla Mamy', body: 'Mama która zna matchę zasługuje na coś więcej. Bundle 250 zł — w środku trzy rzeczy które uczynią jej poranki lepszymi.', visual: 'Bundle BHT na drewnianym blacie, wstążka, kwiat wiśni' },
+            { headline: '1. Gyokuro Powder 30g', body: 'Pierwsza taka w Polsce. Łagodniejsza od matchy, bardziej umami, niższa kofeina (~30mg/szklanka). Idealne dla mamy która chce spokojnego rytuału.', visual: 'Puszka Gyokuro + chawan' },
+            { headline: '2. Matcha Lattea 50g', body: 'Klasyk BHT — matcha gotowa do latte z mlekiem owsianym. Mama która już zna matchę — pije to codziennie. Sprawdzone.', visual: 'Puszka Matcha Lattea + szklanka latte' },
+            { headline: '3. Chasen bambusowy', body: 'Tradycyjny japoński trzepaczek. Bez niego matcha jest "płaska". Mama nauczy się ubijać w 5 minut, używać będzie codziennie.', visual: 'Chasen na białym blacie, zbliżenie' },
+            { headline: 'Pakowanie + kartka', body: 'Bezpłatne pakowanie prezentowe + kartka z Twoim tekstem. Zamów do 24.05 wieczorem — InPost dostarczy do paczkomatu na czas Dnia Matki 26.05.', visual: 'Pełne pakowanie ze wstążką + ręka z kartką' },
+          ],
+        },
+      ],
       grafiki: [
         {
           format: 'Email hero Premium Gift (600×300)',
@@ -201,9 +272,10 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
     },
   };
 
-  const wkData = concreteByWeek[w] || { reels: [], grafiki: [] };
-  if (reels.length === 0) reels = wkData.reels;
+  const wkData = concreteByWeek[w] || { reels: [], grafiki: [], karuzele: [] };
+  if (reels.length === 0) reels = wkData.reels || [];
   grafiki = wkData.grafiki || [];
+  karuzele = wkData.karuzele || [];
 
   // Maile pasujące do tygodnia
   const weekStart = week._startDay || (week.start_date ? parseInt(week.start_date.slice(8)) : 1);
@@ -216,7 +288,7 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
   // Promo
   const promo = (week.promo && week.promo.type && week.promo.type !== 'none') ? week.promo : null;
 
-  return { reels, grafiki, maile, sklepZadania, promo };
+  return { reels, grafiki, karuzele, maile, sklepZadania, promo };
 }
 
 export default function SimplePlan() {
@@ -277,6 +349,8 @@ export default function SimplePlan() {
           body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
           .week-section { page-break-before: always; }
           .week-section:first-of-type { page-break-before: auto; }
+          .karuzela-card { break-inside: avoid; }
+          .slide-card { break-inside: avoid; }
         }
       `}</style>
       <div className="no-print" style={{ marginBottom: 16, display: 'flex', gap: 8, paddingBottom: 12, borderBottom: '1px solid #e2e8f0' }}>
@@ -286,7 +360,7 @@ export default function SimplePlan() {
       </div>
 
       <h1 style={{ fontSize: 28, fontWeight: 700, color: '#1e293b', margin: '0 0 8px', fontFamily: 'Georgia, serif' }}>Prosty plan na {PL_MONTH[m]} {y}</h1>
-      <p style={{ fontSize: 14, color: '#64748b', margin: '0 0 24px' }}>Cel: <strong style={{ color: '#dc2626' }}>70 000 zł netto</strong>. Per tydzień: o czym, co nagrać, co zaprojektować, co wysłać, co w sklepie.</p>
+      <p style={{ fontSize: 14, color: '#64748b', margin: '0 0 24px' }}>Cel: <strong style={{ color: '#dc2626' }}>70 000 zł netto</strong>. Per tydzień: o czym, co nagrać, co zaprojektować, co napisać, co wysłać, co w sklepie.</p>
 
       {weeks.map((week: any, i: number) => {
         const w = week.isoWeek || (18 + i);
@@ -339,15 +413,41 @@ export default function SimplePlan() {
               </div>
             )}
 
-            {/* Grafiki */}
+            {/* Karuzele — z copy per slajd */}
+            {c.karuzele.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <h3 style={{ fontSize: 14, color: accent, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 }}>🎠 Karuzele z copy ({c.karuzele.length})</h3>
+                {c.karuzele.map((k: any, ki: number) => (
+                  <div key={ki} className="karuzela-card" style={{ background: '#fff7ed', border: '1px solid #fdba74', borderRadius: 8, padding: 12, marginBottom: 12, fontSize: 13 }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#9a3412' }}>{ki + 1}. {k.tytul}</div>
+                    <div style={{ fontSize: 11, color: '#9a3412', marginTop: 2, fontStyle: 'italic' }}>{k.format}</div>
+                    {k.mood && <div style={{ fontSize: 11, color: '#c2410c', marginTop: 2, fontStyle: 'italic' }}>Mood: {k.mood}</div>}
+                    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {(k.slides || []).map((s: any, si: number) => (
+                        <div key={si} className="slide-card" style={{ background: '#fff', border: '1px solid #fed7aa', borderRadius: 6, padding: 10, display: 'grid', gridTemplateColumns: '32px 1fr', gap: 10 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#fb923c', color: '#fff', fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{si + 1}</div>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 13, color: '#7c2d12', lineHeight: 1.3 }}>📝 {s.headline}</div>
+                            <div style={{ marginTop: 4, fontSize: 12, color: '#1e293b', lineHeight: 1.5, background: '#fef3c7', padding: '4px 8px', borderRadius: 3 }}>{s.body}</div>
+                            {s.visual && <div style={{ marginTop: 4, fontSize: 11, color: '#9a3412', fontStyle: 'italic' }}>🖼 Wizual: {s.visual}</div>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Grafiki (statyki, story, banery) */}
             {c.grafiki.length > 0 && (
               <div style={{ marginBottom: 16 }}>
-                <h3 style={{ fontSize: 14, color: accent, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 }}>🎨 Grafiki ({c.grafiki.length})</h3>
+                <h3 style={{ fontSize: 14, color: accent, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 }}>🎨 Grafiki / statyki ({c.grafiki.length})</h3>
                 {c.grafiki.map((g: any, gi: number) => (
                   <div key={gi} style={{ background: '#fefce8', border: '1px solid #fde68a', borderRadius: 8, padding: 12, marginBottom: 8, fontSize: 13 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, color: '#92400e' }}>{gi + 1}. {g.format}</div>
                     <div style={{ marginTop: 6, color: '#78350f' }}>{g.opis}</div>
-                    {g.format2 && <div style={{ marginTop: 4, fontSize: 11, color: '#a16207', fontStyle: 'italic' }}>Mood: {g.format2}</div>}
+                    {g.mood && <div style={{ marginTop: 4, fontSize: 11, color: '#a16207', fontStyle: 'italic' }}>Mood: {g.mood}</div>}
                   </div>
                 ))}
               </div>
