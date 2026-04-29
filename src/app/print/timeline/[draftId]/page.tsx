@@ -140,7 +140,7 @@ export default function TimelinePrint() {
   //  Promo mechanism (kupon WC / 2+1): -2 dni
   //  Bundle product (Mother's Day): -5 dni
   //  Influencer seeding (wysyłka paczek): -7 dni przed publikacjami
-  type Dl = { day: number; role: string; what: string; emoji: string; color: string };
+  type Dl = { day: number; role: string; what: string; emoji: string; color: string; publish?: string };
   const deadlines: Dl[] = [];
 
   // Z emailDays — newsletter -1 dzień (zatwierdzenie + harmonogram wysyłki)
@@ -148,50 +148,63 @@ export default function TimelinePrint() {
     if (e.day - 1 >= 1) deadlines.push({
       day: e.day - 1,
       role: 'Tekst',
-      what: `${e.label} (${String(e.day).padStart(2,'0')}.${String(m).padStart(2,'0')} ${e.time}) — newsletter w mailing-tool: subject "${e.subject?.slice(0, 60)}", body, segment, harmonogram wysyłki`,
+      what: `${e.label} — newsletter w mailing-tool: subject "${e.subject?.slice(0, 60)}", body, segment, harmonogram wysyłki`,
       emoji: '✉️',
       color: '#0891b2',
+      publish: `${String(e.day).padStart(2,'0')}.${String(m).padStart(2,'0')} ${e.time}`,
     });
   }
 
   // Pre-sale Gyokuro 12.05 — landing/produkt + email + carousel gotowe -2
   if (m === 5 && y === 2026) {
-    deadlines.push({ day: 10, role: 'Sklep', what: 'Pre-sale Gyokuro: produkt w WC + cena 69 zł first 100 + landing gotowe', emoji: '🛒', color: '#7c3aed' });
-    deadlines.push({ day: 10, role: 'Grafika', what: 'Carousel "Gyokuro vs Matcha 5 różnic" gotowy do publikacji 11.05', emoji: '🎨', color: '#ec4899' });
-    deadlines.push({ day: 11, role: 'Tekst', what: 'Email #2 "Pre-sale 12.05 + 69 zł first 100" gotowy', emoji: '✉️', color: '#0891b2' });
+    deadlines.push({ day: 10, role: 'Sklep', what: 'Pre-sale Gyokuro: produkt w WC + cena 69 zł first 100 + landing gotowe', emoji: '🛒', color: '#7c3aed', publish: '12.05 18:00 (start pre-sale)' });
+    deadlines.push({ day: 10, role: 'Grafika', what: 'Carousel "Gyokuro vs Matcha 5 różnic" — IG/TikTok', emoji: '🎨', color: '#ec4899', publish: '11.05 IG/TikTok' });
+    deadlines.push({ day: 11, role: 'Tekst', what: 'Email #2 "Pre-sale 12.05 + 69 zł first 100" gotowy', emoji: '✉️', color: '#0891b2', publish: '12.05 18:00 (E2)' });
 
     // Influencer seeding 14-15.05 — brief + paczki gotowe -7 = 7-8.05
-    deadlines.push({ day: 8, role: 'Decyzje', what: 'Lista 20 influencerek + briefy + 20 unikalnych kodów rabatowych w WC', emoji: '📋', color: '#f59e0b' });
-    deadlines.push({ day: 13, role: 'Sklep', what: 'Spakowanie 20 paczek "Gyokuro Discovery Set" (Gyokuro + chasen) + InPost paczkomaty', emoji: '📦', color: '#06b6d4' });
+    deadlines.push({ day: 8, role: 'Decyzje', what: 'Lista 20 influencerek + briefy + 20 unikalnych kodów rabatowych w WC', emoji: '📋', color: '#f59e0b', publish: '14-15.05 (wysyłka paczek)' });
+    deadlines.push({ day: 13, role: 'Sklep', what: 'Spakowanie 20 paczek "Gyokuro Discovery Set" (Gyokuro + chasen)', emoji: '📦', color: '#06b6d4', publish: '14-15.05 (InPost wysyłka)' });
 
     // Launch Gyokuro 19.05 — kreatywki -2 (do 17.05) + LP -3 (do 16.05) + ads -2
-    deadlines.push({ day: 16, role: 'Grafika', what: 'Hero video Mama unboxing Gyokuro (60s vertical) + 3 statyki ad gotowe', emoji: '🎬', color: '#ec4899' });
-    deadlines.push({ day: 17, role: 'Sklep', what: 'Strona produktu Gyokuro Powder w WC: status pre-sale → in-stock 19.05', emoji: '🛒', color: '#7c3aed' });
-    deadlines.push({ day: 17, role: 'Reklamy', what: 'Kampania Meta WTD week setup (LAL + retarget): kreatywki + audiences + budżet 1500/dzień', emoji: '📱', color: '#3b82f6' });
-    deadlines.push({ day: 18, role: 'Tekst', what: 'Email #4 "Launch Gyokuro" gotowy + email #5 "WTD 21.05 + 2+1" zaplanowane', emoji: '✉️', color: '#0891b2' });
+    deadlines.push({ day: 16, role: 'Grafika', what: 'Hero video Mama unboxing Gyokuro (60s vertical) + 3 statyki ad', emoji: '🎬', color: '#ec4899', publish: '19.05 (launch day) IG/TT/ad' });
+    deadlines.push({ day: 17, role: 'Sklep', what: 'Strona produktu Gyokuro w WC: status pre-sale → in-stock', emoji: '🛒', color: '#7c3aed', publish: '19.05 (status switch)' });
+    deadlines.push({ day: 17, role: 'Reklamy', what: 'Kampania Meta WTD week setup (LAL + retarget): kreatywki + audiences + budżet 1500/dzień', emoji: '📱', color: '#3b82f6', publish: '19-25.05 (kampania live)' });
+    deadlines.push({ day: 18, role: 'Tekst', what: 'Email #4 "Launch Gyokuro" + email #5 "WTD 21.05 + 2+1" gotowe', emoji: '✉️', color: '#0891b2', publish: '19.05 10:00 (E4) + 21.05 09:00 (E5)' });
 
     // 2+1 mechanic active 19-25.05 — kupon WTD3 lub plugin gotowy -2 = 17.05
-    deadlines.push({ day: 17, role: 'Sklep', what: 'Mechanizm 2+1 w WC: kupon WTD3 (cheapest free, exclude Gyokuro/akcesoria/zestawy) + test koszyka', emoji: '🛒', color: '#f59e0b' });
+    deadlines.push({ day: 17, role: 'Sklep', what: 'Mechanizm 2+1 w WC: kupon WTD3 (cheapest free, exclude Gyokuro/akcesoria/zestawy) + test koszyka', emoji: '🛒', color: '#f59e0b', publish: '19-25.05 (2+1 active w sklepie)' });
 
     // WTD 21.05 IG Live — przygotowanie scenariusza -2 = 19.05
-    deadlines.push({ day: 19, role: 'Mama+Mia', what: 'IG Live "Parzymy Gyokuro razem" 21.05 — scenariusz, plansze, link do strony', emoji: '🎙', color: '#ec4899' });
+    deadlines.push({ day: 19, role: 'Mama+Mia', what: 'IG Live "Parzymy Gyokuro razem" — scenariusz, plansze, link', emoji: '🎙', color: '#ec4899', publish: '21.05 11:00 (WTD IG Live)' });
 
     // Mother's Day bundle 24.05 — bundle gotowy -5 = 19.05
-    deadlines.push({ day: 19, role: 'Sklep', what: 'Bundle "Mama która zna matchę" w WC (Gyokuro + Lattea + chasen) za 250 zł + opcja pakowania prezentowego', emoji: '🌸', color: '#ec4899' });
-    deadlines.push({ day: 22, role: 'Grafika', what: 'Banner sklepu Mother\'s Day + foto bundle premium gift', emoji: '🎨', color: '#ec4899' });
-    deadlines.push({ day: 23, role: 'Tekst', what: 'Email #7 "Premium Gift dla Mamy" gotowy', emoji: '✉️', color: '#0891b2' });
+    deadlines.push({ day: 19, role: 'Sklep', what: 'Bundle "Mama która zna matchę" w WC (Gyokuro + Lattea + chasen) 250 zł + pakowanie prezentowe', emoji: '🌸', color: '#ec4899', publish: '24-26.05 (Dzień Matki)' });
+    deadlines.push({ day: 22, role: 'Grafika', what: 'Banner sklepu Mother\'s Day + foto bundle premium gift', emoji: '🎨', color: '#ec4899', publish: '24-26.05 (homepage banner)' });
+    deadlines.push({ day: 23, role: 'Tekst', what: 'Email #7 "Premium Gift dla Mamy" gotowy', emoji: '✉️', color: '#0891b2', publish: '24.05 11:00 (E7)' });
 
     // Daily content briefs (designer summary) — co tydzień przed startem
     for (const w of weekBars) {
       if (w._startDay > 1) {
-        deadlines.push({ day: w._startDay - 2, role: 'Grafika', what: `Brief tygodnia W${w.isoWeek}: "${(w.theme || '').slice(0, 40)}" — kreatywki + visual moodboard`, emoji: '🎨', color: '#ec4899' });
+        deadlines.push({
+          day: w._startDay - 2,
+          role: 'Grafika',
+          what: `Brief tygodnia W${w.isoWeek}: "${(w.theme || '').slice(0, 40)}" — kreatywki + visual moodboard`,
+          emoji: '🎨', color: '#ec4899',
+          publish: `${String(w._startDay).padStart(2,'0')}.${String(m).padStart(2,'0')} (start tygodnia W${w.isoWeek})`,
+        });
       }
     }
 
     // Promo wszelkie z weeks.promo — setup -2
     for (const w of weekBars) {
       if (w.promo && w.promo.type && w.promo.type !== 'none' && w._startDay > 2) {
-        deadlines.push({ day: w._startDay - 2, role: 'Sklep', what: `Setup promo W${w.isoWeek}: ${w.promo.type} ${w.promo.value || ''} ${w.promo.code ? `(kod ${w.promo.code})` : ''}`, emoji: '🛒', color: '#f59e0b' });
+        deadlines.push({
+          day: w._startDay - 2,
+          role: 'Sklep',
+          what: `Setup promo W${w.isoWeek}: ${w.promo.type} ${w.promo.value || ''} ${w.promo.code ? `(kod ${w.promo.code})` : ''}`,
+          emoji: '🛒', color: '#f59e0b',
+          publish: `${String(w._startDay).padStart(2,'0')}.${String(m).padStart(2,'0')}–${String(w._endDay).padStart(2,'0')}.${String(m).padStart(2,'0')} (promo aktywne)`,
+        });
       }
     }
   }
@@ -398,10 +411,11 @@ export default function TimelinePrint() {
       {deadlines.length > 0 && (
         <>
           <h2 style={{ fontSize: 13, marginTop: 14, marginBottom: 4, color: '#4338ca', borderBottom: '1px solid #c7d2fe', paddingBottom: 3 }}>📋 Deadliny przygotowania — co do kiedy musi być gotowe</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '60px 80px 1fr', gap: '2px 8px', fontSize: 9, alignItems: 'baseline' }}>
-            <div style={{ fontWeight: 700, color: '#475569', borderBottom: '1px solid #cbd5e1', paddingBottom: 2 }}>Data</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '60px 80px 1fr 160px', gap: '2px 8px', fontSize: 9, alignItems: 'baseline' }}>
+            <div style={{ fontWeight: 700, color: '#475569', borderBottom: '1px solid #cbd5e1', paddingBottom: 2 }}>Gotowe na</div>
             <div style={{ fontWeight: 700, color: '#475569', borderBottom: '1px solid #cbd5e1', paddingBottom: 2 }}>Rola</div>
             <div style={{ fontWeight: 700, color: '#475569', borderBottom: '1px solid #cbd5e1', paddingBottom: 2 }}>Co musi być gotowe</div>
+            <div style={{ fontWeight: 700, color: '#475569', borderBottom: '1px solid #cbd5e1', paddingBottom: 2 }}>Publikacja / wysyłka</div>
             {deadlines.map((d: Dl, i: number) => {
               const date = new Date(Date.UTC(y, m - 1, d.day));
               const dow = ['nd','pn','wt','śr','cz','pt','sb'][date.getUTCDay()];
@@ -413,6 +427,7 @@ export default function TimelinePrint() {
                     <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 2, background: d.color, color: '#fff' }}>{d.role}</span>
                   </div>
                   <div key={`d-${i}-what`} style={{ color: '#334155' }}>{d.what}</div>
+                  <div key={`d-${i}-pub`} style={{ color: '#475569', fontWeight: 600, fontSize: 8.5 }}>{d.publish || '—'}</div>
                 </>
               );
             })}
