@@ -359,25 +359,25 @@ export default function TimelinePrint() {
         ))}
       </div>
 
-      {/* Email blasts */}
-      <div className="tl-row" style={{ minHeight: 30 }}>
-        <div className="label">Email blast</div>
-        {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
-        {emailDays.map((ed: any, i: number) => {
-          // Sort same-day emails by time so multiple stack nicely
-          const sameDayBefore = emailDays.filter((e: any, j: number) => e.day === ed.day && j < i).length;
+      {/* Email blasts — compact: 1 marker/dzień; pełna lista poniżej */}
+      <div className="tl-row" style={{ minHeight: 24 }}>
+        <div className="label">✉️ Email</div>
+        {Array.from({ length: daysInMonth }, (_, i) => {
+          const dayNum = i + 1;
+          const todayEmails = emailDays.filter((e: any) => e.day === dayNum);
           return (
-            <div key={i} className="tl-marker" style={{ gridColumn: `${ed.day + 1} / ${ed.day + 2}`, gridRow: 1, top: `${4 + sameDayBefore * 12}px`, transform: 'none' }} title={ed.subject || ''}>
-              <span className="pip" style={{ background: '#0891b2', color: '#fff', fontSize: 7.5, lineHeight: 1.15, padding: '1px 3px' }}>
-                {ed.label.replace(/^E\d:\s*/, '')}<br/>
-                <span style={{ opacity: 0.85, fontSize: 7 }}>{ed.time}</span>
-              </span>
+            <div key={i} className="tl-cell" style={{ position: 'relative' }}>
+              {todayEmails.length > 0 && (
+                <div style={{ position: 'absolute', top: 2, left: 1, right: 1, fontSize: 7.5, fontWeight: 700, textAlign: 'center', lineHeight: 1.1 }} title={todayEmails.map((e: any) => `${e.time} ${e.label}`).join(', ')}>
+                  <span style={{ display: 'inline-block', padding: '1px 3px', borderRadius: 2, background: '#0891b2', color: '#fff' }}>
+                    {todayEmails.length === 1 ? `✉️ ${todayEmails[0].time}` : `✉️ ×${todayEmails.length}`}
+                  </span>
+                </div>
+              )}
             </div>
           );
         })}
       </div>
-
-      {/* Bottom: lista emaili z dokładnym subject */}
 
       {/* Tygodniowe motywy details (compressed under timeline) */}
       <h2 style={{ fontSize: 13, marginTop: 16, marginBottom: 6, color: '#4338ca', borderBottom: '1px solid #c7d2fe', paddingBottom: 3 }}>Motywy tygodni — w skrócie</h2>
