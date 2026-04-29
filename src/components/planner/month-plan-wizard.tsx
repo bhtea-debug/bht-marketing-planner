@@ -1535,6 +1535,15 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
+                  {currentDraftId && (
+                    <button
+                      onClick={() => window.open(`/print/month/${currentDraftId}`, '_blank')}
+                      className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border border-slate-300 hover:border-indigo-400 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-medium"
+                      title="Drukuj cały plan miesięczny (wszystkie tygodnie + KPI)"
+                    >
+                      🖨 Drukuj miesiąc
+                    </button>
+                  )}
                   <button
                     onClick={() => saveDraft()}
                     disabled={savingDraft}
