@@ -147,7 +147,7 @@ export default function TimelinePrint() {
   for (const e of emailDays) {
     if (e.day - 1 >= 1) deadlines.push({
       day: e.day - 1,
-      role: 'Copy',
+      role: 'Tekst',
       what: `${e.label} (${String(e.day).padStart(2,'0')}.${String(m).padStart(2,'0')} ${e.time}) — newsletter w mailing-tool: subject "${e.subject?.slice(0, 60)}", body, segment, harmonogram wysyłki`,
       emoji: '✉️',
       color: '#0891b2',
