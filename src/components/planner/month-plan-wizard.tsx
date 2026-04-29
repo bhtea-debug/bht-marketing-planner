@@ -1251,9 +1251,20 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                                 <span className="text-xs text-slate-500 font-medium">Tydzień {s.isoWeek || w}</span>
                                 <span className="text-xs text-slate-400 ml-2">{s.dateRange || `${s.start_date} – ${s.end_date}`}</span>
                               </div>
-                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">
-                                {s.weekly_budget_pln ? `${s.weekly_budget_pln} PLN` : '—'}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">
+                                  {s.weekly_budget_pln ? `${s.weekly_budget_pln} PLN` : '—'}
+                                </span>
+                                {currentDraftId && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); window.open(`/print/week/${currentDraftId}/${s.isoWeek || w}`, '_blank'); }}
+                                    className="text-[10px] px-1.5 py-0.5 rounded border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-600 hover:text-indigo-700"
+                                    title="Drukuj plan tygodnia"
+                                  >
+                                    🖨 Drukuj
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                           <h4 className="font-semibold text-slate-900 mb-1">{s.theme}</h4>

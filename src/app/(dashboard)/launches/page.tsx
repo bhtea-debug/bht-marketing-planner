@@ -1654,9 +1654,18 @@ export default function LaunchesPage() {
                   {openLaunch.category && ` · ${openLaunch.category}`}
                 </div>
               </div>
-              <button onClick={() => setOpenLaunch(null)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.open(`/print/launch/${openLaunch.id}`, '_blank')}
+                  className="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 font-medium inline-flex items-center gap-1"
+                  title="Otwórz wersję do druku / PDF"
+                >
+                  🖨 Drukuj
+                </button>
+                <button onClick={() => setOpenLaunch(null)} className="text-gray-400 hover:text-gray-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
             </div>
             <div className="p-6 space-y-4">
               <div>
