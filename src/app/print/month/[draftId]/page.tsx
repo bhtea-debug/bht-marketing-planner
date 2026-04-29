@@ -30,12 +30,14 @@ export default function MonthPrint() {
   if (!draft) return <p>Nie znaleziono planu draft={draftId}.</p>;
 
   const payload = draft.payload || {};
-  const weeks: any[] = payload.weeks || payload.week_plans || [];
+  // Wizard zapisuje strukturę: { plan: {weeks, totalBudget, summary, warnings, next_actions}, sharedContext, ... }
+  const plan = payload.plan || payload;
+  const weeks: any[] = plan.weeks || plan.week_plans || payload.weeks || [];
   const [yStr, mStr] = (draft.month || '').split('-');
   const monthLabel = mStr ? `${PL_MONTH[parseInt(mStr)]} ${yStr}` : draft.month;
 
   // Sumy
-  const totalBudget = weeks.reduce((sum, w) => sum + (Number(w.weekly_budget_pln) || 0), 0);
+  const totalBudget = plan.totalBudget != null ? Number(plan.totalBudget) : weeks.reduce((sum, w) => sum + (Number(w.weekly_budget_pln) || 0), 0);
   const totalAds = weeks.flatMap((w: any) => Array.isArray(w.channels) ? w.channels : [])
     .reduce((sum, ch: any) => sum + (Number(ch.budget_pln) || 0), 0);
 
@@ -51,10 +53,24 @@ export default function MonthPrint() {
         <span><b>Wdrożone:</b> {draft.deployed_count || 0} / {draft.weeks_count || weeks.length}</span>
       </div>
 
-      {payload.month_overview && (
+      {(plan.summary || payload.month_overview) && (
         <>
           <h2>Przegląd miesiąca</h2>
-          <div className="box" style={{ whiteSpace: 'pre-wrap' }}>{payload.month_overview}</div>
+          <div className="box" style={{ whiteSpace: 'pre-wrap' }}>{plan.summary || payload.month_overview}</div>
+        </>
+      )}
+
+      {Array.isArray(plan.warnings) && plan.warnings.length > 0 && (
+        <>
+          <h2>⚠ Ostrzeżenia</h2>
+          <ul>{plan.warnings.map((w: any, i: number) => <li key={i}>{typeof w === 'string' ? w : JSON.stringify(w)}</li>)}</ul>
+        </>
+      )}
+
+      {Array.isArray(plan.next_actions) && plan.next_actions.length > 0 && (
+        <>
+          <h2>Następne kroki</h2>
+          <ul>{plan.next_actions.map((a: any, i: number) => <li key={i}>{typeof a === 'string' ? a : JSON.stringify(a)}</li>)}</ul>
         </>
       )}
 

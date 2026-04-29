@@ -17,7 +17,8 @@ export default function WeekPrint() {
       if (!draft) { setLoading(false); return; }
       let payload: any = null;
       try { payload = typeof draft.payload === 'string' ? JSON.parse(draft.payload) : draft.payload; } catch {}
-      const weeks = payload?.weeks || payload?.week_plans || [];
+      const plan = payload?.plan || payload || {};
+      const weeks = plan.weeks || plan.week_plans || payload?.weeks || [];
       const w = weeks.find((x: any) => (x.isoWeek || x.iso_week) === isoWeek) || weeks[0];
       setWeek(w);
       setDraftMeta({ month: draft.month, name: draft.name });
