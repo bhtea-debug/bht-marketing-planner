@@ -156,42 +156,42 @@ export default function TimelinePrint() {
 
   // Pre-sale Gyokuro 12.05 — landing/produkt + email + carousel gotowe -2
   if (m === 5 && y === 2026) {
-    deadlines.push({ day: 10, role: 'Operacje', what: 'Pre-sale Gyokuro: produkt w WC + cena 69 zł first 100 + landing gotowe', emoji: '🛒', color: '#7c3aed' });
-    deadlines.push({ day: 10, role: 'Designer', what: 'Carousel "Gyokuro vs Matcha 5 różnic" gotowy do publikacji 11.05', emoji: '🎨', color: '#ec4899' });
-    deadlines.push({ day: 11, role: 'Copy', what: 'Email #2 "Pre-sale 12.05 + 69 zł first 100" gotowy', emoji: '✉️', color: '#0891b2' });
+    deadlines.push({ day: 10, role: 'Sklep', what: 'Pre-sale Gyokuro: produkt w WC + cena 69 zł first 100 + landing gotowe', emoji: '🛒', color: '#7c3aed' });
+    deadlines.push({ day: 10, role: 'Grafika', what: 'Carousel "Gyokuro vs Matcha 5 różnic" gotowy do publikacji 11.05', emoji: '🎨', color: '#ec4899' });
+    deadlines.push({ day: 11, role: 'Tekst', what: 'Email #2 "Pre-sale 12.05 + 69 zł first 100" gotowy', emoji: '✉️', color: '#0891b2' });
 
     // Influencer seeding 14-15.05 — brief + paczki gotowe -7 = 7-8.05
-    deadlines.push({ day: 8, role: 'Marketing', what: 'Lista 20 influencerek + briefy + 20 unikalnych kodów rabatowych w WC', emoji: '📋', color: '#f59e0b' });
-    deadlines.push({ day: 13, role: 'Operacje', what: 'Spakowanie 20 paczek "Gyokuro Discovery Set" (Gyokuro + chasen) + InPost paczkomaty', emoji: '📦', color: '#06b6d4' });
+    deadlines.push({ day: 8, role: 'Decyzje', what: 'Lista 20 influencerek + briefy + 20 unikalnych kodów rabatowych w WC', emoji: '📋', color: '#f59e0b' });
+    deadlines.push({ day: 13, role: 'Sklep', what: 'Spakowanie 20 paczek "Gyokuro Discovery Set" (Gyokuro + chasen) + InPost paczkomaty', emoji: '📦', color: '#06b6d4' });
 
     // Launch Gyokuro 19.05 — kreatywki -2 (do 17.05) + LP -3 (do 16.05) + ads -2
-    deadlines.push({ day: 16, role: 'Designer', what: 'Hero video Mama unboxing Gyokuro (60s vertical) + 3 statyki ad gotowe', emoji: '🎬', color: '#ec4899' });
-    deadlines.push({ day: 17, role: 'Operacje', what: 'Strona produktu Gyokuro Powder w WC: status pre-sale → in-stock 19.05', emoji: '🛒', color: '#7c3aed' });
-    deadlines.push({ day: 17, role: 'Ads', what: 'Kampania Meta WTD week setup (LAL + retarget): kreatywki + audiences + budżet 1500/dzień', emoji: '📱', color: '#3b82f6' });
-    deadlines.push({ day: 18, role: 'Copy', what: 'Email #4 "Launch Gyokuro" gotowy + email #5 "WTD 21.05 + 2+1" zaplanowane', emoji: '✉️', color: '#0891b2' });
+    deadlines.push({ day: 16, role: 'Grafika', what: 'Hero video Mama unboxing Gyokuro (60s vertical) + 3 statyki ad gotowe', emoji: '🎬', color: '#ec4899' });
+    deadlines.push({ day: 17, role: 'Sklep', what: 'Strona produktu Gyokuro Powder w WC: status pre-sale → in-stock 19.05', emoji: '🛒', color: '#7c3aed' });
+    deadlines.push({ day: 17, role: 'Reklamy', what: 'Kampania Meta WTD week setup (LAL + retarget): kreatywki + audiences + budżet 1500/dzień', emoji: '📱', color: '#3b82f6' });
+    deadlines.push({ day: 18, role: 'Tekst', what: 'Email #4 "Launch Gyokuro" gotowy + email #5 "WTD 21.05 + 2+1" zaplanowane', emoji: '✉️', color: '#0891b2' });
 
     // 2+1 mechanic active 19-25.05 — kupon WTD3 lub plugin gotowy -2 = 17.05
-    deadlines.push({ day: 17, role: 'Operacje', what: 'Mechanizm 2+1 w WC: kupon WTD3 (cheapest free, exclude Gyokuro/akcesoria/zestawy) + test koszyka', emoji: '🛒', color: '#f59e0b' });
+    deadlines.push({ day: 17, role: 'Sklep', what: 'Mechanizm 2+1 w WC: kupon WTD3 (cheapest free, exclude Gyokuro/akcesoria/zestawy) + test koszyka', emoji: '🛒', color: '#f59e0b' });
 
     // WTD 21.05 IG Live — przygotowanie scenariusza -2 = 19.05
-    deadlines.push({ day: 19, role: 'Content', what: 'IG Live "Parzymy Gyokuro razem" 21.05 — scenariusz, plansze, link do strony', emoji: '🎙', color: '#ec4899' });
+    deadlines.push({ day: 19, role: 'Mama+Mia', what: 'IG Live "Parzymy Gyokuro razem" 21.05 — scenariusz, plansze, link do strony', emoji: '🎙', color: '#ec4899' });
 
     // Mother's Day bundle 24.05 — bundle gotowy -5 = 19.05
-    deadlines.push({ day: 19, role: 'Operacje', what: 'Bundle "Mama która zna matchę" w WC (Gyokuro + Lattea + chasen) za 250 zł + opcja pakowania prezentowego', emoji: '🌸', color: '#ec4899' });
-    deadlines.push({ day: 22, role: 'Designer', what: 'Banner sklepu Mother\'s Day + foto bundle premium gift', emoji: '🎨', color: '#ec4899' });
-    deadlines.push({ day: 23, role: 'Copy', what: 'Email #7 "Premium Gift dla Mamy" gotowy', emoji: '✉️', color: '#0891b2' });
+    deadlines.push({ day: 19, role: 'Sklep', what: 'Bundle "Mama która zna matchę" w WC (Gyokuro + Lattea + chasen) za 250 zł + opcja pakowania prezentowego', emoji: '🌸', color: '#ec4899' });
+    deadlines.push({ day: 22, role: 'Grafika', what: 'Banner sklepu Mother\'s Day + foto bundle premium gift', emoji: '🎨', color: '#ec4899' });
+    deadlines.push({ day: 23, role: 'Tekst', what: 'Email #7 "Premium Gift dla Mamy" gotowy', emoji: '✉️', color: '#0891b2' });
 
     // Daily content briefs (designer summary) — co tydzień przed startem
     for (const w of weekBars) {
       if (w._startDay > 1) {
-        deadlines.push({ day: w._startDay - 2, role: 'Designer', what: `Brief tygodnia W${w.isoWeek}: "${(w.theme || '').slice(0, 40)}" — kreatywki + visual moodboard`, emoji: '🎨', color: '#ec4899' });
+        deadlines.push({ day: w._startDay - 2, role: 'Grafika', what: `Brief tygodnia W${w.isoWeek}: "${(w.theme || '').slice(0, 40)}" — kreatywki + visual moodboard`, emoji: '🎨', color: '#ec4899' });
       }
     }
 
     // Promo wszelkie z weeks.promo — setup -2
     for (const w of weekBars) {
       if (w.promo && w.promo.type && w.promo.type !== 'none' && w._startDay > 2) {
-        deadlines.push({ day: w._startDay - 2, role: 'Operacje', what: `Setup promo W${w.isoWeek}: ${w.promo.type} ${w.promo.value || ''} ${w.promo.code ? `(kod ${w.promo.code})` : ''}`, emoji: '🛒', color: '#f59e0b' });
+        deadlines.push({ day: w._startDay - 2, role: 'Sklep', what: `Setup promo W${w.isoWeek}: ${w.promo.type} ${w.promo.value || ''} ${w.promo.code ? `(kod ${w.promo.code})` : ''}`, emoji: '🛒', color: '#f59e0b' });
       }
     }
   }
@@ -268,7 +268,7 @@ export default function TimelinePrint() {
 
       {/* Pre-sale + Launch row */}
       <div className="tl-row" style={{ minHeight: 28 }}>
-        <div className="label">Pre-sale / Launch</div>
+        <div className="label">Premiery</div>
         {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
         {presaleBars.map((b: any, i: number) => (
           <div key={i} className="tl-bar" style={{
@@ -287,7 +287,7 @@ export default function TimelinePrint() {
 
       {/* Promo */}
       <div className="tl-row" style={{ minHeight: 24 }}>
-        <div className="label">Promo</div>
+        <div className="label">Promocje</div>
         {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
         {promoBars.map((b: any, i: number) => (
           <div key={i} className="tl-bar" style={{
@@ -323,7 +323,7 @@ export default function TimelinePrint() {
       {/* Bundle Mother's Day */}
       {motherBar && (
         <div className="tl-row" style={{ minHeight: 24 }}>
-          <div className="label">Bundle gift</div>
+          <div className="label">Zestaw prez.</div>
           {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
           <div className="tl-bar" style={{
             backgroundColor: motherBar.color,
@@ -337,7 +337,7 @@ export default function TimelinePrint() {
       {/* Influencer */}
       {influBar && (
         <div className="tl-row" style={{ minHeight: 22 }}>
-          <div className="label">Influencer</div>
+          <div className="label">Influencerzy</div>
           {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
           <div className="tl-bar" style={{
             backgroundColor: influBar.color,
