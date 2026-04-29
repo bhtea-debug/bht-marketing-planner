@@ -1538,6 +1538,13 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                   {currentDraftId && (
                     <>
                       <button
+                        onClick={() => window.open(`/print/simple/${currentDraftId}`, '_blank')}
+                        className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border border-pink-300 hover:border-pink-500 hover:bg-pink-50 text-pink-700 hover:text-pink-800 font-medium"
+                        title="Prosty plan: konkretne reelsy, grafiki, maile per tydzień"
+                      >
+                        📝 Prosty plan
+                      </button>
+                      <button
                         onClick={() => window.open(`/print/timeline/${currentDraftId}`, '_blank')}
                         className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded border border-emerald-300 hover:border-emerald-500 hover:bg-emerald-50 text-emerald-700 hover:text-emerald-800 font-medium"
                         title="Wizualny harmonogram timeline na A4 landscape"
