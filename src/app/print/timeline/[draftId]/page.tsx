@@ -215,7 +215,7 @@ export default function TimelinePrint() {
           .no-print { display: none !important; }
           body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
         }
-        .tl-row { display: grid; grid-template-columns: 130px repeat(${daysInMonth}, 1fr); align-items: stretch; min-height: 24px; border-bottom: 1px solid #e2e8f0; }
+        .tl-row { display: grid; grid-template-columns: 130px repeat(${daysInMonth}, 1fr); align-items: stretch; min-height: 24px; border-bottom: 1px solid #e2e8f0; position: relative; overflow: hidden; }
         .tl-row .label { padding: 4px 8px; font-weight: 600; font-size: 10px; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0; display: flex; align-items: center; }
         .tl-cell { border-right: 1px dotted #f1f5f9; position: relative; }
         .tl-bar { position: absolute; top: 4px; bottom: 4px; left: 1px; right: 1px; border-radius: 4px; padding: 2px 5px; color: #fff; font-size: 9px; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; }
