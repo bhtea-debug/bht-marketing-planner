@@ -1307,6 +1307,24 @@ export default function MonthPlanWizard({ initialMonth, onClose }: Props) {
                             </div>
                           )}
 
+                          {/* Zakres obowiązków — collapsible */}
+                          {s.team_tasks && typeof s.team_tasks === 'object' && (
+                            <details className="mb-3 text-xs bg-slate-50 rounded border border-slate-200">
+                              <summary className="cursor-pointer px-3 py-2 font-semibold text-slate-700 hover:bg-slate-100 select-none">
+                                📋 Zakres obowiązków zespołu
+                              </summary>
+                              <div className="px-3 pb-3 pt-1 space-y-1.5">
+                                {s.team_tasks.marketing_owner && <div><span className="font-bold text-slate-700">Marketing/Brand:</span> <span className="text-slate-600">{s.team_tasks.marketing_owner}</span></div>}
+                                {s.team_tasks.copywriter && <div><span className="font-bold text-slate-700">Copywriter:</span> <span className="text-slate-600">{s.team_tasks.copywriter}</span></div>}
+                                {s.team_tasks.designer && <div><span className="font-bold text-slate-700">Designer:</span> <span className="text-slate-600">{s.team_tasks.designer}</span></div>}
+                                {s.team_tasks.ads_meta && <div><span className="font-bold text-slate-700">Ads/Meta:</span> <span className="text-slate-600">{s.team_tasks.ads_meta}</span></div>}
+                                {s.team_tasks.content_mia && <div><span className="font-bold text-slate-700">Content/Mia:</span> <span className="text-slate-600">{s.team_tasks.content_mia}</span></div>}
+                                {s.team_tasks.operations && <div><span className="font-bold text-slate-700">Operacje:</span> <span className="text-slate-600">{s.team_tasks.operations}</span></div>}
+                                {s.team_tasks.influencer_pr && <div><span className="font-bold text-slate-700">Influencer/PR:</span> <span className="text-slate-600">{s.team_tasks.influencer_pr}</span></div>}
+                              </div>
+                            </details>
+                          )}
+
                           {/* Per-week feedback + regenerate */}
                           <div className="mt-3 pt-3 border-t border-slate-100">
                             <div className="flex items-start gap-2">

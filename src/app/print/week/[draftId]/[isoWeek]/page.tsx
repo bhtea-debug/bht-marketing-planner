@@ -127,8 +127,23 @@ export default function WeekPrint() {
         </>
       )}
 
-      {/* Zakres obowiązków zespołu — auto-derived z danych tygodnia */}
+      {/* Zakres obowiązków zespołu */}
       <h2>📋 Zakres obowiązków zespołu — ten tydzień</h2>
+      {/* PRIMARY: AI-generated team_tasks (if available from week-plan endpoint) */}
+      {week.team_tasks && typeof week.team_tasks === 'object' && (
+        <div className="grid-2">
+          {week.team_tasks.marketing_owner && <div className="col"><b>Marketing / Brand</b><div>{week.team_tasks.marketing_owner}</div></div>}
+          {week.team_tasks.copywriter && <div className="col"><b>Copywriter</b><div>{week.team_tasks.copywriter}</div></div>}
+          {week.team_tasks.designer && <div className="col"><b>Designer</b><div>{week.team_tasks.designer}</div></div>}
+          {week.team_tasks.ads_meta && <div className="col"><b>Ads / Meta</b><div>{week.team_tasks.ads_meta}</div></div>}
+          {week.team_tasks.content_mia && <div className="col"><b>Content / Mia</b><div>{week.team_tasks.content_mia}</div></div>}
+          {week.team_tasks.operations && <div className="col"><b>Operacje (WC)</b><div>{week.team_tasks.operations}</div></div>}
+          {week.team_tasks.influencer_pr && <div className="col"><b>Influencer / PR</b><div>{week.team_tasks.influencer_pr}</div></div>}
+        </div>
+      )}
+      {/* FALLBACK: auto-derived if AI didn't generate team_tasks */}
+      {!week.team_tasks && (
+      <>
       <div className="grid-2">
         <div className="col">
           <b>Marketing / Brand owner</b>
@@ -207,6 +222,8 @@ export default function WeekPrint() {
         </div>
       </div>
 
+      </>
+      )}
       <div className="footer">
         Wydrukowano z BHT Marketing Planner · {new Date().toLocaleDateString('pl-PL', { dateStyle: 'long' })} · plan {draftMeta?.month} · tydzień ISO {week.isoWeek || isoWeek}
       </div>

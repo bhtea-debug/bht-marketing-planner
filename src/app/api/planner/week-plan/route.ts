@@ -267,6 +267,23 @@ KLUCZOWE REGUŁY:
 - Nie wymyślaj progów darmowej wysyłki "od 150 PLN" — to POGARSZA istniejącą ofertę klienta (129 PLN).
 - Jeśli chcesz zaproponować promo darmowej wysyłki, jedyna sensowna mechanika to OBNIŻENIE progu (np. "darmowa wysyłka od 79 PLN" lub "darmowa wysyłka na wszystko bez minimum").
 
+## 9. ZAKRES OBOWIĄZKÓW ZESPOŁU (team_tasks) — WYMAGANE
+
+Dla każdego tygodnia MUSISZ wypełnić sekcję 'team_tasks' — konkretne zadania per rola, wynikające BEZPOŚREDNIO z motywu, promo i hero produktów tego tygodnia. NIE generyczne ("zrób hooki" — bzdura), ALE konkretne ("Hook na Reels: 'POV: Twoja matcha + Gyokuro w 2+1 koszyku WTD' — 3 warianty 1-3s").
+
+Format każdego pola: 2-4 zadania w jednym stringu, oddzielone " · ". Krótkie i wykonalne.
+
+Przykład dla tygodnia z launchem Gyokuro 19.05 + 2+1 promo:
+- marketing_owner: "Zatwierdzić launch date 19.05 · Daily revenue check vs target 30k tygodnia · Decyzja go/no-go aktywacji 2+1 promo 20.05"
+- copywriter: "Email subject (3 warianty) 'Pierwsza Gyokuro Powder' · Hook IG Reel 5 wariantów · Body carousel 'Gyokuro vs Matcha' 6 slajdów"
+- designer: "Hero video Mama unboxing (60s vertical) · Carousel comparison 6 slajdów · 3 statyki ad (1080×1080 + 1080×1350) · Email header"
+- ads_meta: "Kampania Meta WTD: budżet 1500/dzień, audience LAL Premium Japan buyers · Retarget 30d /shop · Daily check ROAS, threshold ±30%"
+- content_mia: "Mia TikTok 'POV: dostałam się na early access' (15s) · Mama Reel parzenie Gyokuro live · IG Stories 5/dzień · Email blast 19.05 + 21.05 + 24.05"
+- operations: "WC: aktywacja kuponu WTD3 dla 2+1 mechanizmu · Update strony Gyokuro pre-sale → in-stock · Check stock Matcha Lattea + Crazy Good · Test checkout"
+- influencer_pr: "Wysyłka 20 paczek Discovery Set 14.05 · 20 unikatowych kodów IMIE10 do WC · Brief PDF + tracking sheet"
+
+Jeśli w danym tygodniu nie ma aktywacji influencer — pomiń pole 'influencer_pr' lub ustaw na pusty string.
+
 ## 8. Zadania na stronie sklepu (store_tasks) — WYMAGANE W KAŻDYM TYGODNIU
 
 Każdy tydzień MUSI mieć co najmniej 1 pozycję w \`store_tasks\`. Sklep internetowy to NIE pasywne tło — to aktywny kanał sprzedaży, który powinien odzwierciedlać to co się dzieje w kampaniach.
@@ -436,6 +453,7 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
           'designer_summary',
           'channels',
           'store_tasks',
+          'team_tasks',
         ],
         properties: {
           isoWeek: { type: 'integer' },
@@ -583,6 +601,20 @@ Wywołaj narzędzie emit_week_plan ze wszystkimi polami. Dane wejściowe:\n\n${J
                 visual_note: { type: 'string', description: 'Krótka wskazówka wizualna (nawiązanie do briefu kanału jeśli ten sam temat)' },
                 deadline: { type: 'string', description: 'Kiedy musi być gotowe (data ISO lub "przed startem kampanii")' },
               },
+            },
+          },
+          team_tasks: {
+            type: 'object',
+            description: 'Zakres obowiązków zespołu na ten tydzień, per rola. KAŻDY pole = 2-4 konkretne zadania (bullet style w jednym stringu, oddzielone " · "). Konkretne, wynikające z tematu/promo/produktów tego tygodnia, NIE generyczne.',
+            required: ['marketing_owner', 'copywriter', 'designer', 'ads_meta', 'content_mia', 'operations'],
+            properties: {
+              marketing_owner: { type: 'string', description: 'Decyzje top-level (zatwierdzenie motywu, budżetu, promo). Daily check vs target tygodnia.' },
+              copywriter: { type: 'string', description: 'Hooki + body per kanał + email subjects + punktory dla hero produktów.' },
+              designer: { type: 'string', description: 'Kreatywki per format kanału + hero foto + email header. Powiąż z designer_summary.' },
+              ads_meta: { type: 'string', description: 'Setup kampanii Meta/TT z budżetem i audience per kanał. Daily monitoring CTR/ROAS.' },
+              content_mia: { type: 'string', description: 'TikTok/Reels Mama+Mia + IG Stories codziennie + email blast(y).' },
+              operations: { type: 'string', description: 'Setup promo w WC (kod+czas), stock check hero produktów, banery sklepu, test checkout.' },
+              influencer_pr: { type: 'string', description: 'OPCJONALNE: tylko jeśli w tym tygodniu jest aktywacja influencer (np. seeding paczek). Lista, briefy, kody. Pominij jeśli brak.' },
             },
           },
         },
