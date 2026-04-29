@@ -1,0 +1,303 @@
+// @ts-nocheck
+"use client";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+
+const PL_MONTH = ['','styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
+
+function parseDate(s: any): Date | null {
+  if (!s) return null;
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function dayInMonth(d: Date | null, monthYear: string): number | null {
+  if (!d) return null;
+  const [y, m] = monthYear.split('-').map(Number);
+  if (d.getUTCFullYear() === y && d.getUTCMonth() + 1 === m) return d.getUTCDate();
+  return null;
+}
+
+export default function TimelinePrint() {
+  const params = useParams();
+  const draftId = params?.draftId;
+  const [draft, setDraft] = useState<any>(null);
+  const [launches, setLaunches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`/api/planner/drafts/${draftId}`).then(r => r.json()),
+      fetch('/api/launches').then(r => r.json()),
+    ]).then(([dj, lj]) => {
+      const d = dj.data;
+      let p: any = null;
+      try { p = typeof d?.payload === 'string' ? JSON.parse(d.payload) : d?.payload; } catch {}
+      setDraft({ ...d, payload: p });
+      setLaunches(lj.data || []);
+      setLoading(false);
+      if (d?.month) {
+        const [y, m] = d.month.split('-');
+        document.title = `Timeline ${PL_MONTH[parseInt(m)]} ${y}`;
+      }
+    });
+  }, [draftId]);
+
+  if (loading) return <p style={{ padding: 24 }}>Ładuję timeline…</p>;
+  if (!draft) return <p style={{ padding: 24 }}>Brak draftu {draftId}.</p>;
+
+  const month = draft.month || '2026-05';
+  const [yStr, mStr] = month.split('-');
+  const y = parseInt(yStr);
+  const m = parseInt(mStr);
+  const daysInMonth = new Date(Date.UTC(y, m, 0)).getUTCDate(); // 31 dla maja
+
+  const plan = draft.payload?.plan || draft.payload || {};
+  const weeks: any[] = plan.weeks || plan.week_plans || [];
+  const totalBudget = plan.totalBudget != null ? Number(plan.totalBudget) : weeks.reduce((s, w) => s + (Number(w.weekly_budget_pln) || 0), 0);
+
+  // Ustal pozycje w gridzie dla każdego tygodnia (start/end day)
+  const weekBars = weeks.map((w: any, i: number) => {
+    const sd = parseDate(w.start_date);
+    const ed = parseDate(w.end_date);
+    let startDay = dayInMonth(sd, month);
+    let endDay = dayInMonth(ed, month);
+    // Jeśli tydzień zaczyna się w innym miesiącu, ucina do 1
+    if (startDay == null) startDay = sd && sd < new Date(Date.UTC(y, m-1, 1)) ? 1 : null;
+    if (endDay == null) endDay = ed && ed > new Date(Date.UTC(y, m, 0)) ? daysInMonth : null;
+    return { ...w, _startDay: startDay, _endDay: endDay, _idx: i };
+  }).filter((w: any) => w._startDay != null && w._endDay != null);
+
+  // Kolory dla 5 tygodni
+  const weekColors = ['#a78bfa', '#60a5fa', '#34d399', '#fbbf24', '#fb7185', '#a3e635'];
+
+  // Identyfikacja kluczowych dat
+  const keyDates: { day: number; label: string; emoji: string; color: string }[] = [];
+  // Święta polskie maja
+  if (m === 5) {
+    keyDates.push({ day: 1, label: 'Św. Pracy', emoji: '🛠', color: '#94a3b8' });
+    keyDates.push({ day: 3, label: 'Konstytucji', emoji: '🇵🇱', color: '#94a3b8' });
+    keyDates.push({ day: 12, label: 'Dz. Pielęgniarki', emoji: '👩‍⚕️', color: '#94a3b8' });
+    keyDates.push({ day: 21, label: 'World Tea Day', emoji: '🍵', color: '#dc2626' });
+    keyDates.push({ day: 26, label: 'Dzień Matki', emoji: '🌸', color: '#ec4899' });
+  }
+
+  // Launche w tym miesiącu (D2C only)
+  const launchMarkers = launches
+    .map((l: any) => {
+      const date = parseDate(l.planned_launch_date || l.ai_suggested_date);
+      const day = dayInMonth(date, month);
+      if (!day) return null;
+      let chans: string[] = [];
+      try { chans = JSON.parse(l.target_channels || '[]'); } catch {}
+      const isD2C = chans.length === 0 || chans.includes('d2c');
+      if (!isD2C) return null;
+      return { id: l.id, day, name: l.name, status: l.status };
+    })
+    .filter(Boolean) as any[];
+
+  // Pre-sale Gyokuro 12-18.05 (z planning_knowledge)
+  const presaleBars = m === 5 && y === 2026 ? [
+    { startDay: 12, endDay: 18, label: '🍵 Pre-sale Gyokuro', color: '#7c3aed' }
+  ] : [];
+
+  // Promo bars — szukaj w weeks.promo
+  const promoBars = weekBars.flatMap((w: any) => {
+    if (!w.promo || w.promo.type === 'none') return [];
+    return [{
+      startDay: w._startDay,
+      endDay: w._endDay,
+      label: `${w.promo.type}${w.promo.value ? ` ${w.promo.value}` : ''}`,
+      color: '#f59e0b',
+    }];
+  });
+
+  // Influencer seeding 14-15.05 (z planning_knowledge entry 36)
+  const influBar = m === 5 && y === 2026 ? { startDay: 14, endDay: 15, label: '📦 Influencer seeding (20 paczek)', color: '#06b6d4' } : null;
+
+  // Bundle Dzień Matki 24-26.05
+  const motherBar = m === 5 && y === 2026 ? { startDay: 24, endDay: 26, label: '🌸 Bundle "Mama która zna matchę"', color: '#ec4899' } : null;
+
+  // Email blasts — z planning_knowledge content calendar 8 emaili
+  const emailDays = m === 5 && y === 2026 ? [
+    { day: 8, label: 'E1: Teaser' },
+    { day: 12, label: 'E2: Pre-sale' },
+    { day: 16, label: 'E3: Reminder' },
+    { day: 19, label: 'E4: Launch' },
+    { day: 21, label: 'E5: WTD' },
+    { day: 24, label: 'E6: Last 2+1' },
+    { day: 24, label: 'E7: Mother Gift' },
+    { day: 28, label: 'E8: Last chance' },
+  ] : [];
+
+  return (
+    <div style={{
+      width: '100%',
+      maxWidth: '1100px',
+      margin: '0 auto',
+      padding: '12px',
+      fontFamily: '-apple-system, "Segoe UI", system-ui, sans-serif',
+      color: '#1e293b',
+      fontSize: '10px',
+    }}>
+      <style>{`
+        @page { size: A4 landscape; margin: 8mm; }
+        @media print {
+          .no-print { display: none !important; }
+          body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+        }
+        .tl-row { display: grid; grid-template-columns: 130px repeat(${daysInMonth}, 1fr); align-items: stretch; min-height: 24px; border-bottom: 1px solid #e2e8f0; }
+        .tl-row .label { padding: 4px 8px; font-weight: 600; font-size: 10px; color: #475569; background: #f8fafc; border-right: 1px solid #e2e8f0; display: flex; align-items: center; }
+        .tl-cell { border-right: 1px dotted #f1f5f9; position: relative; }
+        .tl-bar { position: absolute; top: 4px; bottom: 4px; left: 1px; right: 1px; border-radius: 4px; padding: 2px 5px; color: #fff; font-size: 9px; font-weight: 600; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; }
+        .tl-marker { position: absolute; top: 50%; transform: translateY(-50%); left: 0; right: 0; text-align: center; font-size: 9px; font-weight: 600; }
+        .tl-marker .pip { display: inline-block; padding: 1px 4px; border-radius: 3px; }
+      `}</style>
+      <div className="no-print" style={{ marginBottom: 12, display: 'flex', gap: 8, paddingBottom: 8, borderBottom: '1px solid #e2e8f0' }}>
+        <button onClick={() => window.print()} style={{ background: '#6366f1', color: '#fff', padding: '6px 14px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>🖨 Drukuj A4 landscape</button>
+        <button onClick={() => window.close()} style={{ background: '#f1f5f9', color: '#64748b', padding: '6px 14px', borderRadius: 6, border: 'none', fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>✕ Zamknij</button>
+        <span style={{ marginLeft: 'auto', fontSize: 11, color: '#64748b', alignSelf: 'center' }}>Best: print A4 landscape, marginesy 8mm</span>
+      </div>
+      <h1 style={{ fontSize: 18, margin: '0 0 4px', color: '#1e293b' }}>Harmonogram marketing — {PL_MONTH[m]} {y}</h1>
+      <div style={{ fontSize: 11, color: '#64748b', marginBottom: 12 }}>
+        Draft #{draft.id} · {weeks.length} tygodni · łączny budżet <b>{totalBudget.toLocaleString('pl-PL')} zł</b> · cel <b>70 000 zł netto</b>
+      </div>
+
+      {/* Day numbers row */}
+      <div className="tl-row" style={{ background: '#f1f5f9', minHeight: 18, borderBottom: '2px solid #cbd5e1' }}>
+        <div className="label">Dzień</div>
+        {Array.from({ length: daysInMonth }, (_, i) => {
+          const d = i + 1;
+          const date = new Date(Date.UTC(y, m - 1, d));
+          const dow = date.getUTCDay();
+          const isWknd = dow === 0 || dow === 6;
+          return (
+            <div key={d} className="tl-cell" style={{ background: isWknd ? '#fef3c7' : 'transparent', textAlign: 'center', fontSize: 9, fontWeight: 600, color: isWknd ? '#92400e' : '#64748b' }}>{d}</div>
+          );
+        })}
+      </div>
+
+      {/* Tygodnie */}
+      <div className="tl-row" style={{ minHeight: 36 }}>
+        <div className="label">Tygodnie</div>
+        {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
+        {weekBars.map((w: any, i: number) => (
+          <div key={i} className="tl-bar" style={{
+            backgroundColor: weekColors[i % weekColors.length],
+            gridColumn: `${w._startDay + 1} / ${w._endDay + 2}`,
+            gridRow: 1,
+            position: 'relative',
+            top: 'auto', bottom: 'auto', left: 'auto', right: 'auto',
+            margin: '4px 1px',
+          }}>
+            <span style={{ fontWeight: 700, marginRight: 6 }}>W{w.isoWeek || w._idx + 18}</span>
+            <span style={{ opacity: 0.95 }}>{(w.theme || '').slice(0, 50)}</span>
+            <span style={{ marginLeft: 'auto', opacity: 0.85 }}>{w.weekly_budget_pln ? `${w.weekly_budget_pln} zł` : ''}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Pre-sale + Launch row */}
+      <div className="tl-row" style={{ minHeight: 28 }}>
+        <div className="label">Pre-sale / Launch</div>
+        {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
+        {presaleBars.map((b: any, i: number) => (
+          <div key={i} className="tl-bar" style={{
+            backgroundColor: b.color,
+            gridColumn: `${b.startDay + 1} / ${b.endDay + 2}`,
+            gridRow: 1,
+            position: 'relative', top: 'auto', bottom: 'auto', left: 'auto', right: 'auto', margin: '4px 1px',
+          }}>{b.label}</div>
+        ))}
+        {launchMarkers.map((lm: any, i: number) => (
+          <div key={`lm-${i}`} className="tl-marker" style={{ gridColumn: `${lm.day + 1} / ${lm.day + 2}`, gridRow: 1 }}>
+            <span className="pip" style={{ background: '#1e40af', color: '#fff' }}>★ {lm.name?.slice(0, 18)}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Promo */}
+      <div className="tl-row" style={{ minHeight: 24 }}>
+        <div className="label">Promo</div>
+        {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
+        {promoBars.map((b: any, i: number) => (
+          <div key={i} className="tl-bar" style={{
+            backgroundColor: b.color,
+            gridColumn: `${b.startDay + 1} / ${b.endDay + 2}`,
+            gridRow: 1,
+            position: 'relative', top: 'auto', bottom: 'auto', left: 'auto', right: 'auto', margin: '3px 1px',
+          }}>{b.label}</div>
+        ))}
+      </div>
+
+      {/* Bundle Mother's Day */}
+      {motherBar && (
+        <div className="tl-row" style={{ minHeight: 24 }}>
+          <div className="label">Bundle gift</div>
+          {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
+          <div className="tl-bar" style={{
+            backgroundColor: motherBar.color,
+            gridColumn: `${motherBar.startDay + 1} / ${motherBar.endDay + 2}`,
+            gridRow: 1,
+            position: 'relative', top: 'auto', bottom: 'auto', left: 'auto', right: 'auto', margin: '3px 1px',
+          }}>{motherBar.label}</div>
+        </div>
+      )}
+
+      {/* Influencer */}
+      {influBar && (
+        <div className="tl-row" style={{ minHeight: 22 }}>
+          <div className="label">Influencer</div>
+          {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
+          <div className="tl-bar" style={{
+            backgroundColor: influBar.color,
+            gridColumn: `${influBar.startDay + 1} / ${influBar.endDay + 2}`,
+            gridRow: 1,
+            position: 'relative', top: 'auto', bottom: 'auto', left: 'auto', right: 'auto', margin: '3px 1px',
+          }}>{influBar.label}</div>
+        </div>
+      )}
+
+      {/* Kluczowe dni */}
+      <div className="tl-row" style={{ minHeight: 26 }}>
+        <div className="label">Kluczowe dni</div>
+        {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
+        {keyDates.map((kd: any, i: number) => (
+          <div key={i} className="tl-marker" style={{ gridColumn: `${kd.day + 1} / ${kd.day + 2}`, gridRow: 1 }}>
+            <span className="pip" style={{ background: kd.color, color: '#fff' }}>{kd.emoji} {kd.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Email blasts */}
+      <div className="tl-row" style={{ minHeight: 22 }}>
+        <div className="label">Email blast</div>
+        {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
+        {emailDays.map((ed: any, i: number) => (
+          <div key={i} className="tl-marker" style={{ gridColumn: `${ed.day + 1} / ${ed.day + 2}`, gridRow: 1 }}>
+            <span className="pip" style={{ background: '#0891b2', color: '#fff', fontSize: 8 }}>{ed.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Tygodniowe motywy details (compressed under timeline) */}
+      <h2 style={{ fontSize: 13, marginTop: 16, marginBottom: 6, color: '#4338ca', borderBottom: '1px solid #c7d2fe', paddingBottom: 3 }}>Motywy tygodni — w skrócie</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${weekBars.length}, 1fr)`, gap: 6, fontSize: 9 }}>
+        {weekBars.map((w: any, i: number) => (
+          <div key={i} style={{ padding: 6, background: '#f8fafc', borderLeft: `3px solid ${weekColors[i % weekColors.length]}`, borderRadius: 3 }}>
+            <div style={{ fontWeight: 700, color: '#1e293b' }}>W{w.isoWeek || w._idx + 18} · {w.start_date?.slice(5) || ''}–{w.end_date?.slice(5) || ''}</div>
+            <div style={{ fontWeight: 600, marginTop: 2, color: '#4338ca', fontSize: 10 }}>{w.theme}</div>
+            {Array.isArray(w.hero_products) && w.hero_products.length > 0 && (
+              <div style={{ marginTop: 2, color: '#475569' }}><b>Hero:</b> {w.hero_products.slice(0, 2).map((p: any) => p.name || p).join(', ')}</div>
+            )}
+            <div style={{ marginTop: 2, color: '#64748b' }}><b>Budżet:</b> {w.weekly_budget_pln || 0} zł</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ marginTop: 12, fontSize: 9, color: '#94a3b8' }}>
+        Wydrukowano z BHT Marketing Planner · {new Date().toLocaleDateString('pl-PL', { dateStyle: 'long' })} · cel maja {totalBudget.toLocaleString('pl-PL')} zł budżet / 70 000 zł netto target
+      </div>
+    </div>
+  );
+}
