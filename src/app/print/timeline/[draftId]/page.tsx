@@ -119,15 +119,16 @@ export default function TimelinePrint() {
   const motherBar = m === 5 && y === 2026 ? { startDay: 24, endDay: 26, label: '🌸 Bundle "Mama która zna matchę"', color: '#ec4899' } : null;
 
   // Email blasts — z planning_knowledge content calendar 8 emaili
+  // Czas wysyłki dobrany pod e-commerce wellness PL (sweet spot 18:00-20:00 weekdays, 10:00-11:00 weekend)
   const emailDays = m === 5 && y === 2026 ? [
-    { day: 8, label: 'E1: Teaser' },
-    { day: 12, label: 'E2: Pre-sale' },
-    { day: 16, label: 'E3: Reminder' },
-    { day: 19, label: 'E4: Launch' },
-    { day: 21, label: 'E5: WTD' },
-    { day: 24, label: 'E6: Last 2+1' },
-    { day: 24, label: 'E7: Mother Gift' },
-    { day: 28, label: 'E8: Last chance' },
+    { day: 8, time: '18:00', label: 'E1: Teaser', subject: 'Coś nowego nadchodzi 12 maja…' },
+    { day: 12, time: '18:00', label: 'E2: Pre-sale start', subject: '🍵 Pre-sale Gyokuro Powder otwarty (-13% first 100 puszek)' },
+    { day: 16, time: '11:00', label: 'E3: Reminder', subject: 'Ostatni weekend pre-sale — 100 puszek po 69 zł' },
+    { day: 19, time: '10:00', label: 'E4: Launch day', subject: '🍵 Japan Gyokuro Powder oficjalnie w sklepie' },
+    { day: 21, time: '09:00', label: 'E5: WTD', subject: 'Dzień Herbaty: 3 paczki, najtańsza GRATIS' },
+    { day: 24, time: '11:00', label: 'E7: Mother Gift', subject: 'Premium Gift dla Mamy — Gyokuro + Lattea + chasen' },
+    { day: 24, time: '18:00', label: 'E6: Last 2+1', subject: 'Ostatnie godziny 2+1 — kończymy o północy' },
+    { day: 28, time: '11:00', label: 'E8: Last chance', subject: 'Gyokuro w maju — jeszcze 3 dni' },
   ] : [];
 
   // ============== DEADLINY PRZYGOTOWANIA (lead-time przed publikacją) ==============
@@ -142,9 +143,15 @@ export default function TimelinePrint() {
   type Dl = { day: number; role: string; what: string; emoji: string; color: string };
   const deadlines: Dl[] = [];
 
-  // Z emailDays — newsletter -1
+  // Z emailDays — newsletter -1 dzień (zatwierdzenie + harmonogram wysyłki)
   for (const e of emailDays) {
-    if (e.day - 1 >= 1) deadlines.push({ day: e.day - 1, role: 'Copy', what: `${e.label} — newsletter gotowy w MailerLite/GetResponse`, emoji: '✉️', color: '#0891b2' });
+    if (e.day - 1 >= 1) deadlines.push({
+      day: e.day - 1,
+      role: 'Copy',
+      what: `${e.label} (${String(e.day).padStart(2,'0')}.${String(m).padStart(2,'0')} ${e.time}) — newsletter w mailing-tool: subject "${e.subject?.slice(0, 60)}", body, segment, harmonogram wysyłki`,
+      emoji: '✉️',
+      color: '#0891b2',
+    });
   }
 
   // Pre-sale Gyokuro 12.05 — landing/produkt + email + carousel gotowe -2
@@ -353,15 +360,24 @@ export default function TimelinePrint() {
       </div>
 
       {/* Email blasts */}
-      <div className="tl-row" style={{ minHeight: 22 }}>
+      <div className="tl-row" style={{ minHeight: 30 }}>
         <div className="label">Email blast</div>
         {Array.from({ length: daysInMonth }, (_, i) => <div key={i} className="tl-cell"></div>)}
-        {emailDays.map((ed: any, i: number) => (
-          <div key={i} className="tl-marker" style={{ gridColumn: `${ed.day + 1} / ${ed.day + 2}`, gridRow: 1 }}>
-            <span className="pip" style={{ background: '#0891b2', color: '#fff', fontSize: 8 }}>{ed.label}</span>
-          </div>
-        ))}
+        {emailDays.map((ed: any, i: number) => {
+          // Sort same-day emails by time so multiple stack nicely
+          const sameDayBefore = emailDays.filter((e: any, j: number) => e.day === ed.day && j < i).length;
+          return (
+            <div key={i} className="tl-marker" style={{ gridColumn: `${ed.day + 1} / ${ed.day + 2}`, gridRow: 1, top: `${4 + sameDayBefore * 12}px`, transform: 'none' }} title={ed.subject || ''}>
+              <span className="pip" style={{ background: '#0891b2', color: '#fff', fontSize: 7.5, lineHeight: 1.15, padding: '1px 3px' }}>
+                {ed.label.replace(/^E\d:\s*/, '')}<br/>
+                <span style={{ opacity: 0.85, fontSize: 7 }}>{ed.time}</span>
+              </span>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Bottom: lista emaili z dokładnym subject */}
 
       {/* Tygodniowe motywy details (compressed under timeline) */}
       <h2 style={{ fontSize: 13, marginTop: 16, marginBottom: 6, color: '#4338ca', borderBottom: '1px solid #c7d2fe', paddingBottom: 3 }}>Motywy tygodni — w skrócie</h2>
@@ -397,6 +413,29 @@ export default function TimelinePrint() {
                     <span style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 2, background: d.color, color: '#fff' }}>{d.role}</span>
                   </div>
                   <div key={`d-${i}-what`} style={{ color: '#334155' }}>{d.what}</div>
+                </>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Mailing — szczegóły z subject + datą + godziną */}
+      {emailDays.length > 0 && (
+        <>
+          <h2 style={{ fontSize: 13, marginTop: 14, marginBottom: 4, color: '#0891b2', borderBottom: '1px solid #67e8f9', paddingBottom: 3 }}>✉️ Harmonogram mailingu — {emailDays.length} blastów</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '70px 60px 1fr', gap: '2px 8px', fontSize: 9, alignItems: 'baseline' }}>
+            <div style={{ fontWeight: 700, color: '#0e7490', borderBottom: '1px solid #cbd5e1', paddingBottom: 2 }}>Data + godz.</div>
+            <div style={{ fontWeight: 700, color: '#0e7490', borderBottom: '1px solid #cbd5e1', paddingBottom: 2 }}>ID</div>
+            <div style={{ fontWeight: 700, color: '#0e7490', borderBottom: '1px solid #cbd5e1', paddingBottom: 2 }}>Subject + segment</div>
+            {emailDays.map((e: any, i: number) => {
+              const date = new Date(Date.UTC(y, m - 1, e.day));
+              const dow = ['nd','pn','wt','śr','cz','pt','sb'][date.getUTCDay()];
+              return (
+                <>
+                  <div key={`em-${i}-d`} style={{ fontWeight: 600, color: '#0e7490', whiteSpace: 'nowrap' }}>{String(e.day).padStart(2, '0')}.{String(m).padStart(2, '0')} {e.time} <span style={{ color: '#94a3b8', fontSize: 8 }}>{dow}</span></div>
+                  <div key={`em-${i}-id`} style={{ fontWeight: 700, color: '#0891b2' }}>{e.label.split(':')[0]}</div>
+                  <div key={`em-${i}-s`} style={{ color: '#334155' }}><b>{e.label.replace(/^E\d:\s*/, '')}</b> — &ldquo;{e.subject}&rdquo;</div>
                 </>
               );
             })}
