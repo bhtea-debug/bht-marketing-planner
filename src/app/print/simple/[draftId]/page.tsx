@@ -288,7 +288,179 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
   // Promo
   const promo = (week.promo && week.promo.type && week.promo.type !== 'none') ? week.promo : null;
 
-  return { reels, grafiki, karuzele, maile, sklepZadania, promo };
+  // Dzień po dniu — Pon-Niedz timeline z konkretami
+  // Każdy item: { kind: 'publish'|'send'|'prep'|'live'|'decision', who: string, what: string, time?: string }
+  const dailyByWeek: Record<number, any[]> = {
+    18: [
+      { day: 'Pon', date: '27.04', items: [
+        { kind: 'prep', who: 'Tekst', what: 'Pisze copy reela "Mama parzy spring tea" + maila #1 teaser' },
+        { kind: 'prep', who: 'Sklep', what: 'Podmienia hero banner — Spring Tea + komunikat majówkowy' },
+        { kind: 'prep', who: 'Reklamy', what: 'Setup kampanii brand awareness Spring Tea (budżet ~600 zł/dzień)' },
+      ]},
+      { day: 'Wt', date: '28.04', items: [
+        { kind: 'prep', who: 'Grafika', what: 'Projektuje karuzelę "5 sposobów" — slajdy 1-3' },
+        { kind: 'prep', who: 'Mama+Mia', what: 'Nagrywanie reela "Mama parzy spring tea na balkonie"' },
+      ]},
+      { day: 'Śr', date: '29.04', items: [
+        { kind: 'prep', who: 'Grafika', what: 'Karuzela "5 sposobów" — slajdy 4-6 + finalizacja' },
+        { kind: 'prep', who: 'Mama+Mia', what: 'BTS pakowania — speed-up x2, muzyka spokojna' },
+      ]},
+      { day: 'Czw', date: '30.04', items: [
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA reel "Mama parzy spring tea" — IG + TikTok' },
+        { kind: 'prep', who: 'Grafika', what: 'IG Story serial 4-slajdy (poranek/dzień/wieczór + CTA)' },
+      ]},
+      { day: 'Pt', date: '01.05', items: [
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA karuzela "5 sposobów na majówkę" — IG' },
+        { kind: 'prep', who: 'Sklep', what: 'Sprawdzenie zapasu Spring Tea (potencjalna sprzedaż weekend)' },
+      ]},
+      { day: 'Sob', date: '02.05', items: [
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA Mia BTS pakowanie (scheduled)' },
+      ]},
+      { day: 'Niedz', date: '03.05', items: [
+        { kind: 'publish', who: 'Grafika', what: 'PUBLIKACJA IG Story serial 4-slajdy (scheduled, lifestyle mood)' },
+      ]},
+    ],
+    19: [
+      { day: 'Pon', date: '04.05', items: [
+        { kind: 'prep', who: 'Tekst', what: 'Pisze copy reela "Co to gyokuro" + carousel headline+body 6 slajdów' },
+        { kind: 'decision', who: 'Decyzje (Michał)', what: 'Finalizuje cenę pre-sale (69 zł) + limit (100 puszek) + datę startu (12.05 18:00)' },
+        { kind: 'prep', who: 'Sklep', what: 'Draft strony produktowej Gyokuro Powder (na podstawie briefu)' },
+      ]},
+      { day: 'Wt', date: '05.05', items: [
+        { kind: 'prep', who: 'Grafika', what: 'Projektuje karuzelę "Gyokuro vs Matcha — 5 różnic" 6 slajdów' },
+        { kind: 'prep', who: 'Mama+Mia', what: 'Nagrywanie Mama "Co to gyokuro" — kuchnia, dwie puszki w rękach' },
+      ]},
+      { day: 'Śr', date: '06.05', items: [
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA reel "Co to gyokuro" — IG + TikTok' },
+        { kind: 'prep', who: 'Mama+Mia', what: 'Nagrywanie Mia POV "czytam Substack"' },
+      ]},
+      { day: 'Czw', date: '07.05', items: [
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA karuzela "Gyokuro vs Matcha — 5 różnic"' },
+        { kind: 'prep', who: 'Tekst', what: 'Pisze maila #1 teaser na 8.05 18:00 (subject: "Coś nowego nadchodzi 12 maja")' },
+      ]},
+      { day: 'Pt', date: '08.05', items: [
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA Mia POV reel — IG + TikTok' },
+        { kind: 'send', who: 'Sklep', what: '18:00 WYSYŁKA mailing #1 teaser do całej bazy (~5000)', time: '18:00' },
+        { kind: 'decision', who: 'Influencerzy', what: 'Finalizacja listy 20 herbaciarek do seedingu (research IG/TT)' },
+      ]},
+      { day: 'Sob', date: '09.05', items: [
+        { kind: 'prep', who: 'Grafika', what: 'Projektuje 7 storys countdown na 12-18.05 ("Pre-sale -7d", -6d...)' },
+        { kind: 'prep', who: 'Sklep', what: 'Finalna strona Gyokuro — sprawdzenie wszystkich grafik, opisów, parzenia' },
+      ]},
+      { day: 'Niedz', date: '10.05', items: [
+        { kind: 'publish', who: 'Grafika', what: 'PUBLIKACJA story #1 countdown "Pre-sale -2d" (scheduled)' },
+        { kind: 'prep', who: 'Sklep', what: 'Test pre-sale: kupon, limit 100, czy strona działa na mobile' },
+      ]},
+    ],
+    20: [
+      { day: 'Pon', date: '11.05', items: [
+        { kind: 'publish', who: 'Grafika', what: 'PUBLIKACJA story countdown "-1d"' },
+        { kind: 'decision', who: 'Decyzje (Michał)', what: 'Final check: cena 69 zł, limit 100, kupon "GYOKURO69" aktywny od 12.05 18:00' },
+        { kind: 'prep', who: 'Reklamy', what: 'Gotowość kampanii pre-sale Meta — start ustawiony na 12.05 18:01' },
+      ]},
+      { day: 'Wt', date: '12.05', items: [
+        { kind: 'live', who: 'Sklep', what: '18:00 GO LIVE pre-sale Gyokuro Powder (kupon aktywny)', time: '18:00' },
+        { kind: 'send', who: 'Sklep', what: '18:00 WYSYŁKA mailing #2 "Pre-sale start" do całej bazy', time: '18:00' },
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA reel "Mama unboxing pierwszej puszki Gyokuro"' },
+        { kind: 'live', who: 'Reklamy', what: 'START kampanii pre-sale Meta (~800 zł/dzień, retargeting + lookalike)' },
+      ]},
+      { day: 'Śr', date: '13.05', items: [
+        { kind: 'publish', who: 'Grafika', what: 'PUBLIKACJA story countdown "Pre-sale -5d do końca"' },
+        { kind: 'prep', who: 'Mama+Mia', what: 'Nagrywanie Mia POV "early access do Gyokuro"' },
+      ]},
+      { day: 'Czw', date: '14.05', items: [
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA Mia POV reel + screenshot mailing kampanii' },
+        { kind: 'prep', who: 'Influencerzy', what: 'Wysyłka 20 paczek influencer (Gyokuro 30g + chasen + kartka z imieniem)' },
+        { kind: 'prep', who: 'Grafika', what: 'Projektuje karuzelę "Jak parzyć Gyokuro w 4 krokach"' },
+      ]},
+      { day: 'Pt', date: '15.05', items: [
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA BTS "pakowanie 20 paczek influencer"' },
+        { kind: 'publish', who: 'Grafika', what: 'PUBLIKACJA karuzela "Jak parzyć Gyokuro w 4 krokach"' },
+        { kind: 'prep', who: 'Reklamy', what: 'Update kampanii — retargeting wszystkich co weszli na stronę Gyokuro' },
+      ]},
+      { day: 'Sob', date: '16.05', items: [
+        { kind: 'send', who: 'Sklep', what: '11:00 WYSYŁKA mailing #3 "Pre-sale reminder — ostatni weekend"', time: '11:00' },
+        { kind: 'decision', who: 'Decyzje (Michał)', what: 'Sprawdzenie ile zostało puszek 69 zł — komunikacja jeśli <30' },
+      ]},
+      { day: 'Niedz', date: '17.05', items: [
+        { kind: 'prep', who: 'Sklep', what: 'Przygotowanie kampanii premiera 19.05 — banner hero, kolejka wysyłek pre-sale' },
+        { kind: 'prep', who: 'Grafika', what: 'Banner sklepu hero "19.05 — pierwsza Gyokuro Powder w Polsce"' },
+      ]},
+    ],
+    21: [
+      { day: 'Pon', date: '18.05', items: [
+        { kind: 'live', who: 'Sklep', what: '23:59 PRE-SALE CLOSE — kupon GYOKURO69 dezaktywuje się', time: '23:59' },
+        { kind: 'prep', who: 'Reklamy', what: 'Pause kampanii pre-sale, start kampanii premiera (19.05+)' },
+        { kind: 'prep', who: 'Tekst', what: 'Pisze maila #4 launch (subject: "🍵 Japan Gyokuro Powder oficjalnie w sklepie")' },
+      ]},
+      { day: 'Wt', date: '19.05', items: [
+        { kind: 'live', who: 'Sklep', what: '10:00 GO LIVE Gyokuro w sklepie (po pre-sale, dla wszystkich)', time: '10:00' },
+        { kind: 'send', who: 'Sklep', what: '10:00 WYSYŁKA mailing #4 "Launch" do całej bazy', time: '10:00' },
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA reel "Launch ceremony — Mama parzy pierwsze"' },
+        { kind: 'prep', who: 'Sklep', what: 'Wysyłka 100 paczek pre-sale (priorytet, dziś/jutro)' },
+      ]},
+      { day: 'Śr', date: '20.05', items: [
+        { kind: 'live', who: 'Reklamy', what: 'START kampanii Gyokuro premium — retargeting + lookalike (~1000 zł/dzień)' },
+        { kind: 'prep', who: 'Tekst', what: 'Pisze maila #5 WTD (subject: "Dzień Herbaty: 3 paczki, najtańsza GRATIS")' },
+      ]},
+      { day: 'Czw', date: '21.05', items: [
+        { kind: 'send', who: 'Sklep', what: '09:00 WYSYŁKA mailing #5 "WTD 2+1"', time: '09:00' },
+        { kind: 'live', who: 'Sklep', what: '11:00 GO LIVE 2+1 (kupon "WTD2PLUS1" aktywny do 25.05 23:59)', time: '11:00' },
+        { kind: 'live', who: 'Mama+Mia', what: '11:00 IG LIVE "Parzymy Gyokuro razem" (30 min Q&A)', time: '11:00' },
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA reel Mia "Mój 3-pak na World Tea Day"' },
+      ]},
+      { day: 'Pt', date: '22.05', items: [
+        { kind: 'publish', who: 'Grafika', what: 'PUBLIKACJA karuzela "Twoje 3 paki na Dzień Herbaty"' },
+        { kind: 'live', who: 'Reklamy', what: 'START kampanii WTD 2+1 (Meta + ewentualnie Google Search "world tea day promocja")' },
+      ]},
+      { day: 'Sob', date: '23.05', items: [
+        { kind: 'publish', who: 'Sklep', what: 'PUBLIKACJA story z liczbą zamówień ("Już 200 koszyków w 3 dni")' },
+        { kind: 'prep', who: 'Influencerzy', what: 'Repost UGC 20 influencerek (story + grid posty)' },
+      ]},
+      { day: 'Niedz', date: '24.05', items: [
+        { kind: 'send', who: 'Sklep', what: '11:00 WYSYŁKA mailing #6 "Premium Gift dla Mamy"', time: '11:00' },
+        { kind: 'send', who: 'Sklep', what: '18:00 WYSYŁKA mailing #7 "Last 2+1 — kończy o północy 25.05"', time: '18:00' },
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA reel Mia "Co podarować mamie która ma wszystko"' },
+        { kind: 'prep', who: 'Grafika', what: 'Banner Mother\'s Day sklepu (aktywuje się 25.05 rano)' },
+      ]},
+    ],
+    22: [
+      { day: 'Pon', date: '25.05', items: [
+        { kind: 'live', who: 'Sklep', what: '23:59 PROMO 2+1 KOŃCZY — kupon WTD2PLUS1 dezaktywuje się', time: '23:59' },
+        { kind: 'prep', who: 'Reklamy', what: 'Pause kampanii WTD 2+1, start kampanii Premium Gift dla Mamy' },
+        { kind: 'publish', who: 'Grafika', what: 'PUBLIKACJA banner Mother\'s Day na sklepie + IG hero' },
+      ]},
+      { day: 'Wt', date: '26.05', items: [
+        { kind: 'live', who: 'Sklep', what: 'DZIEŃ MATKI — Premium Gift bundle 250 zł aktywny w sklepie' },
+        { kind: 'live', who: 'Reklamy', what: 'START kampanii Premium Gift Mother\'s Day (~600 zł/dzień, do 26.05 wieczorem)' },
+        { kind: 'prep', who: 'Mama+Mia', what: 'Nagrywanie reela "Mama: Last call 2+1" (oddanie dziedzicowi za promo które się kończy)' },
+      ]},
+      { day: 'Śr', date: '27.05', items: [
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA reel Mama "Last call 2+1 wczoraj"' },
+        { kind: 'prep', who: 'Tekst', what: 'Pisze maila #8 "Last chance Gyokuro w maju"' },
+      ]},
+      { day: 'Czw', date: '28.05', items: [
+        { kind: 'send', who: 'Sklep', what: '11:00 WYSYŁKA mailing #8 "Gyokuro w maju — jeszcze 3 dni"', time: '11:00' },
+        { kind: 'publish', who: 'Mama+Mia', what: 'PUBLIKACJA reel Mama "Last chance Gyokuro"' },
+      ]},
+      { day: 'Pt', date: '29.05', items: [
+        { kind: 'live', who: 'Reklamy', what: 'Final push Gyokuro — 3 ostatnie dni maja, urgency creative' },
+        { kind: 'prep', who: 'Sklep', what: 'Przygotowanie czerwca — premiery (Czarne Sencha?), banery, plan promo' },
+      ]},
+      { day: 'Sob', date: '30.05', items: [
+        { kind: 'decision', who: 'Decyzje (Michał)', what: 'Przegląd KPIs maja: sprzedaż netto, AOV, ad spend ROAS, ile pre-sale puszek' },
+        { kind: 'prep', who: 'Tekst', what: 'Wstępny szkielet planu czerwca (3 priorytety)' },
+      ]},
+      { day: 'Niedz', date: '31.05', items: [
+        { kind: 'live', who: 'Mama+Mia', what: 'IG LIVE "Co było w maju" — podsumowanie + zapowiedź czerwca (15 min)' },
+        { kind: 'decision', who: 'Decyzje (Michał)', what: 'Decyzja o zamówieniu kolejnej partii Gyokuro jeśli <30% zostało' },
+      ]},
+    ],
+  };
+
+  const daily = dailyByWeek[w] || [];
+
+  return { reels, grafiki, karuzele, maile, sklepZadania, promo, daily };
 }
 
 export default function SimplePlan() {
@@ -351,6 +523,7 @@ export default function SimplePlan() {
           .week-section:first-of-type { page-break-before: auto; }
           .karuzela-card { break-inside: avoid; }
           .slide-card { break-inside: avoid; }
+          .day-row { break-inside: avoid; }
         }
       `}</style>
       <div className="no-print" style={{ marginBottom: 16, display: 'flex', gap: 8, paddingBottom: 12, borderBottom: '1px solid #e2e8f0' }}>
@@ -384,6 +557,56 @@ export default function SimplePlan() {
                 <div style={{ marginTop: 4, fontSize: 12, color: accent, fontWeight: 700 }}>Budżet ads tygodnia: {week.weekly_budget_pln} zł</div>
               )}
             </div>
+
+            {/* DZIEŃ PO DNIU — Pon-Niedz */}
+            {Array.isArray(c.daily) && c.daily.length > 0 && (
+              <div className="daily-block" style={{ background: 'linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%)', border: `2px solid ${accent}`, borderRadius: 10, padding: 14, marginBottom: 16 }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: accent, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>📅 DZIEŃ PO DNIU — co kto robi i kiedy</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {c.daily.map((d: any, di: number) => {
+                    const isWeekend = d.day === 'Sob' || d.day === 'Niedz';
+                    return (
+                      <div key={di} className="day-row" style={{ display: 'grid', gridTemplateColumns: '78px 1fr', gap: 10, padding: '6px 8px', background: isWeekend ? '#fef3c7' : '#fff', border: `1px solid ${isWeekend ? '#fde68a' : '#e2e8f0'}`, borderRadius: 6 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: isWeekend ? '#92400e' : accent, textTransform: 'uppercase', letterSpacing: 1, alignSelf: 'start', paddingTop: 2 }}>
+                          {d.day}<br/><span style={{ fontSize: 10, fontWeight: 600, opacity: 0.75 }}>{d.date}</span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          {(d.items || []).map((it: any, ii: number) => {
+                            const kindLabel: Record<string, string> = {
+                              publish: '📢 PUBLIKUJ',
+                              send: '📤 WYŚLIJ',
+                              live: '🔴 GO LIVE',
+                              prep: '🔧 Przygotuj',
+                              decision: '🎯 Decyzja',
+                            };
+                            const kindColor: Record<string, string> = {
+                              publish: '#dc2626',
+                              send: '#0891b2',
+                              live: '#dc2626',
+                              prep: '#64748b',
+                              decision: '#7c3aed',
+                            };
+                            const lbl = kindLabel[it.kind] || it.kind;
+                            const col = kindColor[it.kind] || '#64748b';
+                            return (
+                              <div key={ii} style={{ fontSize: 11.5, lineHeight: 1.45, display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'baseline' }}>
+                                <span style={{ background: col, color: '#fff', padding: '1px 6px', borderRadius: 3, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, whiteSpace: 'nowrap' }}>{lbl}</span>
+                                {it.time && <span style={{ background: '#1e293b', color: '#fff', padding: '1px 5px', borderRadius: 3, fontSize: 9.5, fontWeight: 700 }}>⏰ {it.time}</span>}
+                                <span style={{ background: '#f1f5f9', color: '#1e293b', padding: '1px 5px', borderRadius: 3, fontSize: 9.5, fontWeight: 700 }}>{it.who}</span>
+                                <span style={{ color: '#1e293b' }}>{it.what}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop: 8, fontSize: 10, color: '#64748b', fontStyle: 'italic' }}>
+                  Legenda ról: Tekst (copy), Grafika (design), Sklep (Woo/strona/promo), Reklamy (Meta/Google ads), Mama+Mia (nagrania), Influencerzy (outreach), Decyzje (Michał).
+                </div>
+              </div>
+            )}
 
             {/* Promo */}
             {c.promo && (
