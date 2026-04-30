@@ -37,17 +37,17 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
           tagline: '🌿 Spring Tea — naturalny aromat sosny',
         },
         {
-          tytul: 'Hands-only ASMR: pakowanie 47 zamówień',
-          kto: 'Studio / hands-only (bez twarzy)',
-          ujecie: 'Stół z paczkami, klasyk InPost, ręce pakują (dowolna osoba, kamera w pionie nad blatem), naklejki, taśma. Speed-up x2 lub real-time z lo-fi muzyką.',
-          tekst: '(brak voiceover). Tekst on-screen: "Pakuję 47 zamówień przed majówką. Twoja herbata leci do Ciebie 🍵". Lub trending audio bez tekstu.',
+          tytul: 'Pakowanie 47 zamówień — kamera z góry, bez twarzy',
+          kto: 'Studio (bez twarzy)',
+          ujecie: 'Stół z paczkami, klasyczne InPosty, ręce pakują (kto akurat pakuje — dowolna osoba), naklejki, taśma. Kamera nad blatem w pionie. Przyspieszone x2 albo normalnie z spokojną muzyką w tle.',
+          tekst: 'Bez głosu. Napis na ekranie: "Pakuję 47 zamówień przed majówką. Twoja herbata leci do Ciebie 🍵". Albo modny dźwięk z TikToka bez tekstu.',
           tagline: '47 paczek przed weekendem',
         },
       ],
       karuzele: [
         {
           tytul: 'Spring Tea — 5 sposobów na majówkę',
-          format: 'IG carousel 6 slajdów (1080×1080)',
+          format: 'Karuzela na IG — 6 slajdów (1080×1080)',
           mood: 'Pastel zielony + cream tło, rustykalny mood, soft natural light, gałązki sosny',
           slides: [
             { headline: 'Spring Tea na majówkę', body: '5 sposobów żeby zrobić ją Twoją. Igły sosny + zielona herbata + cytryna. Pachnie jak las po deszczu.', visual: 'Foto Spring Tea w przezroczystym dzbanku, gałązki sosny w tle' },
@@ -61,7 +61,7 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
       ],
       grafiki: [
         {
-          format: 'IG Story serial 4-slajdy (1080×1920)',
+          format: 'Seria 4 storiek na IG (pionowo, 1080×1920)',
           opis: 'Story 1: poranek — kubek z herbatą na parapecie. Story 2: w połowie dnia — szklanka z lodem na balkonie. Story 3: wieczór — herbata + książka. Story 4: CTA "Zamów Spring Tea".',
           mood: 'Vertical, soft natural light, candid, lifestyle',
         },
@@ -77,17 +77,17 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
           tagline: '🍵 Gyokuro Powder — 19.05 premiera',
         },
         {
-          tytul: 'Macro b-roll: "Skąd to zielone?"',
-          kto: 'Studio macro (bez twarzy) + voice-over',
-          ujecie: 'Slow-mo close-up: liść gyokuro → kamienny młyn (stock JP) → drobny proszek wysypany na łyżkę → woda 60°C wlewana do chawanu → ubijanie chasenem → piana. 6 ujęć po 2-3s. ASMR audio + spokojny voice-over.',
-          tekst: 'Voice-over (Kasia lub Sasza): "Trzy tygodnie zacieniania na japońskiej plantacji. Ręczny zbiór najmłodszych pąków. Mielenie w kamiennym młynie — godzina pracy na 30 gramów proszku. To dlatego gyokuro jest takie zielone i takie głębokie w smaku. Pre-sale za tydzień." Tekst on-screen: "21 dni cienia → 1h młyn → Twój chawan".',
+          tytul: 'Szczegółowe ujęcia: "Skąd to zielone?" (bez twarzy)',
+          kto: 'Studio (bez twarzy), Kasia mówi w tle',
+          ujecie: 'Spowolnione zbliżenia: liść gyokuro → kamienny młyn (zdjęcia z Japonii kupione na stockach) → drobny proszek wysypany na łyżkę → woda 60°C wlewana do chawanu → ubijanie chasenem → piana. Sześć ujęć po 2-3 sekundy. Spokojne dźwięki tła plus głos Kasi.',
+          tekst: 'Kasia (lub Sasza) mówi w tle: "Trzy tygodnie zacieniania na japońskiej plantacji. Ręczny zbiór najmłodszych pąków. Mielenie w kamiennym młynie — godzina pracy na 30 gramów proszku. To dlatego gyokuro jest takie zielone i takie głębokie w smaku. Pre-sale za tydzień." Tekst on-screen: "21 dni cienia → 1h młyn → Twój chawan".',
           tagline: '🍵 Gyokuro — od plantacji do chawanu · pre-sale 12.05',
         },
       ],
       karuzele: [
         {
           tytul: 'Gyokuro vs Matcha — 5 różnic',
-          format: 'IG/TikTok carousel 6 slajdów (1080×1080)',
+          format: 'Karuzela na IG i TikTok — 6 slajdów (1080×1080)',
           mood: 'Cream tło, deep matcha green akcenty, japońska estetyka, minimalistyczne ikony, czcionka serif na headlines',
           slides: [
             { headline: 'Gyokuro vs Matcha — 5 różnic których nikt Ci nie powiedział', body: 'Obie japońskie. Obie zielone. Obie sproszkowane. Ale to NIE to samo. Swipe →', visual: 'Dwie puszki obok siebie: matcha + gyokuro, na cream tle' },
@@ -100,7 +100,7 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
         },
         {
           tytul: 'Skąd pochodzi nasze Gyokuro',
-          format: 'IG carousel 5 slajdów (1080×1080)',
+          format: 'Karuzela na IG — 5 slajdów (1080×1080)',
           mood: 'Stock photo Japan + minimal text overlay, cream tło, deep green',
           slides: [
             { headline: 'Hattori, Shizuoka', body: 'Małe gospodarstwo na zboczu góry, 320m n.p.m. Mgła z Pacyfiku, zacieniana plantacja. Tutaj rośnie Twoje gyokuro.', visual: 'Stock photo zacienianej plantacji w Japonii' },
@@ -113,7 +113,7 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
       ],
       grafiki: [
         {
-          format: 'IG Story 5-slajd serial (1080×1920)',
+          format: 'Seria 5 storiek na IG (pionowo, 1080×1920)',
           opis: 'Story 1: zbliżenie liścia gyokuro. Story 2: zacieniana plantacja Hattori (stock JP). Story 3: kamienne młyny. Story 4: gotowy proszek w chawanie. Story 5: "Pre-sale 12.05 — zapisz się na maila".',
           mood: 'Vertical, soft light, japoński mood',
         },
@@ -136,17 +136,17 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
           tagline: 'Early access mailing list 12.05 18:00',
         },
         {
-          tytul: 'BTS hands-only: pakowanie 20 paczek influencer',
-          kto: 'Studio / hands-only (bez twarzy)',
-          ujecie: 'Top-down (kamera nad blatem), 20 paczek BHT w rzędach, ręce pakują puszkę Gyokuro + chasen + kartkę z imieniem do każdej. Speed-up x3.',
-          tekst: '(brak voiceover, lo-fi/ambient muzyka). Tekst on-screen: "20 wybranych herbaciarek dostaje pierwszą Gyokuro Powder w Polsce — 7 dni przed premierą. Ich kody zniżkowe @influencer1, @influencer2... pojawią się w ich postach.".',
+          tytul: 'Pakowanie 20 paczek dla herbaciarek — kamera z góry, bez twarzy',
+          kto: 'Studio (bez twarzy)',
+          ujecie: 'Kamera z góry, nad blatem. 20 paczek BHT w rzędach. Ręce pakują puszkę Gyokuro, chasen i kartkę z imieniem do każdej. Przyspieszone x3.',
+          tekst: 'Bez głosu, spokojna muzyka. Napis na ekranie: "20 wybranych herbaciarek dostaje pierwszą Gyokuro Powder w Polsce — 7 dni przed premierą. Ich kody zniżkowe @influencer1, @influencer2... pojawią się w ich postach."',
           tagline: 'Influencer seeding 14-15.05',
         },
       ],
       karuzele: [
         {
           tytul: 'Jak parzyć Gyokuro Powder — 4 kroki',
-          format: 'IG carousel 5 slajdów (1080×1080)',
+          format: 'Karuzela na IG — 5 slajdów (1080×1080)',
           mood: 'Cream tło, kroki 1-2-3-4, foto produktu na każdym slajdzie',
           slides: [
             { headline: 'Jak parzyć Gyokuro Powder', body: '4 kroki, 90 sekund, 1 chawan. Przepis który dostajesz w pudełku, ale tutaj raz jeszcze — bo warto.', visual: 'Foto pełnego chawanu zielonej piany na cream tle' },
@@ -159,12 +159,12 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
       ],
       grafiki: [
         {
-          format: 'Email hero (600×300)',
+          format: 'Główna grafika do maila (600×300)',
           opis: 'Foto puszki BHT Gyokuro Powder 30g, na cream tle, obok zielona piana w chawanie po ubiciu. Subject: "🍵 Pre-sale Gyokuro Powder otwarty (-13% first 100 puszek)". CTA "Zamów teraz".',
           mood: 'Email-friendly, minimal text, focus na produkt',
         },
         {
-          format: 'IG Story countdown 7-dni (1080×1920)',
+          format: '7 storiek z odliczaniem na IG (pionowo, 1080×1920)',
           opis: '7 storiek codziennie 12-18.05: każda z licznikiem "Pre-sale -7d", "-6d"... + cytat z Mamy/influencerek. Cream tło, zielony akcent.',
           mood: 'Vertical, urgency mood',
         },
@@ -180,16 +180,16 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
           tagline: '19.05 OFICJALNA PREMIERA — w sklepie',
         },
         {
-          tytul: 'Screen recording: "Mój 3-pak za 130 zamiast 180"',
-          kto: 'Phone screen + ręce (bez twarzy) + voice-over',
-          ujecie: 'Pionowe nagranie ekranu telefonu: scrollowanie sklepu BHT, wkładanie 3 puszek do koszyka (Matcha Lattea + Crazy Good + Strawberry Lemonade), aplikacja kuponu WTD2PLUS1, screen z ceną 130 zamiast 180. Voice-over Mamy lub neutralny.',
-          tekst: 'Voice-over: "Dzień Herbaty — 3 paczki, najtańsza gratis. Bierzemy: Matcha Lattea, Crazy Good, Strawberry Lemonade. Strawberry najtańsza, czyli za darmo. 180 zł na 130. Klikasz, masz." Tekst on-screen na końcu: "21-25.05 · cały katalog · kupon WTD2PLUS1".',
+          tytul: 'Nagranie z ekranu telefonu: "Mój 3-pak za 130 zamiast 180" (bez twarzy)',
+          kto: 'Telefon w kadrze, ręce (bez twarzy), Kasia mówi w tle',
+          ujecie: 'Pionowe nagranie ekranu telefonu — scrollujemy sklep BHT, wrzucamy 3 puszki do koszyka (Matcha Lattea, Crazy Good, Strawberry Lemonade), wpisujemy kupon WTD2PLUS1, ekran pokazuje cenę 130 zł zamiast 180. Kasia (lub Sasza) mówi w tle.',
+          tekst: 'Głos w tle (Kasia): "Dzień Herbaty — 3 paczki, najtańsza gratis. Bierzemy: Matcha Lattea, Crazy Good, Strawberry Lemonade. Strawberry najtańsza, czyli za darmo. 180 zł na 130. Klikasz, masz." Tekst on-screen na końcu: "21-25.05 · cały katalog · kupon WTD2PLUS1".',
           tagline: '21-25.05 WTD — 2+1 najtańsza GRATIS',
         },
         {
           tytul: 'IG Live "Parzymy Gyokuro razem"',
           kto: 'Kasia + Sasza (split-screen lub jedno ujęcie) — opcj. influencerka po seedingu',
-          ujecie: 'Kuchnia, jeden chawan + zestaw. Kasia parzy live, opowiada, odpowiada na pytania widzów (Sasza może odczytywać pytania z chatu). Opcjonalnie split-screen z influencerką która dostała seeding 14.05 i też parzy u siebie.',
+          ujecie: 'Kuchnia, jeden chawan i zestaw. Kasia parzy na żywo, opowiada, odpowiada na pytania widzów. Sasza może odczytywać pytania z komentarzy. Opcjonalnie podzielony ekran z herbaciarką która dostała paczkę 14.05 i też parzy u siebie w domu.',
           tekst: 'Scenariusz Q&A: jak parzyć / jaka temperatura / vs matcha / czy mogę pić wieczorem / dla kogo. Kasia prowadzi 30 min (Sasza wspiera od strony chatu). Plus link do sklepu w opisie + przyklejony comment z kuponem.',
           tagline: '21.05 11:00 IG Live z Mamą',
         },
@@ -197,7 +197,7 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
       karuzele: [
         {
           tytul: 'Twoje 3 paki na Dzień Herbaty (2+1)',
-          format: 'IG carousel 6 slajdów (1080×1080)',
+          format: 'Karuzela na IG — 6 slajdów (1080×1080)',
           mood: 'Kolorowe, każdy slajd inna paleta zgodnie z heroes, czytelne ceny',
           slides: [
             { headline: 'Dzień Herbaty 21 maja', body: '2+1 najtańsza GRATIS na cały katalog. Wybierz 3 dowolne, najtańsza schodzi z koszyka. Aktywne 21-25.05 23:59.', visual: 'Foto 3 puszek różnych kolorów, układ trójkąt' },
@@ -211,15 +211,15 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
       ],
       grafiki: [
         {
-          format: 'Banner sklepu hero (1920×640)',
+          format: 'Główny banner do sklepu (1920×640)',
           opis: 'Foto Gyokuro w chawanie + hasło "Pierwsza Gyokuro Powder w Polsce — premiera 19.05". CTA "Zamów". Cream tło, deep green akcent.',
         },
         {
-          format: '3 statyki ad Meta (1080×1080 + 1080×1350)',
-          opis: '(1) Foto produktu z 5 argumentami "Następny krok po matchy". (2) Carousel-style "Twoje 3-paki na WTD" — przykładowe koszyki z ceną. (3) UGC-style: zrzut DM od influencerki "Pierwsza taka w Polsce".',
+          format: '3 grafiki reklamowe na Mecie (1080×1080 i 1080×1350)',
+          opis: '(1) Foto produktu z 5 argumentami "Następny krok po matchy". (2) Trzy przykładowe koszyki "Twoje 3-paki na WTD" — produkty plus cena. (3) Zrzut wiadomości od herbaciarki "Pierwsza taka w Polsce".',
         },
         {
-          format: 'IG Reel cover (1080×1920)',
+          format: 'Okładka reela na IG (pionowo, 1080×1920)',
           opis: 'Kasia trzyma puszkę gyokuro w jednej ręce, chawan w drugiej, hasło "19.05 — w sklepie".',
         },
       ],
@@ -227,10 +227,10 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
     22: {
       reels: [
         {
-          tytul: 'UGC compilation: "Co kupujący napisali o Gyokuro"',
-          kto: 'Edycja screenshotów DM + influencer reposts (zewnętrzne twarze)',
-          ujecie: '15-20 sekund: szybkie cuts (po 0.8s) ze screenshotów DM/komentarzy + 2-3 ujęć z reelsów influencerek z seedingu (14.05) parzących gyokuro u siebie. Voice-over na końcu zaprasza do bundle.',
-          tekst: 'Tekst on-screen w trakcie cuts: "Pierwszy łyk i milczenie — @ola..." / "Smakuje jak rosół z kwiatami — @kasia..." / "Dziękuję za pierwszy raz — @marta..." / "Mama napisała że jej życie się zmieniło — @ania". Voice-over (Kasia, ostatnie 4s): "Mama która zna matchę zasługuje na coś więcej. Premium Gift 250 zł — Gyokuro + Lattea + chasen, w pakowaniu prezentowym. Zamów do 24 maja."',
+          tytul: 'Montaż "Co kupujący napisali o Gyokuro" (bez naszych twarzy)',
+          kto: 'Montaż screenshotów wiadomości i postów herbaciarek',
+          ujecie: '15-20 sekund: szybkie cięcia (po 0.8s) ze screenshotów wiadomości i komentarzy plus 2-3 ujęcia z reelsów herbaciarek z seedingu (14.05) parzących gyokuro u siebie. Pod koniec głos Kasi zaprasza do bundle.',
+          tekst: 'Napisy na ekranie podczas cięć: "Pierwszy łyk i milczenie — @ola..." / "Smakuje jak rosół z kwiatami — @kasia..." / "Dziękuję za pierwszy raz — @marta..." / "Mama napisała że jej życie się zmieniło — @ania". Kasia mówi pod koniec (ostatnie 4 sekundy): "Mama która zna matchę zasługuje na coś więcej. Premium Gift 250 zł — Gyokuro + Lattea + chasen, w pakowaniu prezentowym. Zamów do 24 maja."',
           tagline: 'Premium Gift dla Mamy 250 zł · zamów do 24.05',
         },
         {
@@ -244,7 +244,7 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
       karuzele: [
         {
           tytul: 'Premium Gift dla Mamy — co w środku',
-          format: 'IG carousel 5 slajdów (1080×1080)',
+          format: 'Karuzela na IG — 5 slajdów (1080×1080)',
           mood: 'Pastel pink + cream + deep green, rustykalne, kwiaty wiśni w tle',
           slides: [
             { headline: 'Premium Gift dla Mamy', body: 'Mama która zna matchę zasługuje na coś więcej. Bundle 250 zł — w środku trzy rzeczy które uczynią jej poranki lepszymi.', visual: 'Bundle BHT na drewnianym blacie, wstążka, kwiat wiśni' },
@@ -257,15 +257,15 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
       ],
       grafiki: [
         {
-          format: 'Email hero Premium Gift (600×300)',
+          format: 'Główna grafika do maila Premium Gift (600×300)',
           opis: 'Foto bundle: Gyokuro + Matcha Lattea + chasen ułożone w trójkąt na drewnianym blacie, wstążka w tle, hasło "Premium Gift dla Mamy". CTA "Zamów".',
         },
         {
-          format: 'Banner Mother\'s Day sklepu (1920×640)',
+          format: 'Banner Dzień Matki do sklepu (1920×640)',
           opis: 'Foto bundle z tła pastelowo-różowo, kwiat wiśni, "Mama która zna matchę". Aktywny 24-26.05.',
         },
         {
-          format: 'IG Reel cover (1080×1920)',
+          format: 'Okładka reela na IG (pionowo, 1080×1920)',
           opis: 'Foto Kasia + Sasza + Mia obok bundle, cream tło, hasło "Mamie której nic nie brakuje".',
         },
       ],
@@ -294,8 +294,8 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
     18: [
       { day: 'Pon', date: '27.04', items: [
         { kind: 'prep', who: 'Tekst', what: 'Tekst do reela "Kasia parzy spring tea" i pierwszy mail teaser na czwartek' },
-        { kind: 'prep', who: 'Sklep', what: 'Hero banner w sklepie zmieniamy na Spring Tea — komunikat o herbacie na majówkowy weekend' },
-        { kind: 'prep', who: 'Reklamy', what: 'Stawiamy kampanię brand awareness Spring Tea na Mecie — ok. 600 zł dziennie' },
+        { kind: 'prep', who: 'Sklep', what: 'Zmieniamy główną grafikę w sklepie na Spring Tea — z hasłem o herbacie na majówkę' },
+        { kind: 'prep', who: 'Reklamy', what: 'Włączamy reklamy Spring Tea na Mecie żeby ludzie nas zobaczyli — ok. 600 zł dziennie' },
       ]},
       { day: 'Wt', date: '28.04', items: [
         { kind: 'prep', who: 'Grafika', what: 'Karuzela "5 sposobów na Spring Tea" — pierwsze 3 slajdy (cover, cytryna, mięta)' },
@@ -303,157 +303,157 @@ function buildWeekConcrete(week: any, weekIdx: number, allEmails: any[]) {
       ]},
       { day: 'Śr', date: '29.04', items: [
         { kind: 'prep', who: 'Grafika', what: 'Kończymy karuzelę "5 sposobów" — slajdy 4-6 i finalna obróbka' },
-        { kind: 'prep', who: 'Studio', what: 'Studio nagrywa ASMR pakowania — top-down kamera, ręce w kadrze, lo-fi muzyka' },
+        { kind: 'prep', who: 'Studio', what: 'Studio nagrywa pakowanie zamówień — kamera z góry, ręce w kadrze, spokojna muzyka' },
       ]},
       { day: 'Czw', date: '30.04', items: [
-        { kind: 'publish', who: 'Kasia', what: 'Reel "Kasia parzy spring tea" idzie na IG i TikTok' },
+        { kind: 'publish', who: 'Kasia', what: 'Wrzucamy reel "Kasia parzy spring tea" na IG i TikTok' },
         { kind: 'prep', who: 'Grafika', what: 'Seria 4 storiek — poranek, dzień, wieczór, na końcu CTA' },
       ]},
       { day: 'Pt', date: '01.05', items: [
-        { kind: 'publish', who: 'Grafika', what: 'Karuzela "5 sposobów na majówkę" idzie na IG' },
+        { kind: 'publish', who: 'Grafika', what: 'Wrzucamy karuzelę "5 sposobów na majówkę" na IG' },
         { kind: 'prep', who: 'Sklep', what: 'Sprawdzamy stan magazynowy Spring Tea — weekend może odpalić sprzedaż' },
       ]},
       { day: 'Sob', date: '02.05', items: [
-        { kind: 'publish', who: 'Studio', what: 'ASMR pakowania leci z plana (scheduled)' },
+        { kind: 'publish', who: 'Studio', what: 'Nagranie pakowania leci z zaplanowanego postu' },
       ]},
       { day: 'Niedz', date: '03.05', items: [
-        { kind: 'publish', who: 'Grafika', what: 'Seria storiek leci z plana — lifestyle mood' },
+        { kind: 'publish', who: 'Grafika', what: 'Seria storiek leci z zaplanowanych postów' },
       ]},
     ],
     19: [
       { day: 'Pon', date: '04.05', items: [
-        { kind: 'prep', who: 'Tekst', what: 'Tekst do reela "Co to gyokuro?" i wszystkie 6 slajdów karuzeli (headline + body do każdego)' },
+        { kind: 'prep', who: 'Tekst', what: 'Piszemy tekst do reela "Co to gyokuro?" i do wszystkich 6 slajdów karuzeli — tytuł i opis do każdego slajdu' },
         { kind: 'decision', who: 'Decyzje (Michał)', what: 'Michał potwierdza: cena pre-sale 69 zł, limit 100 puszek, start 12 maja o 18:00' },
-        { kind: 'prep', who: 'Sklep', what: 'Pierwszy draft strony Gyokuro w sklepie — z gotowego briefu' },
+        { kind: 'prep', who: 'Sklep', what: 'Pierwsza wersja strony Gyokuro w sklepie — używamy briefu który już mamy' },
       ]},
       { day: 'Wt', date: '05.05', items: [
-        { kind: 'prep', who: 'Grafika', what: 'Karuzela "Gyokuro vs Matcha — 5 różnic" — projekt 6 slajdów' },
+        { kind: 'prep', who: 'Grafika', what: 'Projektujemy karuzelę "Gyokuro vs Matcha — 5 różnic" — 6 slajdów' },
         { kind: 'prep', who: 'Kasia', what: 'Kasia nagrywa edukacyjny reel "Co to gyokuro?" w kuchni — 10 minut, dwie puszki w rękach' },
       ]},
       { day: 'Śr', date: '06.05', items: [
-        { kind: 'publish', who: 'Kasia', what: 'Reel "Kasia: Co to gyokuro?" idzie na IG i TikTok' },
-        { kind: 'prep', who: 'Studio', what: 'W studio macro b-roll w slow-mo: liść, młyn (ze stocku JP), proszek, woda 60°C, chasen, piana — ok. 3h pracy' },
+        { kind: 'publish', who: 'Kasia', what: 'Wrzucamy reel "Kasia: Co to gyokuro?" na IG i TikTok' },
+        { kind: 'prep', who: 'Studio', what: 'Studio nagrywa szczegółowe ujęcia w spowolnionym tempie — liść gyokuro, młyn (zdjęcia z Japonii kupione na stockach), proszek, woda 60°C, ubijanie chasenem, piana. Około 3 godziny pracy' },
       ]},
       { day: 'Czw', date: '07.05', items: [
-        { kind: 'publish', who: 'Grafika', what: 'Karuzela "Gyokuro vs Matcha — 5 różnic" idzie na IG' },
-        { kind: 'prep', who: 'Tekst', what: 'Tekst maila teaser na piątek 18:00 — subject "Coś nowego nadchodzi 12 maja"' },
+        { kind: 'publish', who: 'Grafika', what: 'Wrzucamy karuzelę "Gyokuro vs Matcha — 5 różnic" na IG' },
+        { kind: 'prep', who: 'Tekst', what: 'Piszemy maila teaser na piątek 18:00 — temat "Coś nowego nadchodzi 12 maja"' },
       ]},
       { day: 'Pt', date: '08.05', items: [
-        { kind: 'publish', who: 'Studio', what: 'Macro b-roll "Skąd to zielone" idzie na IG i TikTok' },
+        { kind: 'publish', who: 'Studio', what: 'Wrzucamy nagranie szczegółowe "Skąd to zielone" na IG i TikTok' },
         { kind: 'send', who: 'Sklep', what: '18:00 mailing teaser leci do całej bazy (~5000 osób)', time: '18:00' },
-        { kind: 'decision', who: 'Influencerzy', what: 'Zamykamy listę 20 herbaciarek do paczek influencer — research IG i TikToka' },
+        { kind: 'decision', who: 'Influencerzy', what: 'Zamykamy listę 20 herbaciarek do których wyślemy paczki — przeglądamy IG i TikToka' },
       ]},
       { day: 'Sob', date: '09.05', items: [
-        { kind: 'prep', who: 'Grafika', what: '7 storiek countdown na 12-18 maja — "Pre-sale -7d, -6d..."' },
-        { kind: 'prep', who: 'Sklep', what: 'Strona Gyokuro w sklepie — finalne sprawdzenie grafik, opisów i instrukcji parzenia' },
+        { kind: 'prep', who: 'Grafika', what: 'Projektujemy 7 storiek z odliczaniem na 12-18 maja — "Pre-sale za 7 dni, 6 dni..."' },
+        { kind: 'prep', who: 'Sklep', what: 'Sprawdzamy stronę Gyokuro w sklepie — czy grafiki, opisy i instrukcje parzenia są ok' },
       ]},
       { day: 'Niedz', date: '10.05', items: [
-        { kind: 'publish', who: 'Grafika', what: 'Pierwsza story countdown "Pre-sale -2d" leci z plana' },
-        { kind: 'prep', who: 'Sklep', what: 'Test pre-sale: kupon GYOKURO69 działa, limit 100 sztuk się trzyma, strona OK na telefonie' },
+        { kind: 'publish', who: 'Grafika', what: 'Pierwsza story z odliczaniem "Pre-sale za 2 dni" leci z zaplanowanego postu' },
+        { kind: 'prep', who: 'Sklep', what: 'Sprawdzamy czy pre-sale wszystko działa — kupon GYOKURO69, limit 100 sztuk, czy strona dobrze wygląda na telefonie' },
       ]},
     ],
     20: [
       { day: 'Pon', date: '11.05', items: [
-        { kind: 'publish', who: 'Grafika', what: 'Story countdown "-1d do pre-sale" leci z plana' },
+        { kind: 'publish', who: 'Grafika', what: 'Story z odliczaniem "Jutro pre-sale" leci z zaplanowanego postu' },
         { kind: 'decision', who: 'Decyzje (Michał)', what: 'Michał ostatnie sprawdzenie: cena 69 zł, limit 100, kupon GYOKURO69 włącza się jutro o 18:00' },
-        { kind: 'prep', who: 'Reklamy', what: 'Kampania pre-sale na Mecie gotowa — start zaplanowany na jutro o 18:01' },
+        { kind: 'prep', who: 'Reklamy', what: 'Reklamy pre-sale na Mecie gotowe — włączą się jutro o 18:01' },
       ]},
       { day: 'Wt', date: '12.05', items: [
         { kind: 'live', who: 'Sklep', what: '18:00 ruszamy pre-sale Gyokuro w sklepie — kupon GYOKURO69 aktywny', time: '18:00' },
-        { kind: 'send', who: 'Sklep', what: '18:00 mailing "Pre-sale start" do całej bazy', time: '18:00' },
-        { kind: 'publish', who: 'Kasia', what: 'Reel "Kasia unboxing pierwszej puszki Gyokuro" idzie na IG i TikTok' },
-        { kind: 'live', who: 'Reklamy', what: 'Kampania pre-sale na Mecie wystartowała — ok. 800 zł dziennie, retargeting plus lookalike' },
+        { kind: 'send', who: 'Sklep', what: '18:00 wysyłamy maila "Pre-sale start" do wszystkich zapisanych', time: '18:00' },
+        { kind: 'publish', who: 'Kasia', what: 'Wrzucamy reel "Kasia rozpakowuje pierwszą puszkę Gyokuro" na IG i TikTok' },
+        { kind: 'live', who: 'Reklamy', what: 'Reklamy pre-sale na Mecie ruszyły — ok. 800 zł dziennie, pokazujemy je osobom które już nas znają plus podobnym do naszych klientek' },
       ]},
       { day: 'Śr', date: '13.05', items: [
-        { kind: 'publish', who: 'Grafika', what: 'Story countdown "-5 dni do końca pre-sale" leci z plana' },
-        { kind: 'prep', who: 'Mia', what: 'Mia nagrywa POV "early access do Gyokuro" — to jej jedyny reel w tym miesiącu, Gen-Z relatable' },
+        { kind: 'publish', who: 'Grafika', what: 'Story z odliczaniem "5 dni do końca pre-sale" leci z zaplanowanego postu' },
+        { kind: 'prep', who: 'Mia', what: 'Mia nagrywa swój reel "early access do Gyokuro" — pierwszoosobowo, jak gada do koleżanki. Jej jedyny reel w tym miesiącu' },
       ]},
       { day: 'Czw', date: '14.05', items: [
-        { kind: 'publish', who: 'Mia', what: 'Reel Mii idzie na IG i TikTok, plus screenshot z mailingu' },
-        { kind: 'prep', who: 'Influencerzy', what: 'Wysyłamy 20 paczek do herbaciarek — Gyokuro 30g, chasen i kartka z imieniem każdej' },
-        { kind: 'prep', who: 'Grafika', what: 'Karuzela "Jak parzyć Gyokuro w 4 krokach" — projekt' },
+        { kind: 'publish', who: 'Mia', what: 'Wrzucamy reel Mii na IG i TikTok, do tego screenshot z mailingu' },
+        { kind: 'prep', who: 'Influencerzy', what: 'Wysyłamy 20 paczek do wybranych herbaciarek — w każdej puszka Gyokuro 30g, chasen i kartka z imieniem' },
+        { kind: 'prep', who: 'Grafika', what: 'Projektujemy karuzelę "Jak parzyć Gyokuro w 4 krokach"' },
       ]},
       { day: 'Pt', date: '15.05', items: [
-        { kind: 'publish', who: 'Studio', what: 'BTS "pakowanie 20 paczek influencer" idzie na IG i TikTok (top-down, ASMR)' },
-        { kind: 'publish', who: 'Grafika', what: 'Karuzela "Jak parzyć Gyokuro" idzie na IG' },
-        { kind: 'prep', who: 'Reklamy', what: 'Aktualizacja kampanii — retargeting na każdego kto wszedł na stronę Gyokuro' },
+        { kind: 'publish', who: 'Studio', what: 'Wrzucamy nagranie z pakowania 20 paczek dla herbaciarek na IG i TikTok — kamera z góry, spokojne dźwięki pakowania' },
+        { kind: 'publish', who: 'Grafika', what: 'Wrzucamy karuzelę "Jak parzyć Gyokuro" na IG' },
+        { kind: 'prep', who: 'Reklamy', what: 'Aktualizujemy kampanie — pokazujemy reklamy każdemu kto już zaglądnął na stronę Gyokuro' },
       ]},
       { day: 'Sob', date: '16.05', items: [
-        { kind: 'send', who: 'Sklep', what: '11:00 mailing "Pre-sale reminder — ostatni weekend"', time: '11:00' },
-        { kind: 'decision', who: 'Decyzje (Michał)', what: 'Michał sprawdza ile zostało puszek po 69 zł — jeśli mniej niż 30, dorzucamy story z licznikiem' },
+        { kind: 'send', who: 'Sklep', what: '11:00 wysyłamy przypomnienie "Pre-sale — ostatni weekend"', time: '11:00' },
+        { kind: 'decision', who: 'Decyzje (Michał)', what: 'Michał sprawdza ile zostało puszek po 69 zł — jeśli mniej niż 30, wrzucamy story z licznikiem żeby ludzie pospieszyli' },
       ]},
       { day: 'Niedz', date: '17.05', items: [
-        { kind: 'prep', who: 'Sklep', what: 'Przygotowujemy premiera-wtorek 19.05 — banner hero w sklepie i kolejka wysyłek pre-sale' },
-        { kind: 'prep', who: 'Grafika', what: 'Banner hero "19.05 — pierwsza Gyokuro Powder w Polsce" do sklepu' },
+        { kind: 'prep', who: 'Sklep', what: 'Przygotowujemy wtorkową premierę 19.05 — główny banner w sklepie i kolejka paczek do wysłania z pre-sale' },
+        { kind: 'prep', who: 'Grafika', what: 'Robimy główny banner "19.05 — pierwsza Gyokuro Powder w Polsce" do sklepu' },
       ]},
     ],
     21: [
       { day: 'Pon', date: '18.05', items: [
         { kind: 'live', who: 'Sklep', what: '23:59 pre-sale się zamyka — kupon GYOKURO69 przestaje działać', time: '23:59' },
-        { kind: 'prep', who: 'Reklamy', what: 'Wyłączamy kampanię pre-sale, włączamy kampanię premierową (od jutra)' },
-        { kind: 'prep', who: 'Tekst', what: 'Tekst maila launch — subject "🍵 Japan Gyokuro Powder oficjalnie w sklepie"' },
+        { kind: 'prep', who: 'Reklamy', what: 'Wyłączamy reklamy pre-sale, jutro włączamy reklamy premierowe' },
+        { kind: 'prep', who: 'Tekst', what: 'Piszemy maila launch — temat "🍵 Japan Gyokuro Powder oficjalnie w sklepie"' },
       ]},
       { day: 'Wt', date: '19.05', items: [
-        { kind: 'live', who: 'Sklep', what: '10:00 Gyokuro oficjalnie idzie do sklepu — dla wszystkich, nie tylko pre-sale', time: '10:00' },
-        { kind: 'send', who: 'Sklep', what: '10:00 mailing "Launch" do całej bazy', time: '10:00' },
-        { kind: 'publish', who: 'Kasia', what: 'Reel "Launch ceremony — Kasia parzy pierwsze" idzie na IG i TikTok' },
-        { kind: 'prep', who: 'Sklep', what: 'Wysyłamy 100 paczek pre-sale — priorytet, dziś i jutro' },
+        { kind: 'live', who: 'Sklep', what: '10:00 Gyokuro oficjalnie wchodzi do sklepu — dla wszystkich, nie tylko tych z pre-sale', time: '10:00' },
+        { kind: 'send', who: 'Sklep', what: '10:00 wysyłamy maila "Launch" do wszystkich zapisanych', time: '10:00' },
+        { kind: 'publish', who: 'Kasia', what: 'Wrzucamy reel "Kasia parzy pierwsze gyokuro" na IG i TikTok' },
+        { kind: 'prep', who: 'Sklep', what: 'Wysyłamy 100 paczek pre-sale — to priorytet, dziś i jutro' },
       ]},
       { day: 'Śr', date: '20.05', items: [
-        { kind: 'live', who: 'Reklamy', what: 'Kampania premierowa Gyokuro startuje — retargeting plus lookalike, ok. 1000 zł dziennie' },
-        { kind: 'prep', who: 'Tekst', what: 'Tekst maila na Dzień Herbaty — subject "Dzień Herbaty: 3 paczki, najtańsza GRATIS"' },
+        { kind: 'live', who: 'Reklamy', what: 'Włączamy reklamy premierowe Gyokuro — pokazujemy je osobom które już nas znają plus podobnym do klientek, ok. 1000 zł dziennie' },
+        { kind: 'prep', who: 'Tekst', what: 'Piszemy maila na Dzień Herbaty — temat "Dzień Herbaty: 3 paczki, najtańsza GRATIS"' },
       ]},
       { day: 'Czw', date: '21.05', items: [
-        { kind: 'send', who: 'Sklep', what: '09:00 mailing "Dzień Herbaty 2+1" do całej bazy', time: '09:00' },
-        { kind: 'live', who: 'Sklep', what: '11:00 włączamy promo 2+1 — kupon WTD2PLUS1, działa do 25.05 23:59', time: '11:00' },
-        { kind: 'live', who: 'Kasia', what: '11:00 IG Live "Parzymy Gyokuro razem" — Kasia prowadzi, Sasza pilnuje chatu, ok. 30 min Q&A. Opcjonalnie split-screen z jedną z herbaciarek po seedingu', time: '11:00' },
-        { kind: 'publish', who: 'Studio', what: 'Screen recording "3-pak za 130 zł zamiast 180" idzie na IG i TikTok — telefon w kadrze, voice-over Kasi' },
+        { kind: 'send', who: 'Sklep', what: '09:00 wysyłamy maila "Dzień Herbaty 2+1" do wszystkich zapisanych', time: '09:00' },
+        { kind: 'live', who: 'Sklep', what: '11:00 włączamy promocję 2+1 — kupon WTD2PLUS1, działa do 25 maja do północy', time: '11:00' },
+        { kind: 'live', who: 'Kasia', what: '11:00 transmisja na żywo na IG "Parzymy gyokuro razem" — Kasia prowadzi, Sasza odpisuje na komentarze, ok. 30 minut pytań i odpowiedzi. Opcjonalnie podzielony ekran z jedną z herbaciarek która dostała paczkę', time: '11:00' },
+        { kind: 'publish', who: 'Studio', what: 'Wrzucamy nagranie z ekranu telefonu "3-pak za 130 zł zamiast 180" na IG i TikTok — telefon w kadrze, Kasia mówi w tle' },
       ]},
       { day: 'Pt', date: '22.05', items: [
-        { kind: 'publish', who: 'Grafika', what: 'Karuzela "Twoje 3-paki na Dzień Herbaty" idzie na IG' },
-        { kind: 'live', who: 'Reklamy', what: 'Kampania 2+1 na WTD startuje — Meta plus ewentualnie Google Search ("world tea day promocja")' },
+        { kind: 'publish', who: 'Grafika', what: 'Wrzucamy karuzelę "Twoje 3-paki na Dzień Herbaty" na IG' },
+        { kind: 'live', who: 'Reklamy', what: 'Włączamy reklamy 2+1 na Dzień Herbaty — Meta plus ewentualnie wyszukiwarka Google na "world tea day promocja"' },
       ]},
       { day: 'Sob', date: '23.05', items: [
-        { kind: 'publish', who: 'Sklep', what: 'Story z liczbą zamówień — "Już 200 koszyków w 3 dni"' },
-        { kind: 'prep', who: 'Influencerzy', what: 'Repostujemy posty 20 herbaciarek z seedingu — story i grid' },
+        { kind: 'publish', who: 'Sklep', what: 'Wrzucamy story z liczbą zamówień — "Już 200 koszyków w 3 dni"' },
+        { kind: 'prep', who: 'Influencerzy', what: 'Repostujemy posty 20 herbaciarek które dostały paczki — i story, i normalne posty' },
       ]},
       { day: 'Niedz', date: '24.05', items: [
-        { kind: 'send', who: 'Sklep', what: '11:00 mailing "Premium Gift dla Mamy" do całej bazy', time: '11:00' },
-        { kind: 'send', who: 'Sklep', what: '18:00 mailing "Last call 2+1 — promocja kończy się o północy"', time: '18:00' },
-        { kind: 'publish', who: 'Studio', what: 'UGC compilation "Co kupujący napisali o Gyokuro" idzie na IG i TikTok — screenshoty DM, posty herbaciarek, voice-over Kasi' },
-        { kind: 'prep', who: 'Grafika', what: 'Banner Mother\'s Day do sklepu — włącza się jutro rano' },
+        { kind: 'send', who: 'Sklep', what: '11:00 wysyłamy maila "Premium Gift dla Mamy" do wszystkich zapisanych', time: '11:00' },
+        { kind: 'send', who: 'Sklep', what: '18:00 wysyłamy maila "Ostatni dzień 2+1 — kończymy o północy"', time: '18:00' },
+        { kind: 'publish', who: 'Studio', what: 'Wrzucamy montaż "Co kupujący napisali o Gyokuro" na IG i TikTok — screenshoty wiadomości, posty herbaciarek, Kasia mówi w tle' },
+        { kind: 'prep', who: 'Grafika', what: 'Robimy baner na Dzień Matki do sklepu — włączy się jutro rano' },
       ]},
     ],
     22: [
       { day: 'Pon', date: '25.05', items: [
         { kind: 'live', who: 'Sklep', what: '23:59 promo 2+1 się kończy — kupon WTD2PLUS1 przestaje działać', time: '23:59' },
         { kind: 'prep', who: 'Reklamy', what: 'Wyłączamy kampanię WTD 2+1, włączamy kampanię Premium Gift dla Mamy' },
-        { kind: 'publish', who: 'Grafika', what: 'Banner Mother\'s Day idzie do sklepu i jako IG hero' },
+        { kind: 'publish', who: 'Grafika', what: 'Wrzucamy baner Dzień Matki do sklepu i jako główną grafikę na IG' },
       ]},
       { day: 'Wt', date: '26.05', items: [
         { kind: 'live', who: 'Sklep', what: 'Dzień Matki — bundle Premium Gift 250 zł na froncie sklepu' },
-        { kind: 'live', who: 'Reklamy', what: 'Kampania Premium Gift na Mecie startuje — ok. 600 zł dziennie, do dziś wieczora' },
+        { kind: 'live', who: 'Reklamy', what: 'Włączamy reklamy Premium Gift na Mecie — ok. 600 zł dziennie, do dziś wieczora' },
         { kind: 'prep', who: 'Kasia', what: 'Kasia nagrywa krótki reel "Last call 2+1" — kuchnia, 5 minut roboty' },
       ]},
       { day: 'Śr', date: '27.05', items: [
-        { kind: 'publish', who: 'Kasia', what: 'Reel Kasi "Last call 2+1 wczoraj" idzie na IG i TikTok' },
-        { kind: 'prep', who: 'Tekst', what: 'Tekst maila "Last chance Gyokuro w maju" na czwartek' },
+        { kind: 'publish', who: 'Kasia', what: 'Wrzucamy reel Kasi "Ostatnie 2+1 wczoraj" na IG i TikTok' },
+        { kind: 'prep', who: 'Tekst', what: 'Piszemy maila "Ostatnia szansa na Gyokuro w maju" — wyjdzie w czwartek' },
       ]},
       { day: 'Czw', date: '28.05', items: [
-        { kind: 'send', who: 'Sklep', what: '11:00 mailing "Gyokuro w maju — jeszcze 3 dni"', time: '11:00' },
-        { kind: 'publish', who: 'Kasia', what: 'Reel Kasi "Last chance Gyokuro" idzie na IG i TikTok' },
+        { kind: 'send', who: 'Sklep', what: '11:00 wysyłamy maila "Gyokuro w maju — jeszcze 3 dni"', time: '11:00' },
+        { kind: 'publish', who: 'Kasia', what: 'Wrzucamy reel Kasi "Ostatnia szansa Gyokuro" na IG i TikTok' },
       ]},
       { day: 'Pt', date: '29.05', items: [
-        { kind: 'live', who: 'Reklamy', what: 'Final push Gyokuro w kampaniach — 3 ostatnie dni maja, kreacje z urgency' },
-        { kind: 'prep', who: 'Sklep', what: 'Przygotowanie czerwca — jakie premiery (Czarne Sencha?), banery do sklepu, plan promocji' },
+        { kind: 'live', who: 'Reklamy', what: 'Ostatnie pchnięcie Gyokuro w reklamach — 3 ostatnie dni maja, kreacje z hasłem "ostatnia szansa"' },
+        { kind: 'prep', who: 'Sklep', what: 'Planujemy czerwiec — jakie premiery (Czarne Sencha?), jakie banery, jakie promocje' },
       ]},
       { day: 'Sob', date: '30.05', items: [
-        { kind: 'decision', who: 'Decyzje (Michał)', what: 'Michał patrzy na KPI maja — sprzedaż netto, średni koszyk, ROAS reklam, ile schodzi pre-sale Gyokuro' },
+        { kind: 'decision', who: 'Decyzje (Michał)', what: 'Michał patrzy na wyniki maja — ile sprzedaliśmy netto, średnia wartość koszyka, czy reklamy się zwracają, jak idzie Gyokuro' },
         { kind: 'prep', who: 'Tekst', what: 'Wstępny szkielet planu na czerwiec — 3 priorytety na początek' },
       ]},
       { day: 'Niedz', date: '31.05', items: [
-        { kind: 'live', who: 'Kasia', what: 'IG Live "Co było w maju" — Kasia z Saszą, krótkie podsumowanie miesiąca i zapowiedź czerwca (15 min)' },
-        { kind: 'decision', who: 'Decyzje (Michał)', what: 'Michał decyduje czy zamawiamy kolejną partię Gyokuro — jeśli zostało mniej niż 30%, składamy order' },
+        { kind: 'live', who: 'Kasia', what: 'Transmisja na żywo na IG "Co było w maju" — Kasia z Saszą, krótkie podsumowanie miesiąca i zapowiedź czerwca (15 min)' },
+        { kind: 'decision', who: 'Decyzje (Michał)', what: 'Michał decyduje czy zamawiamy kolejną partię Gyokuro — jeśli zostało mniej niż 30% zapasów, składamy zamówienie' },
       ]},
     ],
   };
@@ -573,9 +573,9 @@ export default function SimplePlan() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                           {(d.items || []).map((it: any, ii: number) => {
                             const kindLabel: Record<string, string> = {
-                              publish: '📢 PUBLIKUJ',
+                              publish: '📢 WRZUĆ',
                               send: '📤 WYŚLIJ',
-                              live: '🔴 GO LIVE',
+                              live: '🔴 RUSZA',
                               prep: '🔧 Przygotuj',
                               decision: '🎯 Decyzja',
                             };
@@ -603,7 +603,7 @@ export default function SimplePlan() {
                   })}
                 </div>
                 <div style={{ marginTop: 8, fontSize: 10, color: '#64748b', fontStyle: 'italic' }}>
-                  Legenda ról: Tekst (copy), Grafika (design statyków/karuzel), Sklep (Woo/strona/promo/wysyłka maili), Reklamy (Meta/Google ads), Kasia (główna twarz sklepu, face-to-cam autorytet), Mia (POV Gen-Z — tylko 1× w maju, W20 early access), Sasza (alternatywna twarz/voice-over, BTS, wsparcie Kasi), Studio (hands-only ASMR/macro b-roll/screen recordings/UGC compilation — bez twarzy), Influencerzy (outreach + seeding), Decyzje (Michał).
+                  Kto za co odpowiada: Tekst — copywriting (maile, opisy reelsów, slajdy karuzeli). Grafika — projektowanie grafik, karuzel i banerów. Sklep — strona internetowa, promocje, wysyłka maili, paczki. Reklamy — kampanie na Mecie i w Google. Kasia — główna twarz sklepu, edukacja i ważne momenty. Sasza — alternatywna twarz, głos w tle, nagrania zza kulis, wsparcie Kasi. Mia — jeden reel w miesiącu (W20). Studio — nagrania bez twarzy: pakowanie z góry, szczegółowe ujęcia produktu, nagrania z ekranu telefonu, montaże opinii klientek. Influencerzy — wybór herbaciarek i wysyłka paczek. Michał — decyzje strategiczne.
                 </div>
               </div>
             )}
